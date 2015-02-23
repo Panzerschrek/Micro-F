@@ -510,7 +510,6 @@ void mf_Renderer::GenWaterMesh()
 	MF_DEBUG_INFO_STR_I( "water triangle count: ", quad_count * 2 );
 }
 
-
 void mf_Renderer::PrepareAircraftModels()
 {
 	static const unsigned char* const aircraf_models[]= { mf_Models::f1949 };
