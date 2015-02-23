@@ -5,12 +5,14 @@
 #include "font_data.h"
 
 const unsigned char mf_Text::default_color[4]= {255, 255, 255, 32 };
+const unsigned char* mf_Text::font_data_= NULL;
 
 void mf_Text::CreateTexture()
 {
-	unsigned char* decompressed_font= new unsigned char[ FONT_BITMAP_WIDTH * FONT_BITMAP_HEIGHT ];
+	unsigned char* decompressed_font= new unsigned char[ MF_FONT_BITMAP_WIDTH * MF_FONT_BITMAP_HEIGHT ];
+	font_data_= decompressed_font;
 
-	for( unsigned int i= 0; i< FONT_BITMAP_WIDTH * FONT_BITMAP_HEIGHT / 8; i++ )
+	for( unsigned int i= 0; i< MF_FONT_BITMAP_WIDTH * MF_FONT_BITMAP_HEIGHT / 8; i++ )
 		for( unsigned int j= 0; j< 8; j++ )
 			decompressed_font[ (i<<3) + (7-j) ]= ( (font_data[i] & (1<<j)) >> j ) * 255;
 
@@ -19,7 +21,7 @@ void mf_Text::CreateTexture()
 	glBindTexture( GL_TEXTURE_2D, font_texture_id_ );
 
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_R8,
-		FONT_BITMAP_WIDTH, FONT_BITMAP_HEIGHT, 0,
+		MF_FONT_BITMAP_WIDTH, MF_FONT_BITMAP_HEIGHT, 0,
 		GL_RED, GL_UNSIGNED_BYTE, decompressed_font );
 
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
@@ -35,11 +37,11 @@ void mf_Text::AddText( unsigned int colomn, unsigned int row, unsigned int size,
 	float x, x0, y;
 	float dx, dy;
 
-	x0= x=  2.0f * float( colomn * LETTER_WIDTH ) / viewport_width_ - 1.0f;
-	y= -2.0f * float( (row + 1) * LETTER_HEIGHT ) / viewport_height_ + 1.0f;
+	x0= x=  2.0f * float( colomn * MF_LETTER_WIDTH ) / viewport_width_ - 1.0f;
+	y= -2.0f * float( (row + 1) * MF_LETTER_HEIGHT ) / viewport_height_ + 1.0f;
 
-	dx= 2.0f * float( LETTER_WIDTH * size ) / viewport_width_;
-	dy= 2.0f * float( LETTER_HEIGHT * size ) / viewport_height_;
+	dx= 2.0f * float( MF_LETTER_WIDTH * size ) / viewport_width_;
+	dy= 2.0f * float( MF_LETTER_HEIGHT * size ) / viewport_height_;
 
 
 	mf_TextVertex* v= vertices_ + vertex_buffer_pos_;

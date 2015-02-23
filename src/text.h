@@ -18,10 +18,10 @@ struct mf_TextVertex
 
 #define MF_MAX_TEXT_BUFFER_SIZE 8192
 
-#define LETTER_WIDTH 8
-#define LETTER_HEIGHT 18
-#define FONT_BITMAP_WIDTH 768
-#define FONT_BITMAP_HEIGHT 18
+#define MF_LETTER_WIDTH 8
+#define MF_LETTER_HEIGHT 18
+#define MF_FONT_BITMAP_WIDTH 768
+#define MF_FONT_BITMAP_HEIGHT 18
 
 class mf_Text
 {
@@ -35,6 +35,7 @@ public:
 	void Draw();
 	void SetViewport( unsigned int viewport_width, unsigned int viewport_height );
 
+	static const unsigned char* GetFontData();
 private:
 	void CreateTexture();
 
@@ -51,6 +52,7 @@ private:
 
 public:
 	static const unsigned char default_color[4];
+	static const unsigned char* font_data_;
 };
 
 
@@ -58,4 +60,9 @@ inline void mf_Text::SetViewport( unsigned int viewport_width, unsigned int view
 {
 	viewport_width_ = float(viewport_width );
 	viewport_height_= float(viewport_height);
+}
+
+inline const unsigned char* mf_Text::GetFontData()
+{
+	return font_data_;
 }

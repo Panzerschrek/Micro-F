@@ -47,6 +47,8 @@ public:
 
 	void Mix( const float* color0, const float* color1, const float* sub_color );
 
+	void DrawText( unsigned int x, unsigned int y, unsigned int size, const float* color, const char* text );
+
 	void LinearNormalization( float k );
 	void ExpNormalization( float k );
 

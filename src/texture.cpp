@@ -1,6 +1,7 @@
 #include "micro-f.h"
 #include "texture.h"
 
+#include "text.h"
 #include "mf_math.h"
 
 mf_Texture::mf_Texture( unsigned int size_x_log2, unsigned int size_y_log2 )
@@ -469,6 +470,42 @@ void mf_Texture::Mix( const float* color0, const float* color1, const float* sub
 	{
 		for( unsigned int j= 0; j< 4; j++ )
 			d[j]= color0[j] * d[j] + (sub_color[j] - d[j]) * color1[j];
+	}
+}
+
+void mf_Texture::DrawText( unsigned int x, unsigned int y, unsigned int size, const float* color, const char* text )
+{
+	unsigned int size_x= 1 << size_log2_[0];
+	unsigned int size_y= 1 << size_log2_[1];
+	unsigned int size_x1= size_x - 1;
+	unsigned int size_y1= size_y - 1;
+
+	unsigned int d;
+	unsigned int  x0= x;
+	const unsigned char* text_data= mf_Text::GetFontData();
+	while( *text != 0 )
+	{
+		if( *text == '\n' )
+		{
+			y-= MF_LETTER_HEIGHT * size;
+			x=x0;
+			text++;
+			continue;
+		}
+
+		for( unsigned int j= 0; j< MF_LETTER_HEIGHT * size; j++ )
+			for( unsigned int i= 0; i< MF_LETTER_WIDTH * size; i++ )
+			{
+				 d= i/size + (*text - 32) * MF_LETTER_WIDTH  + j / size * MF_FONT_BITMAP_WIDTH;
+				if( text_data[d] != 0 )
+				{
+					d= (((i+x)&size_x1) + (((j+y)&size_y1)<<size_log2_[0]))<<2;
+					for( unsigned int k= 0; k< 3; k++ )
+						data_[d+k]= color[k];
+				}
+			}
+		text++;
+		x+= MF_LETTER_WIDTH * size;
 	}
 }
 
