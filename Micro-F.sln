@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Micro-F", "Micro-F.vcproj", "{7F2D613D-FD1A-4CA1-8E11-E366F739A441}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bin2ccode", "bin2ccode.vcproj", "{1B9A981D-306C-4A3A-B774-188AE71CE84A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Obj2MFMD_Converter", "Obj2MFMD_Converter.vcproj", "{C8CD3B67-EED2-4774-8B9A-15DCDFA4BC19}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7F2D613D-FD1A-4CA1-8E11-E366F739A441}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7F2D613D-FD1A-4CA1-8E11-E366F739A441}.Debug|Win32.Build.0 = Debug|Win32
+		{7F2D613D-FD1A-4CA1-8E11-E366F739A441}.Release|Win32.ActiveCfg = Release|Win32
+		{7F2D613D-FD1A-4CA1-8E11-E366F739A441}.Release|Win32.Build.0 = Release|Win32
+		{1B9A981D-306C-4A3A-B774-188AE71CE84A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1B9A981D-306C-4A3A-B774-188AE71CE84A}.Debug|Win32.Build.0 = Debug|Win32
+		{1B9A981D-306C-4A3A-B774-188AE71CE84A}.Release|Win32.ActiveCfg = Debug|Win32
+		{1B9A981D-306C-4A3A-B774-188AE71CE84A}.Release|Win32.Build.0 = Debug|Win32
+		{C8CD3B67-EED2-4774-8B9A-15DCDFA4BC19}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C8CD3B67-EED2-4774-8B9A-15DCDFA4BC19}.Debug|Win32.Build.0 = Debug|Win32
+		{C8CD3B67-EED2-4774-8B9A-15DCDFA4BC19}.Release|Win32.ActiveCfg = Debug|Win32
+		{C8CD3B67-EED2-4774-8B9A-15DCDFA4BC19}.Release|Win32.Build.0 = Debug|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

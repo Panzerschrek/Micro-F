@@ -1,0 +1,399 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+
+#include <vector>
+
+#include "mf_model.h"
+
+struct obj_Vertex
+{
+	float xyz[3];
+};
+
+struct obj_TexCoord
+{
+	float st[2];
+};
+
+typedef obj_Vertex obj_Normal;
+
+struct obj_CombinedVertex
+{
+	// vertex, vertex tex coord, normal
+	// if zero - no component
+	unsigned int v, vtc, n;
+	unsigned int duplicated_vertex; // index of duplicatd vertex in vector of combined vertices, or index to himself
+};
+
+struct obj_Face
+{
+	unsigned int first_vertex; // first vertex in array of combined vertices
+	unsigned int vertex_count;
+};
+
+std::vector<obj_Vertex> in_vertices;
+std::vector<obj_TexCoord> in_tex_coords;
+std::vector<obj_Normal> in_normals;
+std::vector<obj_CombinedVertex> in_combined_vertices;
+std::vector<obj_Face> in_faces;
+
+std::vector<char> file_data;
+
+std::vector<mf_ModelVertex> out_vertices;
+std::vector<mf_ModelTexCoord> out_tex_coords;
+std::vector<mf_ModelNormal> out_normals;
+std::vector<unsigned char> out_indeces_byte;
+std::vector<unsigned short> out_indeces_short;
+mf_ModelHeader out_model_header;
+
+
+int mfRound( float x )
+{
+	float intpart, fractpart;
+	fractpart= modf( x, &intpart );
+	if ( x >= 0.0f )
+	{
+		if( fractpart < 0.5f )
+			return int(intpart);
+		else
+			return int(intpart) + 1;
+	}
+	else
+	{
+		if( fractpart < -0.5f )
+			return int(intpart) - 1;
+		else
+			return int(intpart);
+	}
+}
+
+void LoadFile( const char* file_name );
+void ParseOBJ();
+bool IsCharLexemSeparator( char c );
+const char* ParseVector( const char* text, float* out_vector, unsigned int vector_size );
+const char* ParseNumber( const char* text, float* out_number );
+
+void MarkDuplicatedVertices();
+void CalculateBoundingBox();
+void NormalizeNormals();
+
+void LoadFile( const char* file_name )
+{
+	FILE* f= fopen( file_name, "rb" );
+	if( f == NULL )
+		return;
+
+	fseek( f, 0, SEEK_END );
+	unsigned int file_size= ftell(f);
+	fseek( f, 0, SEEK_SET );
+
+	file_data.resize( file_size );
+	fread( &file_data.front(), file_size, 1, f );
+	fclose(f);
+}
+
+void ParseOBJ()
+{
+	const char* text= &file_data.front();
+	const char* text_end= &file_data.back();
+
+	char lexem[ 128 ];
+
+	while( text <= text_end )
+	{
+		while(IsCharLexemSeparator(*text)) text++;
+		sscanf( text, "%s", lexem );
+		while(!IsCharLexemSeparator(*text)) text++;
+
+		if( strcmp( lexem, "#" ) == 0 ) // commnet
+		{
+			while( *text != '\n' ) text++;
+			text++;
+		}
+		else if( strcmp( lexem, "v" ) == 0 ) // vertex
+		{
+			obj_Vertex v;
+			text= ParseVector( text, v.xyz, 3 );
+			in_vertices.push_back(v);
+		}
+		else if( strcmp( lexem, "vt" ) == 0 ) // tex coord
+		{
+			obj_TexCoord tc;
+			text= ParseVector( text, tc.st, 2 );
+			in_tex_coords.push_back(tc);
+		}
+		else if( strcmp( lexem, "vn" ) == 0 ) // normal
+		{
+			obj_Normal n;
+			text= ParseVector( text, n.xyz, 3 );
+			in_normals.push_back(n);
+		}
+		else if( strcmp( lexem, "f" ) == 0 ) // face
+		{
+			obj_Face face;
+			face.first_vertex= in_combined_vertices.size();
+			face.vertex_count= 0;
+			while(IsCharLexemSeparator(*text)) text++;
+			while( text[0] >= '0' && text[0] <= '9' ) // for face vertices
+			{
+				obj_CombinedVertex combined_vertex;
+				combined_vertex.v= combined_vertex.vtc= combined_vertex.n= 0;
+
+				float num;
+				text= ParseNumber( text, &num );
+				combined_vertex.v= (unsigned int) num;
+				if( *text == '/' )
+				{
+					// vertex + something
+					text++;
+					if( *text == '/' )
+					{
+						text++;
+						// vertex + normal
+						text= ParseNumber( text, &num );
+						combined_vertex.n= (unsigned int) num;
+					}
+					else
+					{
+						// vertex + tex_coord
+						text= ParseNumber( text, &num );
+						combined_vertex.vtc= (unsigned int) num;
+						if( *text == '/' )
+						{
+							text++;
+							// vertex + tex_coord + normal
+							text= ParseNumber( text, &num );
+							combined_vertex.n= (unsigned int) num;
+						}
+						else
+						{
+						}
+					}
+				}
+				else
+				{
+					// only vertex
+				}
+				in_combined_vertices.push_back(combined_vertex);
+				face.vertex_count++;
+				while(IsCharLexemSeparator(*text)) text++;
+			} // for face vertices
+			in_faces.push_back(face);
+		} // if face
+	} // while not end of file
+}
+
+bool IsCharLexemSeparator( char c )
+{
+	return c == ' ' || c == '\n' || c == 0x09 || c  == '\t';
+}
+
+const char* ParseVector( const char* text, float* out_vector, unsigned int vector_size )
+{
+	for( unsigned int i= 0; i< vector_size; i++ )
+	{
+		while(IsCharLexemSeparator(*text)) text++;
+		out_vector[i]= (float) atof( text );
+		while(!IsCharLexemSeparator(*text)) text++;
+	}
+	return text;
+}
+
+const char* ParseNumber( const char* text, float* out_number )
+{
+	*out_number= (float)atof(text);
+	if( *text == '+' || *text == '-' )
+		text++;
+	while( *text >= '0' && *text <= '9' )
+		text++;
+	if( *text == '.' )
+	{
+		text++;
+		while( *text >= '0' && *text <= '9' )
+		text++;
+	}
+	return text;
+}
+
+void MarkDuplicatedVertices()
+{
+	unsigned int duplicate_count= 0;
+
+	for( std::vector<obj_CombinedVertex>::iterator v0= in_combined_vertices.begin(); v0< in_combined_vertices.end(); v0++ )
+	{
+		bool is_duplicate= false;
+		for( std::vector<obj_CombinedVertex>::iterator v1= in_combined_vertices.begin(); v1< v0; v1++ )
+			if( v0->v == v1->v && v0->vtc == v1->vtc && v0->n == v1->n )
+			{
+				v0->duplicated_vertex= v1 - in_combined_vertices.begin();
+				is_duplicate= true;
+				duplicate_count++;
+				break;
+			}
+		
+		if( !is_duplicate )
+			v0->duplicated_vertex= v0 - in_combined_vertices.begin();
+	} // for vertices
+}
+
+void CalculateBoundingBox()
+{
+	const float inf= 1e24f;
+
+	out_model_header;
+	float min[3]= {  inf,  inf,  inf };
+	float max[3]= { -inf, -inf, -inf };
+	for( std::vector<obj_Vertex>::iterator v= in_vertices.begin(); v< in_vertices.end(); v++ )
+		for( unsigned int i= 0; i< 3; i++ )
+		{
+			if( v->xyz[i] > max[i] ) max[i]= v->xyz[i];
+			if( v->xyz[i] < min[i] ) min[i]= v->xyz[i];
+		}
+
+	for( unsigned int i= 0; i< 3; i++ )
+	{
+		out_model_header.scale[i]= ( max[i] - min[i] ) / 255.0f;
+		out_model_header.pos[i]= max[i] - 127.0f * out_model_header.scale[i];
+	}
+}
+
+void NormalizeNormals()
+{
+	for( std::vector<obj_Normal>::iterator n= in_normals.begin(); n< in_normals.end(); n++ )
+	{
+		float l= 1.0f / sqrt( n->xyz[0] * n->xyz[0] + n->xyz[1] * n->xyz[1] + n->xyz[2] * n->xyz[2] );
+		for( unsigned int i= 0; i< 3; i++ )
+			n->xyz[i]= n->xyz[i] * l;
+	}
+}
+
+void GenOutMesh()
+{
+	std::vector<unsigned int> old_to_new_vertices( in_combined_vertices.size() );
+
+	for( std::vector<obj_CombinedVertex>::iterator v= in_combined_vertices.begin(); v< in_combined_vertices.end(); v++ )
+	{
+		if( v->duplicated_vertex == v - in_combined_vertices.begin() )
+		{
+			mf_ModelVertex out_vertex;
+			mf_ModelNormal out_normal;
+			mf_ModelTexCoord out_tc;
+			old_to_new_vertices[ v - in_combined_vertices.begin() ]= out_vertices.size();
+
+			for( unsigned int i= 0; i< 3; i++ )
+			{
+				int xyz= mfRound( ( in_vertices[v->v - 1 ].xyz[i] - out_model_header.pos[i] ) / out_model_header.scale[i] );
+				if( xyz > 127 ) xyz= 127;
+				else if( xyz < -128 ) xyz= -128;
+				out_vertex.xyz[i]= (char)xyz;
+			}
+			if( v->n > 0 )
+				for( unsigned int i= 0; i< 3; i++ )
+				{
+					int xyz= mfRound( in_normals[v->n - 1].xyz[i] * 127.0f );
+					if( xyz > 127 ) xyz= 127;
+					else if( xyz < -127 ) xyz= -127;
+					out_normal.xyz[i]= xyz;
+				}
+			if( v->vtc > 0 )
+				for( unsigned int i= 0; i< 2; i++ )
+				{
+					int st= mfRound( in_tex_coords[v->vtc - 1].st[i] * 255.0f );
+					if( st < 0 ) st= 0;
+					else if( st > 255 ) st= 255;
+					out_tc.st[i]= st;
+				}
+			out_vertices.push_back(out_vertex);
+			out_normals.push_back(out_normal);
+			out_tex_coords.push_back(out_tc);
+		}
+		else
+		{
+			old_to_new_vertices[ v - in_combined_vertices.begin() ]= old_to_new_vertices[ v->duplicated_vertex ];
+		} // fi duplicated vertex
+	}// for combined vertices
+
+	for( std::vector<obj_Face>::iterator face= in_faces.begin(); face < in_faces.end(); face++ )
+	{
+		for( unsigned int i= 0; i< face->vertex_count - 2; i++ )
+		{
+			unsigned int v0= old_to_new_vertices[ face->first_vertex         ];
+			unsigned int v1= old_to_new_vertices[ face->first_vertex + i + 1 ];
+			unsigned int v2= old_to_new_vertices[ face->first_vertex + i + 2 ];
+			if( out_vertices.size() <= 255 )
+			{
+				out_indeces_byte.push_back( (unsigned char)v0 );
+				out_indeces_byte.push_back( (unsigned char)v1 );
+				out_indeces_byte.push_back( (unsigned char)v2 );
+			}
+			else
+			{
+				out_indeces_short.push_back( (unsigned short)v0 );
+				out_indeces_short.push_back( (unsigned short)v1 );
+				out_indeces_short.push_back( (unsigned short)v2 );
+			}
+		}
+	} // for faces
+}
+
+void WriteResultFile( const char* file_name )
+{
+	bool short_indeces= out_vertices.size() > 255;
+
+	out_model_header.format_code[0]= 'M';
+	out_model_header.format_code[1]= 'F';
+	out_model_header.format_code[2]= 'M';
+	out_model_header.format_code[3]= 'D';
+	out_model_header.vertex_count= out_vertices.size();
+	out_model_header.trialgle_count= ( short_indeces ? out_indeces_short.size() : out_indeces_byte.size() ) / 3;
+
+	out_model_header.bytes_per_index= short_indeces ? 2 : 1;
+	out_model_header.vertex_format_flags= MF_MODEL_VERTEX_BIT | MF_MODEL_NORMAL_BIT | MF_MODEL_TEXCOORD_BIT;
+
+
+	FILE* f= fopen( file_name, "wb" );
+	if( f == NULL )
+	{
+	}
+
+	fwrite( &out_model_header, 1, sizeof(out_model_header), f );
+	fwrite( &out_vertices.front(), 1, sizeof(mf_ModelVertex) * out_vertices.size(), f );
+	fwrite( &out_normals.front(), 1, sizeof(mf_ModelNormal) * out_normals.size(), f );
+	fwrite( &out_tex_coords.front(), 1, sizeof(mf_ModelTexCoord) * out_tex_coords.size(), f );
+	if( short_indeces )
+		fwrite( &out_indeces_short.front(), 1, sizeof(short) * out_indeces_short.size(), f );
+	else
+		fwrite( &out_indeces_byte.front(), 1, sizeof(char) * out_indeces_byte.size(), f );
+
+	fclose(f);
+}
+
+int main( int argc, char* argv[] )
+{
+	char* input_file_name;
+	for( int i= 1; i< argc; i++ )
+	{
+		if( strcmp( argv[i], "-h" ) == 0 )
+		{
+		}
+		else
+			input_file_name= argv[i];
+	}
+
+	LoadFile( "models/plane.obj" );
+	ParseOBJ();
+	MarkDuplicatedVertices();
+	CalculateBoundingBox();
+	NormalizeNormals();
+	GenOutMesh();
+
+	char out_file_name[128];
+	{
+		//unsigned int i= 0;
+		//while(
+	}
+
+	WriteResultFile( "models/plane.mfmd" );
+	return 0;
+}
