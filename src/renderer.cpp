@@ -17,6 +17,33 @@
 #define MF_TERRAIN_CHUNK_SIZE_CL_LOG2 3
 #define MF_TERRAIN_MESH_SIZE_CHUNKS 72
 
+
+void GenF1949Texture( mf_Texture* tex )
+{
+	static const float plane_color[]= { 0.3f, 0.6f, 0.1f, 0.0f };
+	tex->Fill( plane_color );
+	static const float turbine_back_color[]= { 0.3f, 0.1f, 0.7f, 0.0f };
+	tex->FillRect( 1, 1, 34, 35, turbine_back_color );
+	static const float turbine_front_color[]= { 0.7f, 0.1f, 0.3f, 0.0f };
+	tex->FillRect( 27, 36, 71, 81, turbine_front_color );
+	static const float window_color[]= {0.5f, 0.5f, 0.9f, 1.0f };
+	tex->FillRect( 206, 1, 49, 88, window_color );
+
+	{
+		mf_Texture tex2( 8, 8 );
+		tex2.Noise();
+		static const float add_color[]= { 2.0f, 2.0f, 2.0f, 0.0f };
+		static const float mul_color[]= { 0.333f, 0.333f, 0.333f, 0.0f };
+		tex2.Add( add_color );
+		tex2.Mul( mul_color );
+		tex->Mul( &tex2 );
+	}
+
+	static const float text_color[]= { 1.0f, 1.0f, 1.0f, 0.0f };
+	tex->DrawText( 147, 64, 1, text_color, "F-1949" );
+	tex->LinearNormalization(1.0f);
+}
+
 mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	: player_(player), level_(level)
 	, text_(text)
@@ -99,17 +126,8 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	tex.SinWaveX( 12.0f, 1.0f / 64.0f, MF_PI3 );
 	tex.SinWaveY( 8.0f, 1.0f / 64.0f, MF_PI6 );
 
-	static const float plane_color[]= { 0.3f, 0.6f, 0.1f, 0.0f };
-	tex.Fill( plane_color );
-	static const float turbine_back_color[]= { 0.3f, 0.1f, 0.7f, 0.0f };
-	tex.FillRect( 1, 1, 34, 35, turbine_back_color );
-	static const float turbine_front_color[]= { 0.7f, 0.1f, 0.3f, 0.0f };
-	tex.FillRect( 27, 36, 71, 81, turbine_front_color );
-	
-	static const float window_color[]= {0.5f, 0.5f, 0.9f, 1.0f };
-	tex.FillRect( 206, 1, 49, 88, window_color );
 
-	tex.LinearNormalization(1.0f);
+	GenF1949Texture( &tex );
 
 	glGenTextures( 1, &test_texture_ );
 	glBindTexture( GL_TEXTURE_2D, test_texture_ );
@@ -733,9 +751,12 @@ void mf_Renderer::DrawAircrafts()
 	glBindTexture( GL_TEXTURE_2D, test_texture_ );
 	aircraft_shader_.UniformInt( "tex", 0 );
 
+	glEnable( GL_CULL_FACE );
+
 	aircraft_vbo_.Bind();
 	glDrawElements( GL_TRIANGLES, aircraft_vbo_.IndexDataSize() / sizeof(unsigned short), GL_UNSIGNED_SHORT, 0 );
-	//glDrawArrays( GL_TRIANGLES, 0, aircraft_vbo_.VertexCount() );
+
+	glDisable( GL_CULL_FACE );
 }
 
 void mf_Renderer::DrawWater()

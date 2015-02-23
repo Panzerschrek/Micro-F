@@ -168,7 +168,8 @@ const char* const models_shader_f=
 "{"
 	"float l= max(0.0,dot(sun,normalize(fn)));"
 	"l+=0.3;"
-	"oc=vec4(texture(tex,ftc).xyz,0.5);"
+	"oc=vec4(texture(tex,ftc).xyz*l,0.5);"
+	//"oc=vec4(fn,0.5);"
 "}";
 
 
