@@ -150,7 +150,6 @@
 				AdditionalOptions="opengl32.lib"
 				OutputFile="Micro-F.exe"
 				LinkIncremental="1"
-				ManifestFile="$(IntDir)\man.manifest"
 				EnableUAC="false"
 				GenerateDebugInformation="false"
 				OptimizeReferences="2"
