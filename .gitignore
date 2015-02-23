@@ -1,0 +1,7 @@
+*
+!.gitignore
+!*.obj
+!*.mfmd
+
+!Debug
+Debug/*
