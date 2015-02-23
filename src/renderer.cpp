@@ -81,7 +81,8 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	aircraft_shader_.SetAttribLocation( "n", 1 );
 	aircraft_shader_.SetAttribLocation( "tc", 2 );
 	aircraft_shader_.Create( mf_Shaders::models_shader_v, mf_Shaders::models_shader_f );
-	static const char* const aircraft_shader_uniforms[]= { "mat", "ms", "mp", "tex" };
+	static const char* const aircraft_shader_uniforms[]= {
+		/*vert*/ "mat", "nmat", "ms", "mp", /*frag*/ "tex", "sun", "sl", "al" };
 	aircraft_shader_.FindUniforms( aircraft_shader_uniforms, sizeof(aircraft_shader_uniforms) / sizeof(char*) );
 
 	GenTerrainMesh();
@@ -178,8 +179,8 @@ void mf_Renderer::DrawFrame()
 
 	CreateViewMatrix( view_matrix_, false );
 	DrawTerrain( false );
-	DrawWater();
 	DrawAircrafts();
+	DrawWater();
 
 	{
 		unsigned int first_water_quad, water_quad_count;
@@ -512,6 +513,8 @@ void mf_Renderer::GenWaterMesh()
 
 void mf_Renderer::PrepareAircraftModels()
 {
+	static const unsigned char* const aircraf_models[]= { mf_Models::f1949 };
+	
 	const mf_ModelHeader* header= (const mf_ModelHeader*) mf_Models::f1949;
 
 	mf_ModelVertex* v_p= (mf_ModelVertex*)( ((char*)mf_Models::f1949) + sizeof(mf_ModelHeader) );
@@ -561,20 +564,20 @@ void mf_Renderer::PrepareAircraftModels()
 		}
 	} // for out vertices
 
-	aircraft_vbo_.VertexData( vertices, header->vertex_count * sizeof(mf_GPUModelVertex), sizeof(mf_GPUModelVertex) );
+	aircrafts_data_.vbo.VertexData( vertices, header->vertex_count * sizeof(mf_GPUModelVertex), sizeof(mf_GPUModelVertex) );
 	delete[] vertices;
 
 	unsigned int shift;
 	mf_GPUModelVertex vert;
 	shift= (char*)vert.pos - (char*)&vert;
-	aircraft_vbo_.VertexAttrib( 0, 3, GL_BYTE, false, shift );
+	aircrafts_data_.vbo.VertexAttrib( 0, 3, GL_BYTE, false, shift );
 	shift= (char*)vert.normal - (char*)&vert;
-	aircraft_vbo_.VertexAttrib( 1, 3, GL_BYTE, true, shift );
+	aircrafts_data_.vbo.VertexAttrib( 1, 3, GL_BYTE, true, shift );
 	shift= (char*)vert.tc - (char*)&vert;
-	aircraft_vbo_.VertexAttrib( 2, 2, GL_UNSIGNED_BYTE, true, shift );
+	aircrafts_data_.vbo.VertexAttrib( 2, 2, GL_UNSIGNED_BYTE, true, shift );
 
 	if( header->bytes_per_index == 2 )
-		aircraft_vbo_.IndexData( i_p, header->trialgle_count * 3 * sizeof(unsigned short) );
+		aircrafts_data_.vbo.IndexData( i_p, header->trialgle_count * 3 * sizeof(unsigned short) );
 	else // transform input byte indeces to short indeces
 	{
 		unsigned short* short_indeces= new unsigned short[ header->trialgle_count * 3 ];
@@ -582,9 +585,12 @@ void mf_Renderer::PrepareAircraftModels()
 		for( unsigned int i= 0; i< (unsigned int)(header->trialgle_count * 3); i++ )
 			short_indeces[i]= char_i_p[i];
 
-		aircraft_vbo_.IndexData( short_indeces, header->trialgle_count * 3 * sizeof(unsigned short) );
+		aircrafts_data_.vbo.IndexData( short_indeces, header->trialgle_count * 3 * sizeof(unsigned short) );
 		delete[] short_indeces;
 	}
+
+	aircrafts_data_.models[0].model_header= header;
+	aircrafts_data_.models[0].additional_scale= 1.0f;
 }
 
 void mf_Renderer::CreateViewMatrix( float* out_matrix, bool water_reflection )
@@ -734,8 +740,31 @@ void mf_Renderer::DrawTerrain(bool draw_to_water_framebuffer )
 
 void mf_Renderer::DrawAircrafts()
 {
+	float translate_mat[16];
+	float normal_mat[16];
+	float rot_z_mat[16];
+	float mat[16];
+
+	float translate_vec[3];
+	translate_vec[0]= translate_vec[1]= mf_Math::cos( player_->Angle()[0] );
+	translate_vec[2]= mf_Math::sin( player_->Angle()[0] );
+	translate_vec[0]*= -mf_Math::sin( player_->Angle()[2] );
+	translate_vec[1]*= mf_Math::cos( player_->Angle()[2] );
+	Vec3Mul( translate_vec, 14.0f );
+	Vec3Add( translate_vec, player_->Pos() );
+	Mat4Translate( translate_mat, translate_vec );
+
+	Mat4RotateZ( rot_z_mat, player_->Angle()[2] * 0.0f );
+
+	Mat4Mul( rot_z_mat, translate_mat, mat );
+	Mat4Mul( mat, view_matrix_ );
+
+	
+	Mat4ToMat3( rot_z_mat, normal_mat );
+
 	aircraft_shader_.Bind();
-	aircraft_shader_.UniformMat4( "mat", view_matrix_ );
+	aircraft_shader_.UniformMat4( "mat", mat );
+	aircraft_shader_.UniformMat3( "nmat", normal_mat );
 
 	const mf_ModelHeader* header= (const mf_ModelHeader*) mf_Models::f1949;
 
@@ -752,10 +781,17 @@ void mf_Renderer::DrawAircrafts()
 	glBindTexture( GL_TEXTURE_2D, test_texture_ );
 	aircraft_shader_.UniformInt( "tex", 0 );
 
+	aircraft_shader_.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
+	aircraft_shader_.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
+	aircraft_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
+
+
 	glEnable( GL_CULL_FACE );
 
-	aircraft_vbo_.Bind();
-	glDrawElements( GL_TRIANGLES, aircraft_vbo_.IndexDataSize() / sizeof(unsigned short), GL_UNSIGNED_SHORT, 0 );
+	aircrafts_data_.vbo.Bind();
+	glDrawElements( GL_TRIANGLES,
+		aircrafts_data_.vbo.IndexDataSize() / sizeof(unsigned short),
+		GL_UNSIGNED_SHORT, 0 );
 
 	glDisable( GL_CULL_FACE );
 }

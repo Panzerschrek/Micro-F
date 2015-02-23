@@ -7,6 +7,8 @@
 
 #include "mf_model.h"
 
+#define MF_MAX_AIRCRAFT_MODELS 32
+
 #pragma pack( push, 1 )
 struct mf_GPUModelVertex
 {
@@ -89,7 +91,7 @@ private:
 		unsigned int size[2];
 		GLuint fbo_id;
 		GLuint depth_tex_id;
-	}shadowmap_fbo_;
+	} shadowmap_fbo_;
 	mf_GLSLProgram terrain_shadowmap_shader_;
 	mf_GLSLProgram water_shadowmap_shader_;
 
@@ -107,7 +109,12 @@ private:
 
 	} water_mesh_;
 
-	mf_VertexBuffer aircraft_vbo_;
+	struct
+	{
+		unsigned int model_count;
+		mf_AircratfModelInfo models[ MF_MAX_AIRCRAFT_MODELS ];
+		mf_VertexBuffer vbo;
+	} aircrafts_data_;
 	mf_GLSLProgram aircraft_shader_;
 
 	GLuint test_texture_;

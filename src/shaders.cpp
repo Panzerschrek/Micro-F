@@ -142,6 +142,7 @@ const char* const water_shadowmap_shader_v=
 const char* const models_shader_v=
 "#version 330\n"
 "uniform mat4 mat;" // view matrix
+"uniform mat3 nmat;" // normal matrix
 "uniform vec3 ms;" // model scale
 "uniform vec3 mp;" // model position
 "in vec3 p;" // position
@@ -151,7 +152,7 @@ const char* const models_shader_v=
 "out vec2 ftc;" // fragment tex coord
 "void main()"
 "{"
-	"fn=n;"
+	"fn=nmat*n;"
 	"ftc=tc;"
 	"vec3 pos=p*ms+mp;"
 	"gl_Position=mat*vec4(pos,1.0);"
@@ -159,17 +160,17 @@ const char* const models_shader_v=
 
 const char* const models_shader_f=
 "#version 330\n"
-"uniform sampler2D tex;"
+"uniform sampler2D tex;" // diffuse texture
+"uniform vec3 sun;"
+"uniform vec3 sl;" //sun light
+"uniform vec3 al;" // ambient light
 "in vec3 fn;" // fragment normal
 "in vec2 ftc;" // fragment tex coord
 "out vec4 oc;" // out color
-"const vec3 sun=vec3(0.5,0.5, 0.5);"
 "void main()"
 "{"
 	"float l= max(0.0,dot(sun,normalize(fn)));"
-	"l+=0.3;"
-	"oc=vec4(texture(tex,ftc).xyz*l,0.5);"
-	//"oc=vec4(fn,0.5);"
+	"oc=vec4(texture(tex,ftc).xyz*(al+sl*l),0.5);"
 "}";
 
 
