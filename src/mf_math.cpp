@@ -208,6 +208,21 @@ void Mat4Perspective( float* m, float aspect, float fov, float z_near, float z_f
 	m[12]= m[13]= m[15]= 0.0f;
 }
 
+void Mat4ToMat3( float* m )
+{
+	for( unsigned int i= 0; i< 3; i++ )
+		m[3+i]= m[4+i];
+	for( unsigned int i= 0; i< 3; i++ )
+		m[6+i]= m[8+i];
+}
+
+void Mat4ToMat3( const float* m_in, float* m_out )
+{
+	for( unsigned int y= 0; y< 3; y++ )
+		for( unsigned int x= 0; x< 3; x++ )
+			m_out[x + y*3]= m_in[ x + y*4 ];
+}
+
 float RandF( float max )
 {
 	return RandF( 0.0f, max );

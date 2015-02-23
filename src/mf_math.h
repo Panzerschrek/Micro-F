@@ -39,6 +39,9 @@ void Mat4RotateZ( float* m, float a );
 void Mat4Translate( float* m, const float* v );
 void Mat4Perspective( float* m, float aspect, float fov, float z_near, float z_far );
 
+void Mat4ToMat3( float* m );
+void Mat4ToMat3( const float* m_in, float* m_out );
+
 float RandF( float max ); // returns value in range [0;max]
 float RandF( float min, float max ); // returns value in range [min;max]
 

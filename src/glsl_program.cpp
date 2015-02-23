@@ -102,6 +102,11 @@ void mf_GLSLProgram::UniformMat4( const char* name, const float* mat )
 	glUniformMatrix4fv( GetUniformId(name), 1, GL_FALSE, mat );
 }
 
+void mf_GLSLProgram::UniformMat3( const char* name, const float* mat )
+{
+	glUniformMatrix3fv( GetUniformId(name), 1, GL_FALSE, mat );
+}
+
 void mf_GLSLProgram::UniformVec3( const char* name, const float* v )
 {
 	glUniform3f( GetUniformId(name), v[0], v[1], v[2] );
