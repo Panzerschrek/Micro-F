@@ -369,29 +369,81 @@ void WriteResultFile( const char* file_name )
 	fclose(f);
 }
 
+
+static const char* const help_string=
+"usage:\n"
+"Obj2MDMD_converter [input_file] -o [output_file]"
+"\n";
+
 int main( int argc, char* argv[] )
 {
-	char* input_file_name;
+	char* input_file_name= NULL;
+	char out_file_name[1024]={0};
 	for( int i= 1; i< argc; i++ )
 	{
 		if( strcmp( argv[i], "-h" ) == 0 )
 		{
+			printf( help_string );
+			return 0;
+		}
+		else if( strcmp( argv[i], "-o" ) == 0 )
+		{
+			if( i < argc - 1 )
+				strcpy( out_file_name, argv[++i] );
+			else
+				printf( "warning, missing output file name, after \"-o\"\n" );
 		}
 		else
 			input_file_name= argv[i];
 	}
 
-	LoadFile( "models/plane.obj" );
+	if( input_file_name == NULL )
+	{
+		printf( "error, no input file specified\n" );
+		return -1;
+	}
+
+	LoadFile( input_file_name );
+	if( file_data.size() == 0 )
+	{
+		printf( "error, can`t load file \"%s\"\n", input_file_name );
+		return -1;
+	}
+
 	ParseOBJ();
 	MarkDuplicatedVertices();
 	CalculateBoundingBox();
 	NormalizeNormals();
 	GenOutMesh();
 
-	char out_file_name[128];
+	if( out_file_name[0] == 0 )
 	{
-		//unsigned int i= 0;
-		//while(
+		int len= strlen( input_file_name );
+		int i= len-1;
+		while( i>= 0 )
+		{
+			if( input_file_name[i] == '.' )
+				break;
+			i--;
+		}
+		if( i <= 0 )
+		{
+			strcpy( out_file_name, input_file_name );
+			strcat( out_file_name + len, ".mfmd" );
+		}
+		else
+		{
+			len= i;
+			for( i= 0; i< len; i++ )
+				out_file_name[i]= input_file_name[i];
+			out_file_name[len+0]= '.';
+			out_file_name[len+1]= 'm';
+			out_file_name[len+2]= 'f';
+			out_file_name[len+3]= 'm';
+			out_file_name[len+4]= 'd';
+			out_file_name[len+5]= 0;
+		}
+
 	}
 
 	WriteResultFile( "models/plane.mfmd" );

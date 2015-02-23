@@ -8,9 +8,8 @@
 
 #include "mf_model.h"
 
-#include "../models/plane.h"
+#include "../models/f1949.h"
 
-//#define MF_TERRAIN_VISIBILITY_DISTANCE_M 128
 #define MF_WATER_QUAD_SIZE_CL 4 // size in terrain cells
 
 #define MF_TERRAIN_CHUNK_SIZE_CL 8
@@ -20,27 +19,27 @@
 
 void GenF1949Texture( mf_Texture* tex )
 {
-	static const float plane_color[]= { 0.3f, 0.6f, 0.1f, 0.0f };
+	const unsigned int tex_scaler= 1<< ( tex->SizeXLog2() - 8 );
+
+	static const float plane_color[]= { 0.2f, 0.4f, 0.1f, 0.0f };
 	tex->Fill( plane_color );
 	static const float turbine_back_color[]= { 0.3f, 0.1f, 0.7f, 0.0f };
-	tex->FillRect( 1, 1, 34, 35, turbine_back_color );
+	tex->FillRect( 1 * tex_scaler, 1 * tex_scaler, 34 * tex_scaler, 35 * tex_scaler, turbine_back_color );
 	static const float turbine_front_color[]= { 0.7f, 0.1f, 0.3f, 0.0f };
-	tex->FillRect( 27, 36, 71, 81, turbine_front_color );
+	tex->FillRect( 27 * tex_scaler, 36 * tex_scaler, 71 * tex_scaler, 81 * tex_scaler, turbine_front_color );
 	static const float window_color[]= {0.5f, 0.5f, 0.9f, 1.0f };
-	tex->FillRect( 206, 1, 49, 88, window_color );
+	tex->FillRect( 207 * tex_scaler, 1 * tex_scaler, 49 * tex_scaler, 88 * tex_scaler, window_color );
 
-	{
-		mf_Texture tex2( 8, 8 );
-		tex2.Noise();
-		static const float add_color[]= { 2.0f, 2.0f, 2.0f, 0.0f };
-		static const float mul_color[]= { 0.333f, 0.333f, 0.333f, 0.0f };
-		tex2.Add( add_color );
-		tex2.Mul( mul_color );
-		tex->Mul( &tex2 );
-	}
+	mf_Texture tex2( tex->SizeXLog2(), tex->SizeYLog2() );
+	tex2.Noise();
+	static const float add_color[]= { 1.5f, 1.5f, 1.5f, 1.5f };
+	static const float mul_color[]= { 0.4f, 0.4f, 0.4f, 0.0f };
+	tex2.Add( add_color );
+	tex2.Mul( mul_color );
+	tex->Mul( &tex2 );
 
 	static const float text_color[]= { 1.0f, 1.0f, 1.0f, 0.0f };
-	tex->DrawText( 147, 64, 1, text_color, "F-1949" );
+	tex->DrawText( 147 * tex_scaler, 64 * tex_scaler, tex_scaler, text_color, "F-1949" );
 	tex->LinearNormalization(1.0f);
 }
 
@@ -107,8 +106,8 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
-	mf_Texture tex( 8, 8 );
-	tex.Noise();
+	mf_Texture tex( 10, 10 );
+	/*tex.Noise();
 	static const float fill_color[]= { 0.2f * 2.0f, 0.65f * 2.0f, 0.15f * 2.0f, 0.0f * 2.0f };
 	tex.Mul( fill_color );
 	static const float border_color[]= { 0.7f, 0.1f, 0.1f, 0.0f };
@@ -124,7 +123,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	tex.Pow(2.0f);
 	tex.Mul(gray);
 	tex.SinWaveX( 12.0f, 1.0f / 64.0f, MF_PI3 );
-	tex.SinWaveY( 8.0f, 1.0f / 64.0f, MF_PI6 );
+	tex.SinWaveY( 8.0f, 1.0f / 64.0f, MF_PI6 );*/
 
 
 	GenF1949Texture( &tex );
@@ -740,12 +739,14 @@ void mf_Renderer::DrawAircrafts()
 
 	const mf_ModelHeader* header= (const mf_ModelHeader*) plane_data;
 
-	float scale[3];
+	/*float scale[3];
 	Vec3Mul( header->scale, 8.0f, scale );
 	aircraft_shader_.UniformVec3( "ms", scale );
 	float pos[3]= { 10.0f, 20.0f, 120.0f };
 	Vec3Add( pos, header->pos );
-	aircraft_shader_.UniformVec3( "mp", pos );
+	aircraft_shader_.UniformVec3( "mp", pos );*/
+	aircraft_shader_.UniformVec3( "ms", header->scale );
+	aircraft_shader_.UniformVec3( "mp", header->pos );
 
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, test_texture_ );

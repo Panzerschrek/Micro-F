@@ -5,6 +5,8 @@
 #include "level.h"
 #include "text.h"
 
+#include "mf_model.h"
+
 #pragma pack( push, 1 )
 struct mf_GPUModelVertex
 {
@@ -13,6 +15,16 @@ struct mf_GPUModelVertex
 	unsigned char tc[2];
 };
 #pragma pack(pop)
+
+
+struct mf_AircratfModelInfo
+{
+	const mf_ModelHeader* model_header;
+	float additional_scale;
+
+	unsigned int first_index;
+	unsigned int index_count;
+};
 
 class mf_Renderer
 {

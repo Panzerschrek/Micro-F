@@ -1,3 +1,4 @@
+#pragma once
 //model flags
 #define MF_MODEL_VERTEX_BIT   4
 #define MF_MODEL_NORMAL_BIT   8
