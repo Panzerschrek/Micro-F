@@ -148,23 +148,27 @@ const char* const models_shader_v=
 "in vec3 n;" // normal
 "in vec2 tc;" // texture coord
 "out vec3 fn;" // fragment normal
+"out vec2 ftc;" // fragment tex coord
 "void main()"
 "{"
 	"fn=n;"
+	"ftc=tc;"
 	"vec3 pos=p*ms+mp;"
 	"gl_Position=mat*vec4(pos,1.0);"
 "}";
 
 const char* const models_shader_f=
 "#version 330\n"
+"uniform sampler2D tex;"
 "in vec3 fn;" // fragment normal
+"in vec2 ftc;" // fragment tex coord
 "out vec4 oc;" // out color
 "const vec3 sun=vec3(0.5,0.5, 0.5);"
 "void main()"
 "{"
 	"float l= max(0.0,dot(sun,normalize(fn)));"
 	"l+=0.3;"
-	"oc=vec4(fn*0.5+vec3(0.5,0.5,0.5),0.5);"
+	"oc=vec4(texture(tex,ftc).xyz,0.5);"
 "}";
 
 

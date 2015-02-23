@@ -4,7 +4,6 @@
 
 int main( int argc, char* argv[] )
 {
-	printf( "%d", '\n' );
 	char src_file_name[1024];
 	char dst_file_name[1024];
 
@@ -99,7 +98,7 @@ int main( int argc, char* argv[] )
 				fprintf( f_dst, "\n" );
 		}
 
-		fprintf( f_dst, " 0x%2X };", bin_data[ src_file_len - 1 ] );
+		fprintf( f_dst, " 0x%02X };", bin_data[ src_file_len - 1 ] );
 	}
 
 	fclose( f_dst );

@@ -59,6 +59,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(ProjectName).exe"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>

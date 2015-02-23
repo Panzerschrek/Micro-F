@@ -55,7 +55,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	aircraft_shader_.SetAttribLocation( "n", 1 );
 	aircraft_shader_.SetAttribLocation( "tc", 2 );
 	aircraft_shader_.Create( mf_Shaders::models_shader_v, mf_Shaders::models_shader_f );
-	static const char* const aircraft_shader_uniforms[]= { "mat", "ms", "mp" };
+	static const char* const aircraft_shader_uniforms[]= { "mat", "ms", "mp", "tex" };
 	aircraft_shader_.FindUniforms( aircraft_shader_uniforms, sizeof(aircraft_shader_uniforms) / sizeof(char*) );
 
 	GenTerrainMesh();
@@ -80,7 +80,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
-	mf_Texture tex( 7, 7 );
+	mf_Texture tex( 8, 8 );
 	tex.Noise();
 	static const float fill_color[]= { 0.2f * 2.0f, 0.65f * 2.0f, 0.15f * 2.0f, 0.0f * 2.0f };
 	tex.Mul( fill_color );
@@ -98,6 +98,17 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	tex.Mul(gray);
 	tex.SinWaveX( 12.0f, 1.0f / 64.0f, MF_PI3 );
 	tex.SinWaveY( 8.0f, 1.0f / 64.0f, MF_PI6 );
+
+	static const float plane_color[]= { 0.3f, 0.6f, 0.1f, 0.0f };
+	tex.Fill( plane_color );
+	static const float turbine_back_color[]= { 0.3f, 0.1f, 0.7f, 0.0f };
+	tex.FillRect( 1, 1, 34, 35, turbine_back_color );
+	static const float turbine_front_color[]= { 0.7f, 0.1f, 0.3f, 0.0f };
+	tex.FillRect( 27, 36, 71, 81, turbine_front_color );
+	
+	static const float window_color[]= {0.5f, 0.5f, 0.9f, 1.0f };
+	tex.FillRect( 206, 1, 49, 88, window_color );
+
 	tex.LinearNormalization(1.0f);
 
 	glGenTextures( 1, &test_texture_ );
@@ -717,6 +728,10 @@ void mf_Renderer::DrawAircrafts()
 	float pos[3]= { 10.0f, 20.0f, 120.0f };
 	Vec3Add( pos, header->pos );
 	aircraft_shader_.UniformVec3( "mp", pos );
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, test_texture_ );
+	aircraft_shader_.UniformInt( "tex", 0 );
 
 	aircraft_vbo_.Bind();
 	glDrawElements( GL_TRIANGLES, aircraft_vbo_.IndexDataSize() / sizeof(unsigned short), GL_UNSIGNED_SHORT, 0 );
