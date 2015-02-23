@@ -1,7 +1,15 @@
-*
 !.gitignore
-!*.obj
-!*.mfmd
+*.obj
+*.mfmd
+*.exe
+*.dll
+*.ncb
+*.suo
+*.zip
+*.ilk
+*.pdb
+*.user
+*.blend1
 
-!Debug
 Debug/*
+Release/*
