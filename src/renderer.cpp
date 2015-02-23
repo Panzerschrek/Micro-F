@@ -8,7 +8,7 @@
 
 #include "mf_model.h"
 
-#include "../models/f1949.h"
+#include "../models/models.h"
 
 #define MF_WATER_QUAD_SIZE_CL 4 // size in terrain cells
 
@@ -512,9 +512,9 @@ void mf_Renderer::GenWaterMesh()
 
 void mf_Renderer::PrepareAircraftModels()
 {
-	const mf_ModelHeader* header= (const mf_ModelHeader*) plane_data;
+	const mf_ModelHeader* header= (const mf_ModelHeader*) mf_Models::f1949;
 
-	mf_ModelVertex* v_p= (mf_ModelVertex*)( ((char*)plane_data) + sizeof(mf_ModelHeader) );
+	mf_ModelVertex* v_p= (mf_ModelVertex*)( ((char*)mf_Models::f1949) + sizeof(mf_ModelHeader) );
 	void* next_p= v_p + header->vertex_count;
 	mf_ModelNormal* n_p= NULL;
 	mf_ModelTexCoord* tc_p= NULL;
@@ -737,7 +737,7 @@ void mf_Renderer::DrawAircrafts()
 	aircraft_shader_.Bind();
 	aircraft_shader_.UniformMat4( "mat", view_matrix_ );
 
-	const mf_ModelHeader* header= (const mf_ModelHeader*) plane_data;
+	const mf_ModelHeader* header= (const mf_ModelHeader*) mf_Models::f1949;
 
 	/*float scale[3];
 	Vec3Mul( header->scale, 8.0f, scale );

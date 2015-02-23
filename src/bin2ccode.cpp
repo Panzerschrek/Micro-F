@@ -70,7 +70,7 @@ int main( int argc, char* argv[] )
 	fprintf( f_dst, "/*data from file \"%s\". Generated automatically*/\n", src_file_name );
 	if( text_mode )
 	{
-		fprintf( f_dst, "const char* data= \"" );
+		fprintf( f_dst, "\"" );
 		for( i= 0; i< src_file_len; i++ )
 		{
 			if( bin_data[i] >= 0x20 && bin_data[i] <= 0x7E )
@@ -90,7 +90,7 @@ int main( int argc, char* argv[] )
 	}
 	else
 	{
-		fprintf( f_dst, "unsigned char data[]= {\n" );
+		fprintf( f_dst, "{\n" );
 		for( i= 0; i< src_file_len - 1; i++ )
 		{
 			fprintf( f_dst, " 0x%02X,", bin_data[i] );

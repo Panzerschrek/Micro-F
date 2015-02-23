@@ -216,6 +216,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\models\models.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\player.cpp"
 				>
 			</File>
@@ -275,6 +279,10 @@
 			</File>
 			<File
 				RelativePath=".\src\micro-f.h"
+				>
+			</File>
+			<File
+				RelativePath=".\models\models.h"
 				>
 			</File>
 			<File

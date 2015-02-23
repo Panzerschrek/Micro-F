@@ -446,6 +446,6 @@ int main( int argc, char* argv[] )
 
 	}
 
-	WriteResultFile( "models/plane.mfmd" );
+	WriteResultFile( out_file_name );
 	return 0;
 }
