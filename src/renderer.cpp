@@ -599,6 +599,7 @@ void mf_Renderer::CreateViewMatrix( float* out_matrix, bool water_reflection )
 	float pers_mat[16];
 	float rot_z_mat[16];
 	float rot_x_mat[16];
+	float rot_y_mat[16];
 	float basis_change_mat[16];
 	float translate_mat[16];
 	float final_flip_mat[16];
@@ -620,7 +621,8 @@ void mf_Renderer::CreateViewMatrix( float* out_matrix, bool water_reflection )
 		70.0f * MF_DEG2RAD, 0.5f, 1024.0f );
 
 	Mat4RotateZ( rot_z_mat, -player_->Angle()[2] );
-	Mat4RotateX( rot_x_mat, water_reflection ? player_->Angle()[0] : -player_->Angle()[0]  );
+	Mat4RotateX( rot_x_mat, water_reflection ? player_->Angle()[0] : -player_->Angle()[0] );
+	Mat4RotateY( rot_y_mat, water_reflection ? player_->Angle()[1] : -player_->Angle()[1] );
 
 	{
 		Mat4RotateX( basis_change_mat, -MF_PI2 );
@@ -638,6 +640,7 @@ void mf_Renderer::CreateViewMatrix( float* out_matrix, bool water_reflection )
 
 	Mat4Mul( translate_mat, rot_z_mat, out_matrix );
 	Mat4Mul( out_matrix, rot_x_mat );
+	Mat4Mul( out_matrix, rot_y_mat );
 	Mat4Mul( out_matrix, basis_change_mat );
 	Mat4Mul( out_matrix, pers_mat );
 	if( water_reflection )

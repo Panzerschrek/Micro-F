@@ -8,6 +8,7 @@ mf_Player::mf_Player()
 	, forward_pressed_(false), backward_pressed_(false), left_pressed_(false), right_pressed_(false)
 	, up_pressed_(false), down_pressed_(false)
 	, rotate_up_pressed_(false), rotate_down_pressed_(false), rotate_left_pressed_(false), rotate_right_pressed_(false)
+	, rotate_clockwise_pressed_(false), rotate_anticlockwise_pressed_(false)
 {
 	pos_[0]= pos_[1]= pos_[2]= 0.0f;
 	angle_[0]= angle_[1]= angle_[2]= 0.0f;
@@ -24,6 +25,8 @@ void mf_Player::Tick( float dt )
 	if(rotate_down_pressed_ ) rotate_vec[0]+= -1.0f;
 	if(rotate_left_pressed_ ) rotate_vec[2]+=  1.0f;
 	if(rotate_right_pressed_) rotate_vec[2]+= -1.0f;
+	if(rotate_clockwise_pressed_) rotate_vec[1]+= -1.0f;
+	if(rotate_anticlockwise_pressed_) rotate_vec[1]+= 1.0f;
 
 	const float rot_speed= 1.75f;
 	angle_[0]+= dt * rot_speed * rotate_vec[0];
@@ -34,6 +37,8 @@ void mf_Player::Tick( float dt )
 	else if( angle_[2] < 0.0f ) angle_[2]+= MF_2PI;
 	if( angle_[0] > MF_PI2 ) angle_[0]= MF_PI2;
 	else if( angle_[0] < -MF_PI2) angle_[0]= -MF_PI2;
+	if( angle_[1] > MF_PI ) angle_[1]-= MF_2PI;
+	else if( angle_[1] < -MF_PI) angle_[1]+= MF_2PI;
 
 	float move_vector[]= { 0.0f, 0.0f, 0.0f };
 

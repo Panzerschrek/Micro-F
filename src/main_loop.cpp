@@ -272,6 +272,10 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 			instance->player_.RotateUpReleased(); break;
 		case VK_DOWN:
 			instance->player_.RotateDownReleased(); break;
+		case KEY('Q'):
+			instance->player_.RotateClockwiseReleased(); break;
+		case KEY('E'):
+			instance->player_.RotateAnticlockwiseReleased(); break;
 		default:
 			break;
 		}
@@ -300,6 +304,10 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 			instance->player_.RotateUpPressed(); break;
 		case VK_DOWN:
 			instance->player_.RotateDownPressed(); break;
+		case KEY('Q'):
+			instance->player_.RotateClockwisePressed(); break;
+		case KEY('E'):
+			instance->player_.RotateAnticlockwisePressed(); break;
 
 		default:
 			break;

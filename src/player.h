@@ -39,6 +39,12 @@ public:
 	void RotateLeftReleased();
 	void RotateRightReleased();
 
+	void RotateClockwisePressed();
+	void RotateAnticlockwisePressed();
+
+	void RotateClockwiseReleased();
+	void RotateAnticlockwiseReleased();
+
 private:
 	float pos_[3];
 
@@ -53,6 +59,7 @@ private:
 	bool forward_pressed_, backward_pressed_, left_pressed_, right_pressed_;
 	bool up_pressed_, down_pressed_;
 	bool rotate_up_pressed_, rotate_down_pressed_, rotate_left_pressed_, rotate_right_pressed_;
+	bool rotate_clockwise_pressed_, rotate_anticlockwise_pressed_;
 };
 
 
@@ -179,4 +186,24 @@ inline void mf_Player::RotateLeftReleased()
 inline void mf_Player::RotateRightReleased()
 {
 	rotate_right_pressed_= false;
+}
+
+inline void mf_Player::RotateClockwisePressed()
+{
+	rotate_clockwise_pressed_= true;
+}
+
+inline void mf_Player::RotateAnticlockwisePressed()
+{
+	rotate_anticlockwise_pressed_= true;
+}
+
+inline void mf_Player::RotateClockwiseReleased()
+{
+	rotate_clockwise_pressed_= false;
+}
+
+inline void mf_Player::RotateAnticlockwiseReleased()
+{
+	rotate_anticlockwise_pressed_= false;
 }
