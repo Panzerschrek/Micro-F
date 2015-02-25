@@ -7,6 +7,7 @@
 #include "texture.h"
 
 #include "mf_model.h"
+#include "textures_generation.h"
 
 #include "../models/models.h"
 
@@ -15,33 +16,6 @@
 #define MF_TERRAIN_CHUNK_SIZE_CL 8
 #define MF_TERRAIN_CHUNK_SIZE_CL_LOG2 3
 #define MF_TERRAIN_MESH_SIZE_CHUNKS 72
-
-
-void GenF1949Texture( mf_Texture* tex )
-{
-	const unsigned int tex_scaler= 1<< ( tex->SizeXLog2() - 8 );
-
-	static const float plane_color[]= { 0.2f, 0.4f, 0.1f, 0.0f };
-	tex->Fill( plane_color );
-	static const float turbine_back_color[]= { 0.3f, 0.1f, 0.7f, 0.0f };
-	tex->FillRect( 1 * tex_scaler, 1 * tex_scaler, 34 * tex_scaler, 35 * tex_scaler, turbine_back_color );
-	static const float turbine_front_color[]= { 0.7f, 0.1f, 0.3f, 0.0f };
-	tex->FillRect( 27 * tex_scaler, 36 * tex_scaler, 71 * tex_scaler, 81 * tex_scaler, turbine_front_color );
-	static const float window_color[]= {0.5f, 0.5f, 0.9f, 1.0f };
-	tex->FillRect( 207 * tex_scaler, 1 * tex_scaler, 49 * tex_scaler, 88 * tex_scaler, window_color );
-
-	mf_Texture tex2( tex->SizeXLog2(), tex->SizeYLog2() );
-	tex2.Noise();
-	static const float add_color[]= { 1.5f, 1.5f, 1.5f, 1.5f };
-	static const float mul_color[]= { 0.4f, 0.4f, 0.4f, 0.0f };
-	tex2.Add( add_color );
-	tex2.Mul( mul_color );
-	tex->Mul( &tex2 );
-
-	static const float text_color[]= { 1.0f, 1.0f, 1.0f, 0.0f };
-	tex->DrawText( 147 * tex_scaler, 64 * tex_scaler, tex_scaler, text_color, "F-1949" );
-	tex->LinearNormalization(1.0f);
-}
 
 mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	: player_(player), level_(level)
@@ -107,27 +81,9 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
-	mf_Texture tex( 10, 10 );
-	/*tex.Noise();
-	static const float fill_color[]= { 0.2f * 2.0f, 0.65f * 2.0f, 0.15f * 2.0f, 0.0f * 2.0f };
-	tex.Mul( fill_color );
-	static const float border_color[]= { 0.7f, 0.1f, 0.1f, 0.0f };
-	tex.FillRect( 0, 0, 64, 4, border_color );
-	tex.FillRect( 0, 0, 4, 64, border_color );
-	tex.FillRect( 0, 60, 64, 4, border_color );
-	tex.FillRect( 60, 0, 4, 64, border_color );
-	tex.SinWaveX( 12.0f, 1.0f / 64.0f, MF_PI3 );
-	tex.SinWaveY( 8.0f, 1.0f / 64.0f, MF_PI6 );
-	tex.Shift( 17, 31 );
-	static const float gray[]= { 0.8f, 0.8f, 0.8f, 0.8f };
-	tex.Noise();
-	tex.Pow(2.0f);
-	tex.Mul(gray);
-	tex.SinWaveX( 12.0f, 1.0f / 64.0f, MF_PI3 );
-	tex.SinWaveY( 8.0f, 1.0f / 64.0f, MF_PI6 );*/
-
-
-	GenF1949Texture( &tex );
+	mf_Texture tex( 9, 9 );
+	GenDirtWithGrassTexture( &tex );
+	tex.LinearNormalization(1.0f);
 
 	glGenTextures( 1, &test_texture_ );
 	glBindTexture( GL_TEXTURE_2D, test_texture_ );

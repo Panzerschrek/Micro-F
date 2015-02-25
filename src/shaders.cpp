@@ -47,7 +47,7 @@ const char* const terrain_shader_v=
 "void main()"
 "{"
 	"vec2 sp=p+sh.xy;"
-	"ftc=sp;"
+	"ftc=sp*0.25;"
 	"fn=texelFetch(nm,ivec2(sp),0).xyz;"
 	"float h=texelFetch(hm,ivec2(sp),0).x;"
 	"vec3 p=vec3(sp,h);"

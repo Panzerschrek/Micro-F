@@ -469,7 +469,7 @@ void mf_Texture::Mix( const float* color0, const float* color1, const float* sub
 	for( ; d< d_end; d+= 4 )
 	{
 		for( unsigned int j= 0; j< 4; j++ )
-			d[j]= color0[j] * d[j] + (sub_color[j] - d[j]) * color1[j];
+			d[j]= color0[j] * d[j] + color1[j] * (sub_color[j] - d[j]);
 	}
 }
 

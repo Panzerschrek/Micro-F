@@ -45,15 +45,13 @@ static unsigned short FinalNoise(unsigned int x, unsigned int y)
 	unsigned short r= 0;
 	for( int i= 0; i<= 6; i++ )
 		r+= InterpolatedNoise( x, y, 7 - i )>>(1+i);
-
 	return r;
 }
 
-
 mf_Level::mf_Level()
 {
-	terrain_size_[0]= 768;
-	terrain_size_[1]= 8192;
+	terrain_size_[0]= 640;
+	terrain_size_[1]= 2048;
 	terrain_amplitude_= 128.0f;
 	terrain_ceil_size_= 2.0f;
 	terrain_water_level_= 0.47f * terrain_amplitude_;
