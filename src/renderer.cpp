@@ -242,7 +242,7 @@ void mf_Renderer::GenTerrainMesh()
 {
 	unsigned int traingle_count= 0;
 	unsigned char chunk_lod_table[ MF_TERRAIN_MESH_SIZE_CHUNKS * MF_TERRAIN_MESH_SIZE_CHUNKS ];
-	static const int lod_dst[]= { 64*64, 128*128, 256*256, 512*512, 1024*1024, 0x7FFFFFFF };
+	static const int lod_dst[]= { 64*64, 160*160, 352*352, 448*448, 1024*1024, 0x7FFFFFFF };
 
 	// calculate chunks lods
 	unsigned int center_xy= MF_TERRAIN_CHUNK_SIZE_CL * MF_TERRAIN_MESH_SIZE_CHUNKS / 2;
