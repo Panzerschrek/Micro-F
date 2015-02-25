@@ -1,5 +1,29 @@
 #include "shaders.h"
 
+/*
+common attributes:
+"p" - position
+"n" - normal
+"tc" - texture coordinates
+"c" - color
+
+common uniforms names:
+"mat" - view matrix ( or view matrix, combined with other transformation )
+"nmat" - normal matrix
+"smat" - shadow matrix
+"tex" - diffuse texture
+"sun" - normalized vector of directional light source (sun/moon/etc)
+"sl" - color of directional light
+"al" - color of ambient light
+
+common input/output names
+"fp" - fragment position
+"fn" - fragment normal
+"ftc" - fragment texture coordinates
+"fc" - fragment color
+"c_" - output color of fragment shader
+*/
+
 namespace mf_Shaders
 {
 
@@ -24,11 +48,11 @@ const char* const text_shader_f=
 "uniform sampler2D tex;"
 "in vec4 fc;"
 "in vec2 ftc;"
-"out vec4 oc;"
+"out vec4 c_;"
 "void main(void)"
 "{"
 	"float c=texture2D(tex,ftc).x;"
-	"oc=vec4(fc.xyz*c,max(fc.a,c));"
+	"c_=vec4(fc.xyz*c,max(fc.a,c));"
 "}"
 ;
 
@@ -68,11 +92,11 @@ const char* const terrain_shader_f=
 "in vec3 fn;" // frag normal
 "in vec2 ftc;" // texture coord for diffuse texture
 "in vec3 fstc;"
-"out vec4 color;"
+"out vec4 c_;"
 "void main()"
 "{"
 	"float l=max(0.0,texture(stex,fstc)*dot(sun,normalize(fn)));"
-	"color=vec4(texture(tex,ftc).xyz*(l*sl+al),1.0);"
+	"c_=vec4(texture(tex,ftc).xyz*(l*sl+al),1.0);"
 "}"
 ;
 
@@ -114,11 +138,11 @@ const char* const water_shader_f=
 "uniform sampler2D tex;" // reflection texture
 "uniform vec3 its;" // invert texture size
 "in vec3 fvtc;" // vec to camera
-"out vec4 oc;" // out color
+"out vec4 c_;" // out color
 "void main()"
 "{"
 	"float a=pow(1.0-normalize(fvtc).z,5.0);"
-	"oc=vec4(texture(tex,gl_FragCoord.xy*its.xy).xyz*vec3(0.6,0.7,0.8),clamp(a,0.1,0.9));"
+	"c_=vec4(texture(tex,gl_FragCoord.xy*its.xy).xyz*vec3(0.6,0.7,0.8),clamp(a,0.1,0.9));"
 "}"
 ;
 
@@ -166,11 +190,11 @@ const char* const models_shader_f=
 "uniform vec3 al;" // ambient light
 "in vec3 fn;" // fragment normal
 "in vec2 ftc;" // fragment tex coord
-"out vec4 oc;" // out color
+"out vec4 c_;" // out color
 "void main()"
 "{"
 	"float l= max(0.0,dot(sun,normalize(fn)));"
-	"oc=vec4(texture(tex,ftc).xyz*(al+sl*l),0.5);"
+	"c_=vec4(texture(tex,ftc).xyz*(al+sl*l),0.5);"
 "}";
 
 
