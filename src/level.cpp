@@ -2,6 +2,7 @@
 #include "level.h"
 
 #include "mf_math.h"
+#include "textures_generation.h"
 
 #define MF_MAX_VALLEY_WAY_POINTS 1024
 
@@ -50,14 +51,14 @@ static unsigned short FinalNoise(unsigned int x, unsigned int y)
 
 mf_Level::mf_Level()
 {
-	terrain_size_[0]= 640;
-	terrain_size_[1]= 2048;
+	terrain_size_[0]= 512;
+	terrain_size_[1]= 8192;
 	terrain_amplitude_= 128.0f;
 	terrain_ceil_size_= 2.0f;
-	terrain_water_level_= 0.47f * terrain_amplitude_;
+	terrain_water_level_= terrain_amplitude_ / 9.0f;
 
 	terrain_heightmap_data_= new unsigned short[ terrain_size_[0] * terrain_size_[1] ];
-	terrain_normal_map_= new char[ terrain_size_[0] * terrain_size_[1] * 3 ];
+	terrain_normal_textures_map_= new char[ terrain_size_[0] * terrain_size_[1] * 4 ];
 
 	valley_way_points_= new ValleyWayPoint[ MF_MAX_VALLEY_WAY_POINTS ];
 	valley_way_point_count_= 0;
@@ -67,7 +68,7 @@ mf_Level::mf_Level()
 mf_Level::~mf_Level()
 {
 	delete[] terrain_heightmap_data_;
-	delete[] terrain_normal_map_;
+	delete[] terrain_normal_textures_map_;
 
 	delete[] valley_way_points_;
 }
@@ -79,9 +80,13 @@ void mf_Level::GenTarrain()
 	// first gen
 	for( unsigned int y= 0; y< terrain_size_[1]; y++ )
 		for( unsigned int x= 0; x< terrain_size_[0]; x++ )
-			primary_terrain_data[ x + y * terrain_size_[0] ]= FinalNoise(x,y);
+		{
+			unsigned int noise= FinalNoise(x,y);
+			noise= ( noise * noise ) >> 16;
+			primary_terrain_data[ x + y * terrain_size_[0] ]= (unsigned short)noise;
+		}
 
-	// Make terrain smooth
+	// Make terrain smooth. Also, set default texture
 	for( unsigned int y= 1; y< terrain_size_[1] - 1; y++ )
 		for( unsigned int x= 1; x< terrain_size_[0] - 1; x++ )
 		{
@@ -99,10 +104,12 @@ void mf_Level::GenTarrain()
 
 			terrain_heightmap_data_[ x + y * terrain_size_[0] ]= (unsigned short)(r>>4);
 
+			terrain_normal_textures_map_[ (x + y * terrain_size_[0]) * 4 + 3 ]= TextureDirwWithGrass;
+
 		}
 	delete[] primary_terrain_data;
 
-	//GenValleyWayPoints();
+	GenValleyWayPoints();
 
 	// Gen Normals
 	float terr_k= terrain_amplitude_ / float(0xFFFF);
@@ -131,14 +138,68 @@ void mf_Level::GenTarrain()
 
 			Vec3Normalize(normal);
 			for( unsigned int j= 0; j< 3; j++ )
-				terrain_normal_map_[ (x + y * terrain_size_[0]) * 3 + j ]= (char)( 126.5f * normal[j]);
+				terrain_normal_textures_map_[ (x + y * terrain_size_[0]) * 4 + j ]= (char)( 126.9f * normal[j] );
 		}// for xy
+
+	// set borderes
+	for( unsigned int x= 1; x < terrain_size_[0] - 1; x++ )
+	{
+		unsigned int i0dst= x;
+		unsigned int i0src= x + terrain_size_[0];
+		unsigned int i1dst= x + (terrain_size_[1]-2) * terrain_size_[0];
+		unsigned int i1src= x + (terrain_size_[1]-1) * terrain_size_[0];
+		terrain_heightmap_data_[ i0dst ]= terrain_heightmap_data_[ i0src ];
+		terrain_heightmap_data_[ i1dst ]= terrain_heightmap_data_[ i1src ];
+
+		for( unsigned int j= 0; j< 4; j++ )
+		{
+			terrain_normal_textures_map_[ i0dst * 4 + j ]= terrain_normal_textures_map_[ i0src * 4 + j ];
+			terrain_normal_textures_map_[ i1dst * 4 + j ]= terrain_normal_textures_map_[ i1src * 4 + j ];
+		}
+	} // for x
+	for( unsigned int y= 1; y < terrain_size_[1] - 1; y++ )
+	{
+		unsigned int i0dst= y * terrain_size_[0];
+		unsigned int i0src= 1 + y * terrain_size_[0];
+		unsigned int i1dst= terrain_size_[0] - 1 + y * terrain_size_[0];
+		unsigned int i1src= terrain_size_[0] - 2 + y * terrain_size_[0];
+		terrain_heightmap_data_[ i0dst ]= terrain_heightmap_data_[ i0src ];
+		terrain_heightmap_data_[ i1dst ]= terrain_heightmap_data_[ i1src ];
+
+		for( unsigned int j= 0; j< 4; j++ )
+		{
+			terrain_normal_textures_map_[ i0dst * 4 + j ]= terrain_normal_textures_map_[ i0src * 4 + j ];
+			terrain_normal_textures_map_[ i1dst * 4 + j ]= terrain_normal_textures_map_[ i1src * 4 + j ];
+		}
+	} // for y
+
+	// set cornere
+	terrain_heightmap_data_[0]= terrain_heightmap_data_[ 1 + terrain_size_[0] ];
+	terrain_heightmap_data_[ terrain_size_[0] - 1 ]= terrain_heightmap_data_[ terrain_size_[0] - 2 ];
+	for( unsigned int j= 0; j< 4; j++ )
+	{
+		terrain_normal_textures_map_[j]=
+			terrain_normal_textures_map_[ (1 + terrain_size_[0]) * 4 + j ];
+		terrain_normal_textures_map_[ (terrain_size_[0] - 1) * 4 + j ]=
+			terrain_normal_textures_map_[ (terrain_size_[0] - 2) * 4 + j ];
+	}
+	unsigned int i0dst= ( terrain_size_[1] - 1 ) * terrain_size_[0];
+	unsigned int i0src= 1 + ( terrain_size_[1] - 2 ) * terrain_size_[0] ;
+	unsigned int i1dst= terrain_size_[0] - 1 + ( terrain_size_[1] - 1 ) * terrain_size_[0];
+	unsigned int i1src= terrain_size_[0] - 2 + ( terrain_size_[1] - 2 ) * terrain_size_[0];
+	terrain_heightmap_data_[ i0dst ]= terrain_heightmap_data_[ i0src ];
+	terrain_heightmap_data_[ i1dst ]= terrain_heightmap_data_[ i1src ];
+	for( unsigned int j= 0; j< 4; j++ )
+	{
+		terrain_normal_textures_map_[ i0dst * 4 + j ]= terrain_normal_textures_map_[ i0src * 4 + j ];
+		terrain_normal_textures_map_[ i1dst * 4 + j ]= terrain_normal_textures_map_[ i1src * 4 + j ];
+	}
 }
 
 void mf_Level::GenValleyWayPoints()
 {
-	const float y_range[]= {256.0f, 384.0f };
-	const float x_amplitude= 256.0f;
+	const float y_range[]= {128.0f, 256.0f };
+	const float x_amplitude= 128.0f;
 
 	unsigned int y= 16;
 
@@ -154,13 +215,13 @@ void mf_Level::GenValleyWayPoints()
 
 		valley_way_points_[ valley_way_point_count_ ].x= (unsigned int)(x);
 		valley_way_points_[ valley_way_point_count_ ].y= y;
-		valley_way_points_[ valley_way_point_count_ ].h= 0xFFFF;
+		valley_way_points_[ valley_way_point_count_ ].h= (unsigned int)( 0.0f, RandF( float(0xFFFF/12) ) );
 		valley_way_point_count_++;
 	}
 
 	for( unsigned int i= 1; i< valley_way_point_count_ - 2; i++ )
 	{
-		float dx0= float( int(valley_way_points_[i].x) - int(valley_way_points_[i-1].x) )
+		/*float dx0= float( int(valley_way_points_[i].x) - int(valley_way_points_[i-1].x) )
 			/ float( int(valley_way_points_[i].y) - int(valley_way_points_[i-1].y) );
 
 		float dx1= float( int(valley_way_points_[i+1].x) - int(valley_way_points_[i].x) )
@@ -188,20 +249,32 @@ void mf_Level::GenValleyWayPoints()
 				terrain_heightmap_data_[ x + y * terrain_size_[0] ]= 0x7F;
 			}
 		}
-
-		/*int dx= int(valley_way_points_[i+1].x - valley_way_points_[i].x);
+*/
+		int dx= int(valley_way_points_[i+1].x - valley_way_points_[i].x);
 		int dy= int(valley_way_points_[i+1].y - valley_way_points_[i].y);
+		int dh= int(valley_way_points_[i+1].h - valley_way_points_[i].h);
 		int center_x_f16= valley_way_points_[i].x << 16;
 		int dx_f16= ( dx << 16 ) / dy;
-		for( int y= valley_way_points_[i].y; y< int(valley_way_points_[i+1].y); y++, center_x_f16+= dx_f16 )
+		float h_f= float(valley_way_points_[i].h);
+		float dh_f= float(dh) / float(dy);
+		for( int y= valley_way_points_[i].y; y< int(valley_way_points_[i+1].y); y++, center_x_f16+= dx_f16, h_f+= dh_f )
 		{
-			int width_2= 4 / 2;
-			//width_2= width_2 * int(mf_Math::sqrt(float(dx*dx + dy*dy))) / dy;
-			int x_center= center_x_f16>>16;
+			int width_2= 48;
+			width_2= width_2 * int(mf_Math::sqrt(float(dx*dx + dy*dy))) / dy;
+			int x_center= center_x_f16 >> 16;
+			int h= int(h_f);
 			for( int x= x_center - width_2; x< x_center + width_2; x++ )
 			{
-				terrain_heightmap_data_[ x + y * terrain_size_[0] ]= 0xFFFF;
+				int ind= x + y * terrain_size_[0];
+				int dw= abs(x_center - x);
+				int final_h= (
+						h * (width_2 - dw) +
+						terrain_heightmap_data_[ ind ] * dw
+					) / width_2;
+				terrain_heightmap_data_[ ind ]= (unsigned short) final_h;
+
+				terrain_normal_textures_map_[ ind * 4 + 3 ]= TextureDirt;
 			}
-		}*/
+		}
 	}
 }

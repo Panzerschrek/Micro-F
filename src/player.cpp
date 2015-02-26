@@ -54,7 +54,7 @@ void mf_Player::Tick( float dt )
 
 	Vec3Mat4Mul( move_vector, move_vector_rot_mat );
 
-	const float speed= 25.0f;
+	const float speed= 5.0f * 25.0f;
 	float tmp= dt * speed;
 	pos_[0]+= tmp * move_vector[0];
 	pos_[1]+= tmp * move_vector[1];

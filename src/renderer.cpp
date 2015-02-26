@@ -77,7 +77,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	glBindTexture( GL_TEXTURE_2D, terrain_normal_map_texture_ );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8_SNORM,
 		level->TerrainSizeX(), level->TerrainSizeY(), 0,
-		GL_RGB, GL_BYTE, level->GetTerrainNormals() );
+		GL_RGBA, GL_BYTE, level->GetTerrainNormalTextureMap() );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 

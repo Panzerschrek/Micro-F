@@ -8,7 +8,7 @@ public:
 	~mf_Level();
 
 	const unsigned short* GetTerrianHeightmapData() const;
-	const char* GetTerrainNormals() const;
+	const char* GetTerrainNormalTextureMap() const;
 	unsigned int TerrainSizeX() const;
 	unsigned int TerrainSizeY() const;
 	float TerrainAmplitude() const;
@@ -23,11 +23,12 @@ private:
 	struct ValleyWayPoint
 	{
 		unsigned int x, y; // in terrain units
-		unsigned int h; // heihht in terrain scale
+		unsigned int h; // height in terrain scale
 	};
 
 	unsigned short* terrain_heightmap_data_;
-	char* terrain_normal_map_;
+	 // combined data of terrain normals and textures. Format : n.x, n.y, n.z, texture_number
+	char* terrain_normal_textures_map_;
 	float terrain_amplitude_; // in meters
 	float terrain_ceil_size_; // in meters
 	float terrain_water_level_;
@@ -43,9 +44,9 @@ inline const unsigned short* mf_Level::GetTerrianHeightmapData() const
 	return terrain_heightmap_data_;
 }
 
-inline const char* mf_Level::GetTerrainNormals() const
+inline const char* mf_Level::GetTerrainNormalTextureMap() const
 {
-	return terrain_normal_map_;
+	return terrain_normal_textures_map_;
 }
 
 inline unsigned int mf_Level::TerrainSizeX() const
