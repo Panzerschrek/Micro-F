@@ -61,19 +61,20 @@ const char* const terrain_shader_v=
 "uniform mat4 mat;" // view matrix
 "uniform mat4 smat;" // shadow matrix
 "uniform sampler2D hm;" // heightmap
-"uniform sampler2D nm;" // normal map
+"uniform sampler2D nm;" // normal map and texture map
 "uniform vec3 sh;" // mesh shift
 "uniform float wl;" // water level
 "in vec2 p;" // position
 "out vec3 fn;" // frag normal
-"out vec3 ftc;" // frag tex coord
+"out vec2 ftc;" // frag tex coord
 "out vec3 fstc;" // frag shadowmap tex coord
+"out vec2 fp;" // frag position
 "void main()"
 "{"
 	"vec2 sp=p+sh.xy;"
-	"vec4 nmtv=texelFetch(nm,ivec2(sp),0);"
-	"ftc=vec3(sp*0.5,nmtv.a*127.1);"
-	"fn=nmtv.xyz;"
+	"fp=sp;"
+	"ftc=sp*0.5;"
+	"fn=texelFetch(nm,ivec2(sp),0).xyz;"
 	"float h=texelFetch(hm,ivec2(sp),0).x;"
 	"vec3 p=vec3(sp,h);"
 	"gl_Position=mat*vec4(p,1.0);"
@@ -87,17 +88,30 @@ const char* const terrain_shader_f=
 "#version 330\n"
 "uniform sampler2DArray tex;" // diffuse texture
 "uniform sampler2DShadow stex;" // shadowmap
+"uniform sampler2D nm;" // normal map and texture map
 "uniform vec3 sun;"
 "uniform vec3 sl;" //sun light
 "uniform vec3 al;" // ambient light
 "in vec3 fn;" // frag normal
-"in vec3 ftc;" // texture coord for diffuse texture
+"in vec2 ftc;" // texture coord for diffuse texture
 "in vec3 fstc;"
+"in vec2 fp;"
 "out vec4 c_;"
 "void main()"
 "{"
+	"float t00=texelFetch(nm,ivec2(fp),0).a*127.1;"
+	"float t10=texelFetch(nm,ivec2(fp)+ivec2(1,0),0).a*127.1;"
+	"float t01=texelFetch(nm,ivec2(fp)+ivec2(0,1),0).a*127.1;"
+	"float t11=texelFetch(nm,ivec2(fp)+ivec2(1,1),0).a*127.1;"
+	"vec2 tcmod=mod(fp,vec2(1.0,1.0));"
+	"vec4 c00=texture(tex,vec3(ftc,t00));"
+	"vec4 c10=texture(tex,vec3(ftc,t10));"
+	"vec4 c01=texture(tex,vec3(ftc,t01));"
+	"vec4 c11=texture(tex,vec3(ftc,t11));"
+	"vec4 cy0=mix(c00,c01,tcmod.y);"
+	"vec4 cy1=mix(c10,c11,tcmod.y);"
 	"float l=max(0.0,texture(stex,fstc)*dot(sun,normalize(fn)));"
-	"c_=vec4(texture(tex,ftc).xyz*(l*sl+al),1.0);"
+	"c_=vec4(mix(cy0,cy1,tcmod.x).xyz*(l*sl+al),1.0);"
 "}"
 ;
 

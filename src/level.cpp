@@ -104,7 +104,10 @@ void mf_Level::GenTarrain()
 
 			terrain_heightmap_data_[ x + y * terrain_size_[0] ]= (unsigned short)(r>>4);
 
-			terrain_normal_textures_map_[ (x + y * terrain_size_[0]) * 4 + 3 ]= TextureDirtWithGrass;
+			if( (r>>4) < 0x7FFF )
+				terrain_normal_textures_map_[ (x + y * terrain_size_[0]) * 4 + 3 ]= TextureDirtWithGrass;
+			else
+				terrain_normal_textures_map_[ (x + y * terrain_size_[0]) * 4 + 3 ]= TextureDirt;
 
 		}
 	delete[] primary_terrain_data;
