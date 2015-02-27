@@ -68,6 +68,7 @@ private:
 	mf_VertexBuffer terrain_vbo_;
 	GLuint terrain_heightmap_texture_;
 	GLuint terrain_normal_map_texture_;
+	GLuint terrain_textures_array_;
 
 	struct
 	{

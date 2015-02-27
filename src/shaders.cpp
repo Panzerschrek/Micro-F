@@ -66,13 +66,14 @@ const char* const terrain_shader_v=
 "uniform float wl;" // water level
 "in vec2 p;" // position
 "out vec3 fn;" // frag normal
-"out vec2 ftc;" // frag tex coord
+"out vec3 ftc;" // frag tex coord
 "out vec3 fstc;" // frag shadowmap tex coord
 "void main()"
 "{"
 	"vec2 sp=p+sh.xy;"
-	"ftc=sp*0.5;"
-	"fn=texelFetch(nm,ivec2(sp),0).xyz;"
+	"vec4 nmtv=texelFetch(nm,ivec2(sp),0);"
+	"ftc=vec3(sp*0.5,nmtv.a*127.1);"
+	"fn=nmtv.xyz;"
 	"float h=texelFetch(hm,ivec2(sp),0).x;"
 	"vec3 p=vec3(sp,h);"
 	"gl_Position=mat*vec4(p,1.0);"
@@ -84,13 +85,13 @@ const char* const terrain_shader_v=
 
 const char* const terrain_shader_f=
 "#version 330\n"
-"uniform sampler2D tex;" // diffuse texture
+"uniform sampler2DArray tex;" // diffuse texture
 "uniform sampler2DShadow stex;" // shadowmap
 "uniform vec3 sun;"
 "uniform vec3 sl;" //sun light
 "uniform vec3 al;" // ambient light
 "in vec3 fn;" // frag normal
-"in vec2 ftc;" // texture coord for diffuse texture
+"in vec3 ftc;" // texture coord for diffuse texture
 "in vec3 fstc;"
 "out vec4 c_;"
 "void main()"

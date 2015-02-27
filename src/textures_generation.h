@@ -6,7 +6,7 @@ class mf_Texture;
 enum mf_TerrainTexture
 {
 	TextureDirt,
-	TextureDirwWithGrass,
+	TextureDirtWithGrass,
 	LastTexture
 };
 extern void (* const terrain_texture_gen_func[])(mf_Texture* t);

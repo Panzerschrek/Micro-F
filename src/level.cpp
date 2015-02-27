@@ -52,7 +52,7 @@ static unsigned short FinalNoise(unsigned int x, unsigned int y)
 mf_Level::mf_Level()
 {
 	terrain_size_[0]= 512;
-	terrain_size_[1]= 8192;
+	terrain_size_[1]= 512;
 	terrain_amplitude_= 128.0f;
 	terrain_ceil_size_= 2.0f;
 	terrain_water_level_= terrain_amplitude_ / 9.0f;
@@ -104,7 +104,7 @@ void mf_Level::GenTarrain()
 
 			terrain_heightmap_data_[ x + y * terrain_size_[0] ]= (unsigned short)(r>>4);
 
-			terrain_normal_textures_map_[ (x + y * terrain_size_[0]) * 4 + 3 ]= TextureDirwWithGrass;
+			terrain_normal_textures_map_[ (x + y * terrain_size_[0]) * 4 + 3 ]= TextureDirtWithGrass;
 
 		}
 	delete[] primary_terrain_data;
@@ -146,8 +146,8 @@ void mf_Level::GenTarrain()
 	{
 		unsigned int i0dst= x;
 		unsigned int i0src= x + terrain_size_[0];
-		unsigned int i1dst= x + (terrain_size_[1]-2) * terrain_size_[0];
-		unsigned int i1src= x + (terrain_size_[1]-1) * terrain_size_[0];
+		unsigned int i1dst= x + (terrain_size_[1]-1) * terrain_size_[0];
+		unsigned int i1src= x + (terrain_size_[1]-2) * terrain_size_[0];
 		terrain_heightmap_data_[ i0dst ]= terrain_heightmap_data_[ i0src ];
 		terrain_heightmap_data_[ i1dst ]= terrain_heightmap_data_[ i1src ];
 
@@ -161,8 +161,8 @@ void mf_Level::GenTarrain()
 	{
 		unsigned int i0dst= y * terrain_size_[0];
 		unsigned int i0src= 1 + y * terrain_size_[0];
-		unsigned int i1dst= terrain_size_[0] - 1 + y * terrain_size_[0];
-		unsigned int i1src= terrain_size_[0] - 2 + y * terrain_size_[0];
+		unsigned int i1dst= terrain_size_[0] - 2 + y * terrain_size_[0];
+		unsigned int i1src= terrain_size_[0] - 1 + y * terrain_size_[0];
 		terrain_heightmap_data_[ i0dst ]= terrain_heightmap_data_[ i0src ];
 		terrain_heightmap_data_[ i1dst ]= terrain_heightmap_data_[ i1src ];
 
@@ -173,7 +173,7 @@ void mf_Level::GenTarrain()
 		}
 	} // for y
 
-	// set cornere
+	// set corners
 	terrain_heightmap_data_[0]= terrain_heightmap_data_[ 1 + terrain_size_[0] ];
 	terrain_heightmap_data_[ terrain_size_[0] - 1 ]= terrain_heightmap_data_[ terrain_size_[0] - 2 ];
 	for( unsigned int j= 0; j< 4; j++ )

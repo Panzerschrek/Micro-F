@@ -94,6 +94,30 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 	glGenerateMipmap(GL_TEXTURE_2D);
 
+
+	{
+		const unsigned int terrain_texture_size_log2= 9;
+		const unsigned int terrain_texture_size= 1 << terrain_texture_size_log2;
+		glGenTextures( 1, &terrain_textures_array_ );
+		glBindTexture( GL_TEXTURE_2D_ARRAY, terrain_textures_array_ );
+		glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8,
+			terrain_texture_size, terrain_texture_size, LastTexture,
+			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		mf_Texture tex( terrain_texture_size_log2, terrain_texture_size_log2 );
+		for( unsigned int i= 0; i< LastTexture; i++ )
+		{
+			terrain_texture_gen_func[i]( &tex );
+			tex.LinearNormalization( 1.0f );
+			glTexSubImage3D( GL_TEXTURE_2D_ARRAY, 0,
+				0, 0, i,
+				terrain_texture_size, terrain_texture_size, 1,
+				GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
+		} // for textures
+		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+	}
+
 	CreateWaterReflectionFramebuffer();
 	CreateShadowmapFramebuffer();
 }
@@ -669,7 +693,7 @@ void mf_Renderer::DrawTerrain(bool draw_to_water_framebuffer )
 	terrain_shader_.UniformInt( "nm", 1 );
 
 	glActiveTexture( GL_TEXTURE2 );
-	glBindTexture( GL_TEXTURE_2D, test_texture_ );
+	glBindTexture( GL_TEXTURE_2D_ARRAY, terrain_textures_array_ );
 	terrain_shader_.UniformInt( "tex", 2 );
 
 	glActiveTexture( GL_TEXTURE3 );
