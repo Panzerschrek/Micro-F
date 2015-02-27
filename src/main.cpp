@@ -2,7 +2,7 @@
 #include "main_loop.h"
 
 const char* const intro_sting=
-"\"Micro-F\" - simple 96k game. (c) 2015 Artom \"Panzerschrek\" Khvosch\n";
+"\"Micro-F\" - simple 96k game. (c) 2015 Artom \"Panzerschrek\" Kunz\n";
 
 const char* const help_string=
 "options:\n"
