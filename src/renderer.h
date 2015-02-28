@@ -41,6 +41,7 @@ private:
 
 	void DrawTerrain( bool draw_to_water_framebuffer );
 	void DrawSun( bool draw_to_water_framebuffer );
+	void DrawSky(  bool draw_to_water_framebuffer );
 	void DrawAircrafts();
 	void DrawWater();
 	void DrawShadows();
@@ -113,6 +114,9 @@ private:
 
 	GLuint sun_texture_;
 	mf_GLSLProgram sun_shader_;
+
+	mf_GLSLProgram sky_shader_;
+	mf_VertexBuffer sky_vbo_;
 
 	GLuint test_texture_;
 };

@@ -8,6 +8,7 @@
 
 #include "mf_model.h"
 #include "drawing_model.h"
+#include "models_generation.h"
 #include "textures_generation.h"
 
 #include "../models/models.h"
@@ -60,14 +61,32 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 		/*vert*/ "mat", "nmat", /*frag*/ "tex", "sun", "sl", "al" };
 	aircraft_shader_.FindUniforms( aircraft_shader_uniforms, sizeof(aircraft_shader_uniforms) / sizeof(char*) );
 
-	//sun shader
+	// sun shader
 	sun_shader_.Create( mf_Shaders::sun_shader_v, mf_Shaders::sun_shader_f );
 	static const char* const sun_shader_uniforms[]= { "mat", "s", "tex", "i" };
 	sun_shader_.FindUniforms( sun_shader_uniforms, sizeof(sun_shader_uniforms) / sizeof(char*) );
 
+	// sky shader
+	sky_shader_.SetAttribLocation( "p", 0 );
+	sky_shader_.Create( mf_Shaders::sky_shader_v, mf_Shaders::sky_shader_f );
+	static const char* const sky_shader_unifroms[]= { "mat" };
+	sky_shader_.FindUniforms( sky_shader_unifroms, sizeof(sky_shader_unifroms) / sizeof(char*) );
+
 	GenTerrainMesh();
 	GenWaterMesh();
 	PrepareAircraftModels();
+
+	{ // sky mesh
+		mf_DrawingModel model;
+		GenGeosphere( &model, 24, 32 );
+		sky_vbo_.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
+		sky_vbo_.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
+
+		mf_DrawingModelVertex vert;
+		unsigned int shift;
+		shift= (char*)vert.pos - (char*)&vert;
+		sky_vbo_.VertexAttrib( 0, 3, GL_FLOAT, false, shift );
+	}
 
 	// terrain heightmap
 	glGenTextures( 1, &terrain_heightmap_texture_ );
@@ -160,11 +179,11 @@ void mf_Renderer::Resize()
 
 void mf_Renderer::DrawFrame()
 {
-	glClearColor( 0.6f, 0.7f, 1.0f, 0.0f );
+	//glClearColor( 0.6f, 0.7f, 1.0f, 0.0f );
 
 	glBindFramebuffer( GL_FRAMEBUFFER, shadowmap_fbo_.fbo_id );
 	glViewport( 0, 0, shadowmap_fbo_.size[0], shadowmap_fbo_.size[1] );
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+	glClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	DrawShadows();
 
 	glBindFramebuffer( GL_FRAMEBUFFER, water_reflection_fbo_.fbo_id );
@@ -172,6 +191,7 @@ void mf_Renderer::DrawFrame()
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	CreateViewMatrix( view_matrix_, true );
 	DrawTerrain( true );
+	DrawSky( true );
 	DrawSun( true );
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
@@ -183,6 +203,7 @@ void mf_Renderer::DrawFrame()
 	CreateViewMatrix( view_matrix_, false );
 	DrawTerrain( false );
 	DrawAircrafts();
+	DrawSky( false );
 	DrawSun( false );
 	DrawWater();
 
@@ -733,6 +754,38 @@ void mf_Renderer::DrawSun( bool draw_to_water_framebuffer )
 
 	glDisable( GL_BLEND );
 	glDisable( GL_PROGRAM_POINT_SIZE );
+}
+
+void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
+{
+	sky_shader_.Bind();
+
+	float mat[16];
+	float translate_mat[16];
+	float scale_mat[16];
+	Mat4Scale( scale_mat, 1.5f * float(MF_TERRAIN_CHUNK_SIZE_CL * MF_TERRAIN_MESH_SIZE_CHUNKS ) * level_->TerrainCellSize() );
+
+	float translate_vec[3];
+	translate_vec[0]= player_->Pos()[0];
+	translate_vec[1]= player_->Pos()[1];
+	if( draw_to_water_framebuffer )
+		translate_vec[2]= ( 2.0f * level_->TerrainWaterLevel() - player_->Pos()[2] );
+	else translate_vec[2]= player_->Pos()[2];
+	Mat4Translate( translate_mat, translate_vec );
+
+	Mat4Mul( scale_mat, translate_mat, mat );
+	Mat4Mul( mat, view_matrix_ );
+
+	sky_shader_.UniformMat4( "mat", mat );
+
+	sky_vbo_.Bind();
+
+	// draw only second part of vbo ( becouse sky is sphere, draw only height triangles )
+	glDrawElements(
+		GL_TRIANGLES,
+		sky_vbo_.IndexDataSize() / ( sizeof(unsigned short) * 3 / 4 ),
+		GL_UNSIGNED_SHORT,
+		(void*)( sky_vbo_.IndexDataSize() * 1 / 4 ) );
 }
 
 void mf_Renderer::DrawAircrafts()

@@ -238,4 +238,25 @@ const char* const sun_shader_f=
 "}";
 ;
 
+const char* const sky_shader_v=
+"#version 330\n"
+"uniform mat4 mat;"
+"in vec3 p;"
+"out vec3 fp;"
+"void main()"
+"{"
+	"fp=p;"
+	"gl_Position=mat*vec4(p,1.0);"
+"}"
+;
+const char* const sky_shader_f=
+"#version 330\n"
+"out vec4 c_;"
+"in vec3 fp;"
+"void main()"
+"{"
+	"float l= (3.0f-fp.z)*0.25;"
+	"c_=vec4(vec3(0.7,0.8,1.1)*l,1.0);"
+"}";
+
 } // namespace mf_Shaders

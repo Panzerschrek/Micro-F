@@ -18,6 +18,20 @@ mf_DrawingModel::~mf_DrawingModel()
 		delete[] indeces_;
 }
 
+void mf_DrawingModel::SetVertexData( mf_DrawingModelVertex* vertices, unsigned int vertex_count )
+{
+	if( vertices_ != NULL ) delete[] vertices_;
+	vertices_= vertices;
+	vertex_count_= vertex_count;
+}
+
+void mf_DrawingModel::SetIndexData( unsigned short* indeces, unsigned int index_count )
+{
+	if( indeces_ != NULL ) delete[] indeces_;
+	indeces_= indeces;
+	index_count_= index_count;
+}
+
 void mf_DrawingModel::Copy( const mf_DrawingModel* m )
 {
 	if( vertices_ != NULL )

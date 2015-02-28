@@ -20,6 +20,9 @@ public:
 	unsigned int VertexCount() const;
 	unsigned int IndexCount() const;
 
+	void SetVertexData( mf_DrawingModelVertex* vertices, unsigned int vertex_count );
+	void SetIndexData( unsigned short* indeces, unsigned int index_count );
+
 	void Copy( const mf_DrawingModel* m );
 
 	void LoadFromMFMD( const unsigned char* model_data );

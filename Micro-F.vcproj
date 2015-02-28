@@ -223,6 +223,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\models_generation.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\player.cpp"
 				>
 			</File>
@@ -294,6 +298,10 @@
 			</File>
 			<File
 				RelativePath=".\models\models.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\models_generation.h"
 				>
 			</File>
 			<File
