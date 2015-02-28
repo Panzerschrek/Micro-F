@@ -62,7 +62,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 
 	//sun shader
 	sun_shader_.Create( mf_Shaders::sun_shader_v, mf_Shaders::sun_shader_f );
-	static const char* const sun_shader_uniforms[]= { "mat", "s", "tex" };
+	static const char* const sun_shader_uniforms[]= { "mat", "s", "tex", "i" };
 	sun_shader_.FindUniforms( sun_shader_uniforms, sizeof(sun_shader_uniforms) / sizeof(char*) );
 
 	GenTerrainMesh();
@@ -172,7 +172,7 @@ void mf_Renderer::DrawFrame()
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	CreateViewMatrix( view_matrix_, true );
 	DrawTerrain( true );
-	DrawSun();
+	DrawSun( true );
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
 
@@ -183,7 +183,7 @@ void mf_Renderer::DrawFrame()
 	CreateViewMatrix( view_matrix_, false );
 	DrawTerrain( false );
 	DrawAircrafts();
-	DrawSun();
+	DrawSun( false );
 	DrawWater();
 
 	{
@@ -248,7 +248,7 @@ void mf_Renderer::CreateWaterReflectionFramebuffer()
 void mf_Renderer::CreateShadowmapFramebuffer()
 {
 	shadowmap_fbo_.sun_azimuth= -MF_PI3;
-	shadowmap_fbo_.sun_elevation= MF_PI4;
+	shadowmap_fbo_.sun_elevation= MF_PI6;
 
 	shadowmap_fbo_.sun_vector[0]= shadowmap_fbo_.sun_vector[1]= mf_Math::cos( shadowmap_fbo_.sun_elevation );
 	shadowmap_fbo_.sun_vector[2]= mf_Math::sin( shadowmap_fbo_.sun_elevation );
@@ -696,7 +696,7 @@ void mf_Renderer::DrawTerrain(bool draw_to_water_framebuffer )
 		glDisable( GL_CLIP_DISTANCE0 );
 }
 
-void mf_Renderer::DrawSun()
+void mf_Renderer::DrawSun( bool draw_to_water_framebuffer )
 {
 	sun_shader_.Bind();
 
@@ -711,11 +711,19 @@ void mf_Renderer::DrawSun()
 	Mat4Mul( translate_mat, view_matrix_, mat );
 
 	sun_shader_.UniformMat4( "mat", mat );
-	sun_shader_.UniformFloat( "s",mf_MainLoop::Instance()->ViewportHeight() * 128.0f/1024.0f );
+
+	float sprite_size;
+	if( draw_to_water_framebuffer )
+		sprite_size= float(water_reflection_fbo_.size[1]) * 128.0f/1024.0f;
+	else
+		sprite_size= float(mf_MainLoop::Instance()->ViewportHeight()) * 128.0f/1024.0f;
+	sun_shader_.UniformFloat( "s", sprite_size );
 
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, sun_texture_ );
-	terrain_shader_.UniformInt( "tex", 0 );
+	sun_shader_.UniformInt( "tex", 0 );
+
+	sun_shader_.UniformFloat( "i", 4.0f ); // sun light intencity
 
 	glEnable( GL_PROGRAM_POINT_SIZE );
 	glEnable( GL_BLEND );

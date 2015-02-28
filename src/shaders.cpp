@@ -229,10 +229,12 @@ const char* const sun_shader_v=
 const char* const sun_shader_f=
 "#version 330\n"
 "uniform sampler2D tex;"
+"uniform float i;" // sun light intencity
 "out vec4 c_;"
 "void main()"
 "{"
-	"c_=texture(tex,gl_PointCoord);"
+	"vec4 t=texture(tex,gl_PointCoord);"
+	"c_=vec4(t.xyz*i,t.a);"
 "}";
 ;
 

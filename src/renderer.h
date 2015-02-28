@@ -39,8 +39,8 @@ private:
 
 	void CalculateWaterMeshVisiblyPart( unsigned int* first_quad, unsigned int* quad_count );
 
-	void DrawTerrain(bool draw_to_water_framebuffer= false );
-	void DrawSun();
+	void DrawTerrain( bool draw_to_water_framebuffer );
+	void DrawSun( bool draw_to_water_framebuffer );
 	void DrawAircrafts();
 	void DrawWater();
 	void DrawShadows();
