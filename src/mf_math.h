@@ -31,6 +31,8 @@ void Mat4Scale( float* mat, const float* scale );
 void Mat4Scale( float* mat, float scale );
 void Vec3Mat4Mul( const float* v, const float* m, float* v_dst );
 void Vec3Mat4Mul( float* v_dst, const float* m );
+void Vec3Mat3Mul( const float* v, const float* m, float* v_dst );
+void Vec3Mat3Mul( float* v_dst, const float* m );
 void Mat4Mul( const float* m0, const float* m1, float* m_dst );
 void Mat4Mul( float* m0_dst, const float* m1 );
 void Mat4RotateX( float* m, float a );

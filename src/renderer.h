@@ -9,21 +9,8 @@
 
 #define MF_MAX_AIRCRAFT_MODELS 32
 
-#pragma pack( push, 1 )
-struct mf_GPUModelVertex
-{
-	char pos[3];
-	char normal[3];
-	unsigned char tc[2];
-};
-#pragma pack(pop)
-
-
 struct mf_AircratfModelInfo
 {
-	const mf_ModelHeader* model_header;
-	float additional_scale;
-
 	unsigned int first_index;
 	unsigned int index_count;
 };

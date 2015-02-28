@@ -189,8 +189,6 @@ const char* const models_shader_v=
 "#version 330\n"
 "uniform mat4 mat;" // view matrix
 "uniform mat3 nmat;" // normal matrix
-"uniform vec3 ms;" // model scale
-"uniform vec3 mp;" // model position
 "in vec3 p;" // position
 "in vec3 n;" // normal
 "in vec2 tc;" // texture coord
@@ -200,8 +198,7 @@ const char* const models_shader_v=
 "{"
 	"fn=nmat*n;"
 	"ftc=tc;"
-	"vec3 pos=p*ms+mp;"
-	"gl_Position=mat*vec4(pos,1.0);"
+	"gl_Position=mat*vec4(p,1.0);"
 "}";
 
 const char* const models_shader_f=

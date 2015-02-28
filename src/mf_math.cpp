@@ -129,6 +129,21 @@ void Vec3Mat4Mul( float* v_dst, const float* m )
 	Vec3Mat4Mul( v, m, v_dst );
 }
 
+void Vec3Mat3Mul( const float* v, const float* m, float* v_dst )
+{
+	for( unsigned int i= 0; i< 3; i++ )
+		v_dst[i]= v[0] * m[i] + v[1] * m[i+3] + v[2] * m[i+6];
+}
+
+void Vec3Mat3Mul( float* v_dst, const float* m )
+{
+	float v[3];
+	for( unsigned int i= 0; i< 3; i++ )
+		v[i]= v_dst[i];
+	
+	Vec3Mat3Mul( v, m, v_dst );
+}
+
 void Mat4Mul( const float* m0, const float* m1, float* m_dst )
 {
 	unsigned int i, j;
