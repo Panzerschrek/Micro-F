@@ -86,31 +86,35 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
-	mf_Texture tex( 9, 9 );
-	GenF1949Texture( &tex );
-	tex.LinearNormalization(1.0f);
+	{ // test texture
+		mf_Texture tex( 9, 9 );
+		GenF1949Texture( &tex );
+		tex.LinearNormalization(1.0f);
 
-	glGenTextures( 1, &test_texture_ );
-	glBindTexture( GL_TEXTURE_2D, test_texture_ );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-		1 << tex.SizeXLog2(), 1 << tex.SizeYLog2(), 0,
-		GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-	glGenerateMipmap(GL_TEXTURE_2D);
+		glGenTextures( 1, &test_texture_ );
+		glBindTexture( GL_TEXTURE_2D, test_texture_ );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
+			1 << tex.SizeXLog2(), 1 << tex.SizeYLog2(), 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
 
-	// Sun Texture
-	GenSunTexture( &tex );
-	tex.LinearNormalization(1.0f);
+	{ // sun texture
+		mf_Texture sun_tex( 6, 6 );
+		GenSunTexture( &sun_tex );
+		sun_tex.LinearNormalization(1.0f);
 
-	glGenTextures( 1, &sun_texture_ );
-	glBindTexture( GL_TEXTURE_2D, sun_texture_ );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-		1 << tex.SizeXLog2(), 1 << tex.SizeYLog2(), 0,
-		GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-	glGenerateMipmap(GL_TEXTURE_2D);
+		glGenTextures( 1, &sun_texture_ );
+		glBindTexture( GL_TEXTURE_2D, sun_texture_ );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
+			1 << sun_tex.SizeXLog2(), 1 << sun_tex.SizeYLog2(), 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, sun_tex.GetNormalizedData() );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
 
 	{
 		const unsigned int terrain_texture_size_log2= 9;
@@ -618,7 +622,7 @@ void mf_Renderer::CreateViewMatrix( float* out_matrix, bool water_reflection )
 
 	Mat4Perspective( pers_mat,
 		float(main_loop->ViewportWidth())/ float(main_loop->ViewportHeight()),
-		70.0f * MF_DEG2RAD, 0.5f, 1024.0f );
+		70.0f * MF_DEG2RAD, 0.5f, 2048.0f );
 
 	Mat4RotateZ( rot_z_mat, -player_->Angle()[2] );
 	Mat4RotateX( rot_x_mat, water_reflection ? player_->Angle()[0] : -player_->Angle()[0] );
@@ -755,7 +759,9 @@ void mf_Renderer::DrawSun()
 	float mat[16];
 	float translate_mat[16];
 	float translate_vec[3];
-	Vec3Mul( shadowmap_fbo_.sun_vector, 128.0f, translate_vec );
+	Vec3Mul( shadowmap_fbo_.sun_vector,
+		float(MF_TERRAIN_CHUNK_SIZE_CL * MF_TERRAIN_MESH_SIZE_CHUNKS) * level_->TerrainCellSize(),
+		translate_vec );
 	Vec3Add( translate_vec, player_->Pos() );
 	Mat4Translate( translate_mat, translate_vec );
 	Mat4Mul( translate_mat, view_matrix_, mat );
