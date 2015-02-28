@@ -44,6 +44,28 @@ void GenSunTexture( mf_Texture* tex )
 	tex->Pow( 0.7f );
 }
 
+void GenMoonTexture( mf_Texture* tex )
+{
+	static const float black_color[]= { 0.0f, 0.0f, 0.0f, 0.0f };
+	tex->Fill( black_color );
+
+	unsigned int size_x= 1 << tex->SizeXLog2();
+	unsigned int size_y= 1 << tex->SizeYLog2();
+	static const float moon_color[]= { 1.0f, 1.0f, 1.0f, 1.0f };
+	tex->FillEllipse( size_x / 2, size_y / 2, size_x/2, moon_color );
+
+
+	mf_Texture noise_texture( tex->SizeXLog2(), tex->SizeYLog2() );
+	noise_texture.Noise();
+	noise_texture.Rotate( 37.0f );
+	static const float noise_mul_color[]= { 0.33f, 0.33f, 0.33f, 0.33f };
+	noise_texture.Mul( noise_mul_color );
+	static const float noise_add_color[]= { 0.66f, 0.66f, 0.66f, 0.66f };
+	noise_texture.Add( noise_add_color );
+
+	tex->Mul( &noise_texture );
+}
+
 void GenDirtTexture( mf_Texture* tex )
 {
 	tex->Noise();

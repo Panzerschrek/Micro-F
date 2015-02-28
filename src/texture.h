@@ -8,6 +8,7 @@ public:
 	~mf_Texture();
 
 	const float* GetData() const;
+	float* GetData();
 	const unsigned char* GetNormalizedData() const;
 	unsigned int SizeXLog2() const;
 	unsigned int SizeYLog2() const;
@@ -21,7 +22,7 @@ public:
 	void RadialGradient( int center_x, int center_y, int radius, const float* color0, const float* color1 );
 	void Fill( const float* color );
 	void FillRect( unsigned int x, unsigned int y, unsigned int width, unsigned int height, const float* color );
-	void FillCircle( int center_x, int center_y, int radius, const float* color );
+	void FillEllipse( int center_x, int center_y, int radius, const float* color, float scale_x= 1.0f, float scale_y= 1.0f );
 	void DrawLine( unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, const float* color );
 	void Grayscale();
 	void Abs();
@@ -69,6 +70,11 @@ private:
 };
 
 inline const float* mf_Texture::GetData() const
+{
+	return data_;
+}
+
+inline float* mf_Texture::GetData()
 {
 	return data_;
 }

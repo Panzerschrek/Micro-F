@@ -152,21 +152,23 @@ void mf_Texture::FillRect( unsigned int x, unsigned int y, unsigned int width, u
 	}
 }
 
-void mf_Texture::FillCircle( int center_x, int center_y, int radius, const float* color )
+void mf_Texture::FillEllipse( int center_x, int center_y, int radius, const float* color, float scale_x, float scale_y )
 {
 	int size_x1= (1<<size_log2_[0]) - 1;
 	int size_y1= (1<<size_log2_[1]) - 1;
-	int radius2= radius * radius;
+	float radius2= float(radius * radius);
+	float scale_x2= scale_x * scale_x;
+	float scale_y2= scale_y * scale_y;
 
 	for( int y= center_y - radius, y_end= center_y + radius; y<= y_end; y++ )
 	{
-		int dy2= y - center_y;
-		dy2= dy2 * dy2;
+		int dy= y - center_y;
+		float dy2= float(dy * dy) * scale_y2;
 		int y_ind= y & size_y1;
 		for( int x= center_x - radius, x_end= center_x + radius; x <= x_end; x++ )
 		{
 			int dx= x - center_x;
-			if( dx * dx + dy2<= radius2 )
+			if( float(dx*dx) * scale_x2 + dy2<= radius2 )
 			{
 				int ind= ( (x&size_x1) + (y_ind<<size_log2_[0]) ) << 2;
 				data_[ind  ]= color[0];
