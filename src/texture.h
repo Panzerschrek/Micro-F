@@ -18,8 +18,10 @@ public:
 	void RandomPoints();
 	void GenNormalMap(); // takes heightmap in alpha channel and writes d/dx in r-channel and d/dy in g-channel
 	void Gradient( unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, const float* color0, const float* color1 );
+	void RadialGradient( int center_x, int center_y, int radius, const float* color0, const float* color1 );
 	void Fill( const float* color );
 	void FillRect( unsigned int x, unsigned int y, unsigned int width, unsigned int height, const float* color );
+	void FillCircle( int center_x, int center_y, int radius, const float* color );
 	void DrawLine( unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, const float* color );
 	void Grayscale();
 	void Abs();

@@ -59,6 +59,11 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 		/*vert*/ "mat", "nmat", "ms", "mp", /*frag*/ "tex", "sun", "sl", "al" };
 	aircraft_shader_.FindUniforms( aircraft_shader_uniforms, sizeof(aircraft_shader_uniforms) / sizeof(char*) );
 
+	//sun shader
+	sun_shader_.Create( mf_Shaders::sun_shader_v, mf_Shaders::sun_shader_f );
+	static const char* const sun_shader_uniforms[]= { "mat", "s", "tex" };
+	sun_shader_.FindUniforms( sun_shader_uniforms, sizeof(sun_shader_uniforms) / sizeof(char*) );
+
 	GenTerrainMesh();
 	GenWaterMesh();
 	PrepareAircraftModels();
@@ -94,6 +99,18 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 	glGenerateMipmap(GL_TEXTURE_2D);
 
+	// Sun Texture
+	GenSunTexture( &tex );
+	tex.LinearNormalization(1.0f);
+
+	glGenTextures( 1, &sun_texture_ );
+	glBindTexture( GL_TEXTURE_2D, sun_texture_ );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
+		1 << tex.SizeXLog2(), 1 << tex.SizeYLog2(), 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	{
 		const unsigned int terrain_texture_size_log2= 9;
@@ -150,6 +167,7 @@ void mf_Renderer::DrawFrame()
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	CreateViewMatrix( view_matrix_, true );
 	DrawTerrain( true );
+	DrawSun();
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
 
@@ -160,6 +178,7 @@ void mf_Renderer::DrawFrame()
 	CreateViewMatrix( view_matrix_, false );
 	DrawTerrain( false );
 	DrawAircrafts();
+	DrawSun();
 	DrawWater();
 
 	{
@@ -224,7 +243,7 @@ void mf_Renderer::CreateWaterReflectionFramebuffer()
 void mf_Renderer::CreateShadowmapFramebuffer()
 {
 	shadowmap_fbo_.sun_azimuth= -MF_PI3;
-	shadowmap_fbo_.sun_elevation= MF_PI6;//MF_PI4;
+	shadowmap_fbo_.sun_elevation= MF_PI4;
 
 	shadowmap_fbo_.sun_vector[0]= shadowmap_fbo_.sun_vector[1]= mf_Math::cos( shadowmap_fbo_.sun_elevation );
 	shadowmap_fbo_.sun_vector[2]= mf_Math::sin( shadowmap_fbo_.sun_elevation );
@@ -402,6 +421,7 @@ void mf_Renderer::GenTerrainMesh()
 			} // if( lod != lod_y )
 		} // for x
 
+	terrain_mesh_patch_triangle_count_= patch_triangle_count;
 	terrain_vbo_.VertexData( quads, traingle_count* 6 * sizeof(short), sizeof(short) * 2 );
 	delete[] quads;
 	terrain_vbo_.VertexAttrib( 0, 2, GL_UNSIGNED_SHORT, false, 0 );
@@ -710,14 +730,51 @@ void mf_Renderer::DrawTerrain(bool draw_to_water_framebuffer )
 	terrain_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
 
 	terrain_vbo_.Bind();
-
+	unsigned int patches_vertex_count= terrain_mesh_patch_triangle_count_ * 3;
 	if( draw_to_water_framebuffer )
+	{
+		glCullFace( GL_FRONT );
 		glEnable( GL_CLIP_DISTANCE0 );
+	}
+	else glCullFace( GL_BACK );
 
-	glDrawArrays(GL_TRIANGLES, 0, terrain_vbo_.VertexCount() );
+	glEnable( GL_CULL_FACE );
+	glDrawArrays( GL_TRIANGLES, 0, terrain_vbo_.VertexCount() - patches_vertex_count );
+	glDisable( GL_CULL_FACE );
+	// raw terrain patches separatly, without culling
+	glDrawArrays( GL_TRIANGLES, terrain_vbo_.VertexCount() - patches_vertex_count, patches_vertex_count );
 
 	if( draw_to_water_framebuffer )
 		glDisable( GL_CLIP_DISTANCE0 );
+}
+
+void mf_Renderer::DrawSun()
+{
+	sun_shader_.Bind();
+
+	float mat[16];
+	float translate_mat[16];
+	float translate_vec[3];
+	Vec3Mul( shadowmap_fbo_.sun_vector, 128.0f, translate_vec );
+	Vec3Add( translate_vec, player_->Pos() );
+	Mat4Translate( translate_mat, translate_vec );
+	Mat4Mul( translate_mat, view_matrix_, mat );
+
+	sun_shader_.UniformMat4( "mat", mat );
+	sun_shader_.UniformFloat( "s",mf_MainLoop::Instance()->ViewportHeight() * 128.0f/1024.0f );
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, sun_texture_ );
+	terrain_shader_.UniformInt( "tex", 0 );
+
+	glEnable( GL_PROGRAM_POINT_SIZE );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+	glDrawArrays( GL_POINTS, 0, 1 );
+
+	glDisable( GL_BLEND );
+	glDisable( GL_PROGRAM_POINT_SIZE );
 }
 
 void mf_Renderer::DrawAircrafts()

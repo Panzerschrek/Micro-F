@@ -107,6 +107,31 @@ void mf_Texture::Gradient( unsigned int x0, unsigned int y0, unsigned int x1, un
 		}
 }
 
+void mf_Texture::RadialGradient( int center_x, int center_y, int radius, const float* color0, const float* color1 )
+{
+	int size_x1= (1<<size_log2_[0]) - 1;
+	int size_y1= (1<<size_log2_[1]) - 1;
+	float inv_radius_f= 1.0f / float(radius);
+
+	for( int y= center_y - radius, y_end= center_y + radius; y<= y_end; y++ )
+	{
+		int dy= y - center_y;
+		float dy2= float( dy * dy );
+		int y_ind= y & size_y1;
+		for( int x= center_x - radius, x_end= center_x + radius; x <= x_end; x++ )
+		{
+			int ind= ( (x&size_x1) + (y_ind<<size_log2_[0]) ) << 2;
+
+			int dx= x - center_x;
+			float r= inv_radius_f * mf_Math::sqrt( float(dx*dx) + dy2 );
+			if( r > 1.0f ) r= 1.0f;
+			float inv_r= 1.0f - r;
+			for( unsigned int j= 0; j < 4; j++ )
+				data_[ind+j]= color0[j] * inv_r + color1[j] * r;
+		} // for x
+	} // for y
+}
+
 void mf_Texture::Fill( const float* color )
 {
 	FillRect( 0, 0, 1<<size_log2_[0], 1<<size_log2_[1], color );
@@ -125,6 +150,32 @@ void mf_Texture::FillRect( unsigned int x, unsigned int y, unsigned int width, u
 			d[3]= color[3];
 		}
 	}
+}
+
+void mf_Texture::FillCircle( int center_x, int center_y, int radius, const float* color )
+{
+	int size_x1= (1<<size_log2_[0]) - 1;
+	int size_y1= (1<<size_log2_[1]) - 1;
+	int radius2= radius * radius;
+
+	for( int y= center_y - radius, y_end= center_y + radius; y<= y_end; y++ )
+	{
+		int dy2= y - center_y;
+		dy2= dy2 * dy2;
+		int y_ind= y & size_y1;
+		for( int x= center_x - radius, x_end= center_x + radius; x <= x_end; x++ )
+		{
+			int dx= x - center_x;
+			if( dx * dx + dy2<= radius2 )
+			{
+				int ind= ( (x&size_x1) + (y_ind<<size_log2_[0]) ) << 2;
+				data_[ind  ]= color[0];
+				data_[ind+1]= color[1];
+				data_[ind+2]= color[2];
+				data_[ind+3]= color[3];
+			}
+		} // for x
+	} // for y
 }
 
 void mf_Texture::DrawLine( unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, const float* color )

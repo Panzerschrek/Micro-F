@@ -53,6 +53,7 @@ private:
 	void CalculateWaterMeshVisiblyPart( unsigned int* first_quad, unsigned int* quad_count );
 
 	void DrawTerrain(bool draw_to_water_framebuffer= false );
+	void DrawSun();
 	void DrawAircrafts();
 	void DrawWater();
 	void DrawShadows();
@@ -66,7 +67,11 @@ private:
 	float terrain_shadow_matrix_[16];
 
 	mf_GLSLProgram terrain_shader_;
+
 	mf_VertexBuffer terrain_vbo_;
+	unsigned int terrain_mesh_patch_triangle_count_;
+
+
 	GLuint terrain_heightmap_texture_;
 	GLuint terrain_normal_map_texture_;
 	GLuint terrain_textures_array_;
@@ -118,6 +123,9 @@ private:
 		mf_VertexBuffer vbo;
 	} aircrafts_data_;
 	mf_GLSLProgram aircraft_shader_;
+
+	GLuint sun_texture_;
+	mf_GLSLProgram sun_shader_;
 
 	GLuint test_texture_;
 };

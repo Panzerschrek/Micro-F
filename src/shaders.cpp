@@ -51,8 +51,8 @@ const char* const text_shader_f=
 "out vec4 c_;"
 "void main(void)"
 "{"
-	"float c=texture2D(tex,ftc).x;"
-	"c_=vec4(fc.xyz*c,max(fc.a,c));"
+	"float x=texture(tex,ftc).x;"
+	"c_=vec4(fc.xyz*x,max(fc.a,x));"
 "}"
 ;
 
@@ -99,10 +99,11 @@ const char* const terrain_shader_f=
 "out vec4 c_;"
 "void main()"
 "{"
-	"float t00=texelFetch(nm,ivec2(fp),0).a*127.1;"
-	"float t10=texelFetch(nm,ivec2(fp)+ivec2(1,0),0).a*127.1;"
-	"float t01=texelFetch(nm,ivec2(fp)+ivec2(0,1),0).a*127.1;"
-	"float t11=texelFetch(nm,ivec2(fp)+ivec2(1,1),0).a*127.1;"
+	"ivec2 ifp=ivec2(fp);"
+	"float t00=texelFetch(nm,ifp,0).a*127.1;"
+	"float t10=texelFetch(nm,ifp+ivec2(1,0),0).a*127.1;"
+	"float t01=texelFetch(nm,ifp+ivec2(0,1),0).a*127.1;"
+	"float t11=texelFetch(nm,ifp+ivec2(1,1),0).a*127.1;"
 	"vec2 tcmod=mod(fp,vec2(1.0,1.0));"
 	"vec4 c00=texture(tex,vec3(ftc,t00));"
 	"vec4 c10=texture(tex,vec3(ftc,t10));"
@@ -160,8 +161,8 @@ const char* const water_shader_f=
 "out vec4 c_;" // out color
 "void main()"
 "{"
-	"float s=0.01*sin(fp.x*1.7+ph*2.8);"
-	"float c=0.01*cos(fp.y*1.5+ph*2.7);"
+	"float s=0.005*sin(fp.x*1.7+ph*2.8);"
+	"float c=0.005*cos(fp.y*1.5+ph*2.7);"
 	"float a=pow(1.0-normalize(fvtc).z,5.0);"
 	"c_=vec4(texture(tex,(gl_FragCoord.xy*its.xy)+vec2(s,c)).xyz*vec3(0.6,0.7,0.8),clamp(a,0.1,0.9));"
 "}"
@@ -218,5 +219,24 @@ const char* const models_shader_f=
 	"c_=vec4(texture(tex,ftc).xyz*(al+sl*l),0.5);"
 "}";
 
+const char* const sun_shader_v=
+"#version 330\n"
+"uniform mat4 mat;"
+"uniform float s;" // sprite size
+"void main()"
+"{"
+	"gl_PointSize=s;"
+	"gl_Position=mat*vec4(0.0,0.0,0.0,1.0);"
+"}";
+
+const char* const sun_shader_f=
+"#version 330\n"
+"uniform sampler2D tex;"
+"out vec4 c_;"
+"void main()"
+"{"
+	"c_=texture(tex,gl_PointCoord);"
+"}";
+;
 
 } // namespace mf_Shaders
