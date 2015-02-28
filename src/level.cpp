@@ -52,8 +52,8 @@ static unsigned short FinalNoise(unsigned int x, unsigned int y)
 mf_Level::mf_Level()
 {
 	terrain_size_[0]= 512;
-	terrain_size_[1]= 512;
-	terrain_amplitude_= 128.0f;
+	terrain_size_[1]= 8192;
+	terrain_amplitude_= 144.0f;
 	terrain_ceil_size_= 2.0f;
 	terrain_water_level_= terrain_amplitude_ / 9.0f;
 
@@ -86,7 +86,7 @@ void mf_Level::GenTarrain()
 			primary_terrain_data[ x + y * terrain_size_[0] ]= (unsigned short)noise;
 		}
 
-	// Make terrain smooth. Also, set default texture
+	// Make terrain smooth.
 	for( unsigned int y= 1; y< terrain_size_[1] - 1; y++ )
 		for( unsigned int x= 1; x< terrain_size_[0] - 1; x++ )
 		{
@@ -103,12 +103,6 @@ void mf_Level::GenTarrain()
 			r+= primary_terrain_data[ (x+1) + (y+1) * terrain_size_[0] ];
 
 			terrain_heightmap_data_[ x + y * terrain_size_[0] ]= (unsigned short)(r>>4);
-
-			if( (r>>4) < 0x7FFF )
-				terrain_normal_textures_map_[ (x + y * terrain_size_[0]) * 4 + 3 ]= TextureDirtWithGrass;
-			else
-				terrain_normal_textures_map_[ (x + y * terrain_size_[0]) * 4 + 3 ]= TextureDirt;
-
 		}
 	delete[] primary_terrain_data;
 
@@ -197,6 +191,8 @@ void mf_Level::GenTarrain()
 		terrain_normal_textures_map_[ i0dst * 4 + j ]= terrain_normal_textures_map_[ i0src * 4 + j ];
 		terrain_normal_textures_map_[ i1dst * 4 + j ]= terrain_normal_textures_map_[ i1src * 4 + j ];
 	}
+
+	PlaceTextures();
 }
 
 void mf_Level::GenValleyWayPoints()
@@ -279,5 +275,31 @@ void mf_Level::GenValleyWayPoints()
 				terrain_normal_textures_map_[ ind * 4 + 3 ]= TextureDirt;
 			}
 		}
+	}
+}
+
+void mf_Level::PlaceTextures()
+{
+	unsigned short water_level_s= (unsigned short)( float(0xFFFF) * 1.05 * terrain_water_level_ / terrain_amplitude_ );
+	char rock_normal_z= 100;
+
+	unsigned int ind= 0;
+	for( unsigned int y= 0; y< terrain_size_[1]; y++ )
+		for( unsigned int x= 0; x< terrain_size_[0]; x++, ind++ )
+		{
+			if( terrain_heightmap_data_[ ind ] < water_level_s )
+				terrain_normal_textures_map_[ ind * 4 + 3 ]= TextureSand;
+			else if( terrain_normal_textures_map_[ ind * 4 + 2 ] < rock_normal_z )
+				terrain_normal_textures_map_[ ind * 4 + 3 ]= TextureRock;
+			else
+				terrain_normal_textures_map_[ ind * 4 + 3 ]= TextureDirtWithGrass;
+
+		}
+
+	for( unsigned int i= 0; i< LastTexture; i++ )
+	{
+		for( unsigned int y= i*16; y< i*16 + 16; y++ )
+			for( unsigned int x= 0; x< 16; x++ )
+				terrain_normal_textures_map_[ (x + y * terrain_size_[0]) * 4 + 3 ]= (char)i;
 	}
 }

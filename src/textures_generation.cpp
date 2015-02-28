@@ -55,8 +55,8 @@ void GenDirtWithGrassTexture( mf_Texture* tex )
 	tex->Pow(32.0f);
 	tex->Mul(after_noise_mul_value);
 
-	tex->SinWaveX( 7.0f, 1.0f / 64.0f, MF_PI3 );
-	tex->SinWaveY( 9.0f, 1.0f / 64.0f, MF_PI4 );
+	tex->SinWaveDeformX( 7.0f, 1.0f / 64.0f, MF_PI3 );
+	tex->SinWaveDeformY( 9.0f, 1.0f / 64.0f, MF_PI4 );
 
 	static const float grass_color[]= { 0.325f*0.6f, 0.65f*0.6f, 0.2f*0.6f, 0.0f*0.6f };
 	static const float one[]= { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -68,8 +68,42 @@ void GenDirtWithGrassTexture( mf_Texture* tex )
 	tex->Mul( &noise_sub_tex );
 }
 
+void GenSandTexture( mf_Texture* tex )
+{
+	tex->Noise( 8 );
+	mf_Texture tex2( tex->SizeXLog2(), tex->SizeYLog2() );
+	tex2.Noise( 5 );
+
+	tex->Sub( &tex2 );
+	static const float mul_color[]= { 6.0f, 6.0f, 6.0f, 6.0f };
+	tex->Mul( mul_color );
+	static const float add_color[]= { 0.4f, 0.4f, 0.4f, 0.4f };
+	tex->Add( add_color );
+
+	static const float sand_color[]= { 0.88f, 0.81f, 0.32f, 0.0f };
+	tex->Mul( sand_color );
+}
+
+void GenRockTexture( mf_Texture* tex )
+{
+	tex->Noise(7);
+	tex->Pow( 0.7f );
+
+	static const float add_color[]= { 0.3f, 0.3f, 0.3f, 0.3f };
+	tex->Add( add_color );
+	static const float mul_color[]= { 1.0f / 1.3f, 1.0f / 1.3f, 1.0f / 1.3f, 0.0f };
+	tex->Mul( mul_color );
+
+	static const float rock_color[]= { 0.6f, 0.5f, 0.55f, 0.0f };
+	tex->Mul( rock_color );
+
+	tex->Shift( 111, 57 );
+}
+
 void (* const terrain_texture_gen_func[])(mf_Texture* t)=
 {
 	GenDirtTexture,
-	GenDirtWithGrassTexture
+	GenDirtWithGrassTexture,
+	GenSandTexture,
+	GenRockTexture
 };

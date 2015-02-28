@@ -82,7 +82,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
 	mf_Texture tex( 9, 9 );
-	GenDirtWithGrassTexture( &tex );
+	GenF1949Texture( &tex );
 	tex.LinearNormalization(1.0f);
 
 	glGenTextures( 1, &test_texture_ );
@@ -224,7 +224,7 @@ void mf_Renderer::CreateWaterReflectionFramebuffer()
 void mf_Renderer::CreateShadowmapFramebuffer()
 {
 	shadowmap_fbo_.sun_azimuth= -MF_PI3;
-	shadowmap_fbo_.sun_elevation= MF_PI4;
+	shadowmap_fbo_.sun_elevation= MF_PI6;//MF_PI4;
 
 	shadowmap_fbo_.sun_vector[0]= shadowmap_fbo_.sun_vector[1]= mf_Math::cos( shadowmap_fbo_.sun_elevation );
 	shadowmap_fbo_.sun_vector[2]= mf_Math::sin( shadowmap_fbo_.sun_elevation );
@@ -769,7 +769,7 @@ void mf_Renderer::DrawAircrafts()
 
 
 	glEnable( GL_CULL_FACE );
-
+	glCullFace( GL_BACK );
 	aircrafts_data_.vbo.Bind();
 	glDrawElements( GL_TRIANGLES,
 		aircrafts_data_.vbo.IndexDataSize() / sizeof(unsigned short),
@@ -824,26 +824,56 @@ void mf_Renderer::DrawWater()
 
 void mf_Renderer::DrawShadows()
 {
-	float proj_mat[16];
-	float translate_mat[16];
-	float rot_x_mat[16];
-	float rot_z_mat[16];
 	float projection_final_mat[16];
+	{
+		float max[3], min[3];
+		float terrain_shift[3];
+		float rot_x_mat[16];
+		float rot_z_mat[16];
+		float primary_proj_mat[16];
+		float corrected_proj_mat[16];
 
-	float proj_scale[3]= { 1.0f / 128.0f, 1.0f / 128.0f, -1.0f / 128.0f };
-	Mat4Scale( proj_mat, proj_scale );
+		Mat4RotateZ( rot_z_mat, -shadowmap_fbo_.sun_azimuth );
+		Mat4RotateX( rot_x_mat, MF_PI2 - shadowmap_fbo_.sun_elevation );
+		Mat4Mul( rot_z_mat, rot_x_mat, primary_proj_mat );
 
-	float translate_vec[3];
-	Vec3Mul( player_->Pos(), -1.0f, translate_vec );
-	Mat4Translate( translate_mat, translate_vec );
+		GetTerrainMeshShift( terrain_shift );
+		for( unsigned int i= 0; i< 2; i++ )
+		{
+			min[i]= terrain_shift[i] * level_->TerrainCellSize();
+			max[i]= ( terrain_shift[i] + float(MF_TERRAIN_CHUNK_SIZE_CL*MF_TERRAIN_MESH_SIZE_CHUNKS) ) * level_->TerrainCellSize();
+		}
+		min[2]= 0.0f;
+		max[2]= level_->TerrainAmplitude();
 
-	Mat4RotateZ( rot_z_mat, -shadowmap_fbo_.sun_azimuth );
-	Mat4RotateX( rot_x_mat, MF_PI2 - shadowmap_fbo_.sun_elevation );
+		const float inf= 1e24f;
+		float min_proj[3]= { inf, inf, inf }, max_proj[3]= { -inf, -inf, -inf };
+		for( unsigned int i= 0; i< 8; i++ )
+		{
+			float pos[3];
+			pos[0]= (i&1) ? min[0] : max[0];
+			pos[1]= ((i>>1)&1) ? min[1] : max[1];
+			pos[2]= ((i>>2)&1) ? min[2] : max[2];
+			float proj_pos[3];
+			Vec3Mat4Mul( pos, primary_proj_mat, proj_pos );
+			for( unsigned int j= 0; j< 3; j++ )
+			{
+				if( proj_pos[j] > max_proj[j] ) max_proj[j]= proj_pos[j];
+				if( proj_pos[j] < min_proj[j] ) min_proj[j]= proj_pos[j];
+			}
+		}// for bounding box vertices
 
-	Mat4Mul( translate_mat, rot_z_mat, projection_final_mat );
-	Mat4Mul( projection_final_mat, rot_x_mat );
-	Mat4Mul( projection_final_mat, proj_mat );
-
+		Mat4Identity( corrected_proj_mat );
+		corrected_proj_mat[ 0]= 2.0f / ( max_proj[0] - min_proj[0] );
+		corrected_proj_mat[12]= 1.0f - corrected_proj_mat[ 0] * max_proj[0];
+		corrected_proj_mat[ 5]= 2.0f / ( max_proj[1] - min_proj[1] );
+		corrected_proj_mat[13]= 1.0f - corrected_proj_mat[ 5] * max_proj[1];
+		corrected_proj_mat[10]= 2.0f / ( max_proj[2] - min_proj[2] );
+		corrected_proj_mat[14]= 1.0f - corrected_proj_mat[10] * max_proj[2];
+		corrected_proj_mat[10]*= -1.0f;
+		corrected_proj_mat[14]*= -1.0f;
+		Mat4Mul( primary_proj_mat, corrected_proj_mat, projection_final_mat );
+	} // calculate projection matrix
 	{ // draw terrain
 		float terrain_mat[16];
 
@@ -864,7 +894,7 @@ void mf_Renderer::DrawShadows()
 		terrain_vbo_.Bind();
 
 		glEnable( GL_CULL_FACE );
-		glCullFace( GL_BACK );
+		glCullFace( GL_FRONT );
 		glDrawArrays(GL_TRIANGLES, 0, terrain_vbo_.VertexCount() );
 		glDisable( GL_CULL_FACE );
 

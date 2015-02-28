@@ -18,6 +18,7 @@ public:
 private:
 	void GenTarrain();
 	void GenValleyWayPoints();
+	void PlaceTextures();
 
 private:
 	struct ValleyWayPoint

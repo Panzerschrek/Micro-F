@@ -79,7 +79,7 @@ const char* const terrain_shader_v=
 	"vec3 p=vec3(sp,h);"
 	"gl_Position=mat*vec4(p,1.0);"
 	"p=(smat*vec4(p,1.0)).xyz;"
-	"fstc=p*0.5+vec3(0.5,0.5,0.5-0.003);"
+	"fstc=p*0.5+vec3(0.5,0.5,0.5);"
 	"gl_ClipDistance[0]=h-wl;"
 "}"
 ;
@@ -138,10 +138,12 @@ const char* const water_shader_v=
 "uniform float ph;" // sin phase
 "in vec2 p;"
 "out vec3 fvtc;" // vec to camera
+"out vec2 fp;" // frag position
 "const float om=0.25;" // omega
 "void main()"
 "{"
 	"vec3 p3=vec3(p*tcs.xy,wl);"
+	"fp=p3.xy;"
 	"p3.z+=(sin(p.x*om+ph)+sin(p.y*om+ph)-2.08)*0.2;" // sub values for prevent reflection artefacts (like sky pixels near coast )
 	"fvtc=cp-p3;"
 	"gl_Position=mat*vec4(p3,1.0);"
@@ -152,12 +154,16 @@ const char* const water_shader_f=
 "#version 330\n"
 "uniform sampler2D tex;" // reflection texture
 "uniform vec3 its;" // invert texture size
+"uniform float ph;" // sin phase
 "in vec3 fvtc;" // vec to camera
+"in vec2 fp;"
 "out vec4 c_;" // out color
 "void main()"
 "{"
+	"float s=0.01*sin(fp.x*1.7+ph*2.8);"
+	"float c=0.01*cos(fp.y*1.5+ph*2.7);"
 	"float a=pow(1.0-normalize(fvtc).z,5.0);"
-	"c_=vec4(texture(tex,gl_FragCoord.xy*its.xy).xyz*vec3(0.6,0.7,0.8),clamp(a,0.1,0.9));"
+	"c_=vec4(texture(tex,(gl_FragCoord.xy*its.xy)+vec2(s,c)).xyz*vec3(0.6,0.7,0.8),clamp(a,0.1,0.9));"
 "}"
 ;
 

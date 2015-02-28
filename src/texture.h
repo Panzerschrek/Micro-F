@@ -23,8 +23,8 @@ public:
 	void DrawLine( unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, const float* color );
 	void Grayscale();
 	void Abs();
-	void SinWaveX( float amplitude, float freq, float phase );
-	void SinWaveY( float amplitude, float freq, float phase );
+	void SinWaveDeformX( float amplitude, float freq, float phase );
+	void SinWaveDeformY( float amplitude, float freq, float phase );
 	void DeformX( float dx_dy );
 	void DeformY( float dy_dx );
 

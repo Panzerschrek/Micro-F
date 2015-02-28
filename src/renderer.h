@@ -47,6 +47,7 @@ private:
 
 	void CreateViewMatrix( float* out_matrix, bool water_reflection );
 	void CreateTerrainMatrix( float* out_matrix );
+	// eturns shift in terrain cells
 	void GetTerrainMeshShift( float* out_shift );
 
 	void CalculateWaterMeshVisiblyPart( unsigned int* first_quad, unsigned int* quad_count );

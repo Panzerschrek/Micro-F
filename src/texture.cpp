@@ -206,7 +206,7 @@ void mf_Texture::Abs()
 	}
 }
 
-void mf_Texture::SinWaveX( float amplitude, float freq, float phase )
+void mf_Texture::SinWaveDeformX( float amplitude, float freq, float phase )
 {
 	float* new_data= new float[ 1<<( size_log2_[0] + size_log2_[1] + 2) ];
 
@@ -232,7 +232,7 @@ void mf_Texture::SinWaveX( float amplitude, float freq, float phase )
 	data_= new_data;
 }
 
-void mf_Texture::SinWaveY( float amplitude, float freq, float phase )
+void mf_Texture::SinWaveDeformY( float amplitude, float freq, float phase )
 {
 	float* new_data= new float[ 1<<( size_log2_[0] + size_log2_[1] + 2) ];
 	float* dst= new_data;
