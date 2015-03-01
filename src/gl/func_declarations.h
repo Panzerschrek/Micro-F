@@ -50,7 +50,8 @@ extern PFNGLUNIFORMMATRIX4FVPROC	glUniformMatrix4fv;
 extern PFNGLUNIFORMMATRIX3FVPROC	glUniformMatrix3fv;
 extern PFNGLUNIFORM3FPROC			glUniform3f;
 extern PFNGLUNIFORM4FPROC			glUniform4f;
-extern PFNGLUNIFORM1FPROC          glUniform1f;
+extern PFNGLUNIFORM1FPROC			glUniform1f;
+extern PFNGLUNIFORM1FVPROC			glUniform1fv;
 extern PFNGLDRAWBUFFERSPROC         glDrawBuffers;
 
 

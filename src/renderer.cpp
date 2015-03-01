@@ -69,7 +69,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	// sky shader
 	sky_shader_.SetAttribLocation( "p", 0 );
 	sky_shader_.Create( mf_Shaders::sky_shader_v, mf_Shaders::sky_shader_f );
-	static const char* const sky_shader_unifroms[]= { "mat", "sun" };
+	static const char* const sky_shader_unifroms[]= { "mat", "sun", "sky_k", "tu" };
 	sky_shader_.FindUniforms( sky_shader_unifroms, sizeof(sky_shader_unifroms) / sizeof(char*) );
 
 	GenTerrainMesh();
@@ -179,8 +179,6 @@ void mf_Renderer::Resize()
 
 void mf_Renderer::DrawFrame()
 {
-	//glClearColor( 0.6f, 0.7f, 1.0f, 0.0f );
-
 	glBindFramebuffer( GL_FRAMEBUFFER, shadowmap_fbo_.fbo_id );
 	glViewport( 0, 0, shadowmap_fbo_.size[0], shadowmap_fbo_.size[1] );
 	glClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
@@ -192,7 +190,7 @@ void mf_Renderer::DrawFrame()
 	CreateViewMatrix( view_matrix_, true );
 	DrawTerrain( true );
 	DrawSky( true );
-	//DrawSun( true );
+	DrawSun( true );
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
 
@@ -204,7 +202,7 @@ void mf_Renderer::DrawFrame()
 	DrawTerrain( false );
 	DrawAircrafts();
 	DrawSky( false );
-	//DrawSun( false );
+	DrawSun( false );
 	DrawWater();
 
 	{
@@ -269,8 +267,7 @@ void mf_Renderer::CreateWaterReflectionFramebuffer()
 void mf_Renderer::CreateShadowmapFramebuffer()
 {
 	shadowmap_fbo_.sun_azimuth= -MF_PI3;
-	//shadowmap_fbo_.sun_elevation= MF_PI6;
-	shadowmap_fbo_.sun_elevation= MF_PI4;
+	shadowmap_fbo_.sun_elevation= MF_PI6;
 
 	shadowmap_fbo_.sun_vector[0]= shadowmap_fbo_.sun_vector[1]= mf_Math::cos( shadowmap_fbo_.sun_elevation );
 	shadowmap_fbo_.sun_vector[2]= mf_Math::sin( shadowmap_fbo_.sun_elevation );
@@ -586,9 +583,10 @@ void mf_Renderer::CreateViewMatrix( float* out_matrix, bool water_reflection )
 		Vec3Mul( player_->Pos(), -1.0f, translate_vec );
 	Mat4Translate( translate_mat, translate_vec );
 
+	const float fov= 80.0f * MF_DEG2RAD;
 	Mat4Perspective( pers_mat,
 		float(main_loop->ViewportWidth())/ float(main_loop->ViewportHeight()),
-		70.0f * MF_DEG2RAD, 0.5f, 2048.0f );
+		fov, 0.5f, 2048.0f );
 
 	Mat4RotateZ( rot_z_mat, -player_->Angle()[2] );
 	Mat4RotateX( rot_x_mat, water_reflection ? player_->Angle()[0] : -player_->Angle()[0] );
@@ -780,6 +778,30 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	sky_shader_.UniformMat4( "mat", mat );
 
 	sky_shader_.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
+
+	{ // setup Perez sky model parameters
+		const float tu= 1.8f; // now ( while we not use HDR ) it is optimal paremeter
+		const float sky_k[]=
+		{
+			 0.17872f * tu - 1.46303f,
+			-0.35540f * tu + 0.42749f,
+			-0.02266f * tu + 5.32505f,
+			 0.12064f * tu - 2.57705f,
+			-0.06696f * tu + 0.37027f,
+			-0.01925f * tu - 0.25922f,
+			-0.06651f * tu + 0.00081f,
+			-0.00041f * tu + 0.21247f,
+			-0.06409f * tu - 0.89887f,
+			-0.00325f * tu + 0.04517f,
+			-0.01669f * tu - 0.26078f,
+			-0.09495f * tu + 0.00921f,
+			-0.00792f * tu + 0.21023f,
+			-0.04405f * tu - 1.65369f,
+			-0.01092f * tu + 0.05291f,
+		};
+		sky_shader_.UniformFloatAray( "sky_k", 15, sky_k );
+		sky_shader_.UniformFloat( "tu", tu );
+	}
 
 	sky_vbo_.Bind();
 
@@ -977,5 +999,4 @@ void mf_Renderer::DrawShadows()
 		water_mesh_.vbo.Bind();
 		glDrawArrays( GL_TRIANGLES, first_quad * 6 , quad_count * 6 );
 	} // draw water
-
 }

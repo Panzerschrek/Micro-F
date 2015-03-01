@@ -27,6 +27,7 @@ public:
 	void UniformMat3Array( const char* name, unsigned int count, const float* mat );
 	void UniformVec3 ( const char* name, const float* v );
 	void UniformFloat( const char* name, float f );
+	void UniformFloatAray( const char* name, unsigned int count, const float* f );
 
 private:
 	GLint GetUniformId( const char* name );

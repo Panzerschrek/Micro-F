@@ -127,6 +127,11 @@ void mf_GLSLProgram::UniformFloat( const char* name, float f )
 	glUniform1f( GetUniformId(name), f );
 }
 
+void mf_GLSLProgram::UniformFloatAray( const char* name, unsigned int count, const float* f )
+{
+	glUniform1fv( GetUniformId(name), count, f );
+}
+
 GLint mf_GLSLProgram::GetUniformId( const char* name )
 {
 	for( unsigned int i= 0; i< uniform_count_; i++ )
