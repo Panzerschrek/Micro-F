@@ -36,6 +36,7 @@ private:
 	void CreateTerrainMatrix( float* out_matrix );
 	// eturns shift in terrain cells
 	void GetTerrainMeshShift( float* out_shift );
+	float GetSceneRadius(); // returns half of iagonal of scene bounding box
 
 	void CalculateWaterMeshVisiblyPart( unsigned int* first_quad, unsigned int* quad_count );
 
@@ -92,8 +93,8 @@ private:
 
 	struct QuadRow
 	{
-		unsigned short first_quad_number;
-		unsigned short quad_count;
+		unsigned int first_quad_number;
+		unsigned int quad_count;
 	};
 	struct
 	{

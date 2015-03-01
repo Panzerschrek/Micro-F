@@ -17,7 +17,12 @@
 
 #define MF_TERRAIN_CHUNK_SIZE_CL 8
 #define MF_TERRAIN_CHUNK_SIZE_CL_LOG2 3
-#define MF_TERRAIN_MESH_SIZE_CHUNKS 72
+#define MF_TERRAIN_MESH_SIZE_X_CHUNKS 96
+#define MF_TERRAIN_MESH_SIZE_Y_CHUNKS 144
+
+static const float g_sun_distance_scaler= 1.5f;
+static const float g_sky_radius_scaler= 2.0f;
+static const float g_zfar_scaler= 2.5f;
 
 mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	: player_(player), level_(level)
@@ -310,25 +315,26 @@ void mf_Renderer::CreateShadowmapFramebuffer()
 void mf_Renderer::GenTerrainMesh()
 {
 	unsigned int traingle_count= 0;
-	unsigned char chunk_lod_table[ MF_TERRAIN_MESH_SIZE_CHUNKS * MF_TERRAIN_MESH_SIZE_CHUNKS ];
+	unsigned char chunk_lod_table[ MF_TERRAIN_MESH_SIZE_X_CHUNKS * MF_TERRAIN_MESH_SIZE_Y_CHUNKS ];
 	static const int lod_dst[]= { 64*64, 160*160, 352*352, 448*448, 1024*1024, 0x7FFFFFFF };
 
 	// calculate chunks lods
-	unsigned int center_xy= MF_TERRAIN_CHUNK_SIZE_CL * MF_TERRAIN_MESH_SIZE_CHUNKS / 2;
-	for( unsigned int y= 0; y< MF_TERRAIN_MESH_SIZE_CHUNKS; y++ )
+	unsigned int center_x= MF_TERRAIN_CHUNK_SIZE_CL * MF_TERRAIN_MESH_SIZE_X_CHUNKS / 2;
+	unsigned int center_y= MF_TERRAIN_CHUNK_SIZE_CL * MF_TERRAIN_MESH_SIZE_Y_CHUNKS / 2;
+	for( unsigned int y= 0; y< MF_TERRAIN_MESH_SIZE_Y_CHUNKS; y++ )
 	{
 		int cl_y= y * MF_TERRAIN_CHUNK_SIZE_CL + MF_TERRAIN_CHUNK_SIZE_CL / 2;
-		int y_dst2= cl_y - center_xy;
+		int y_dst2= cl_y - center_y;
 		y_dst2*= y_dst2;
-		for( unsigned int x= 0; x< MF_TERRAIN_MESH_SIZE_CHUNKS; x++ )
+		for( unsigned int x= 0; x< MF_TERRAIN_MESH_SIZE_X_CHUNKS; x++ )
 		{
 			int cl_x= x * MF_TERRAIN_CHUNK_SIZE_CL + MF_TERRAIN_CHUNK_SIZE_CL / 2;
-			int x_dst= cl_x - center_xy;
+			int x_dst= cl_x - center_x;
 			int dst2= y_dst2 + x_dst * x_dst;
 			for( unsigned int i= 0, i_end= MF_TERRAIN_CHUNK_SIZE_CL_LOG2+1; i< i_end; i++ )
 				if( dst2 < lod_dst[i] || i == i_end - 1 )
 				{
-					chunk_lod_table[ x + y * MF_TERRAIN_MESH_SIZE_CHUNKS ]= (unsigned char)i;
+					chunk_lod_table[ x + y * MF_TERRAIN_MESH_SIZE_X_CHUNKS ]= (unsigned char)i;
 					traingle_count+= 2 * ( ( MF_TERRAIN_CHUNK_SIZE_CL * MF_TERRAIN_CHUNK_SIZE_CL ) >> (i+i) );
 					break;
 				}
@@ -337,12 +343,12 @@ void mf_Renderer::GenTerrainMesh()
 
 	// calculate patch count
 	unsigned int patch_triangle_count= 0;
-	for( unsigned int y= 0; y< MF_TERRAIN_MESH_SIZE_CHUNKS-1; y++ )
-		for( unsigned int x= 0; x< MF_TERRAIN_MESH_SIZE_CHUNKS-1; x++ )
+	for( unsigned int y= 0; y< MF_TERRAIN_MESH_SIZE_Y_CHUNKS-1; y++ )
+		for( unsigned int x= 0; x< MF_TERRAIN_MESH_SIZE_X_CHUNKS-1; x++ )
 		{
-			unsigned int lod  = chunk_lod_table[ x   +  y    * MF_TERRAIN_MESH_SIZE_CHUNKS ];
-			unsigned int lod_x= chunk_lod_table[ x+1 +  y    * MF_TERRAIN_MESH_SIZE_CHUNKS ];
-			unsigned int lod_y= chunk_lod_table[ x   + (y+1) * MF_TERRAIN_MESH_SIZE_CHUNKS ];
+			unsigned int lod  = chunk_lod_table[ x   +  y    * MF_TERRAIN_MESH_SIZE_X_CHUNKS ];
+			unsigned int lod_x= chunk_lod_table[ x+1 +  y    * MF_TERRAIN_MESH_SIZE_X_CHUNKS ];
+			unsigned int lod_y= chunk_lod_table[ x   + (y+1) * MF_TERRAIN_MESH_SIZE_X_CHUNKS ];
 			if( lod != lod_x )
 			{
 				unsigned int max_lod= (lod > lod_x) ? lod : lod_x;
@@ -360,10 +366,10 @@ void mf_Renderer::GenTerrainMesh()
 	unsigned short* q= quads;
 
 	// gen terrain triangles
-	for( unsigned int y= 0; y< MF_TERRAIN_MESH_SIZE_CHUNKS; y++ )
-		for( unsigned int x= 0; x< MF_TERRAIN_MESH_SIZE_CHUNKS; x++ )
+	for( unsigned int y= 0; y< MF_TERRAIN_MESH_SIZE_Y_CHUNKS; y++ )
+		for( unsigned int x= 0; x< MF_TERRAIN_MESH_SIZE_X_CHUNKS; x++ )
 		{
-			unsigned int lod= chunk_lod_table[ x + y * MF_TERRAIN_MESH_SIZE_CHUNKS ];
+			unsigned int lod= chunk_lod_table[ x + y * MF_TERRAIN_MESH_SIZE_X_CHUNKS ];
 			unsigned int chunk_quad_count= MF_TERRAIN_CHUNK_SIZE_CL >> lod;
 			unsigned short quad_size= 1 << lod;
 			for( unsigned int j= 0; j< chunk_quad_count; j++ )
@@ -401,12 +407,12 @@ void mf_Renderer::GenTerrainMesh()
 		} // for chunk x
 
 	// gen patches
-	for( unsigned int y= 0; y< MF_TERRAIN_MESH_SIZE_CHUNKS-1; y++ )
-		for( unsigned int x= 0; x< MF_TERRAIN_MESH_SIZE_CHUNKS-1; x++ )
+	for( unsigned int y= 0; y< MF_TERRAIN_MESH_SIZE_Y_CHUNKS-1; y++ )
+		for( unsigned int x= 0; x< MF_TERRAIN_MESH_SIZE_X_CHUNKS-1; x++ )
 		{
-			unsigned int lod  = chunk_lod_table[ x   +  y    * MF_TERRAIN_MESH_SIZE_CHUNKS ];
-			unsigned int lod_x= chunk_lod_table[ x+1 +  y    * MF_TERRAIN_MESH_SIZE_CHUNKS ];
-			unsigned int lod_y= chunk_lod_table[ x   + (y+1) * MF_TERRAIN_MESH_SIZE_CHUNKS ];
+			unsigned int lod  = chunk_lod_table[ x   +  y    * MF_TERRAIN_MESH_SIZE_X_CHUNKS ];
+			unsigned int lod_x= chunk_lod_table[ x+1 +  y    * MF_TERRAIN_MESH_SIZE_X_CHUNKS ];
+			unsigned int lod_y= chunk_lod_table[ x   + (y+1) * MF_TERRAIN_MESH_SIZE_X_CHUNKS ];
 			if( lod != lod_x )
 			{
 				unsigned short s_x= (unsigned short) ( (x+1) * MF_TERRAIN_CHUNK_SIZE_CL );
@@ -492,7 +498,7 @@ void mf_Renderer::GenWaterMesh()
 
 	for( unsigned int y= 0; y< size_y; y++ )
 	{
-		water_mesh_.quad_rows[y].first_quad_number= (unsigned short)( (q - quads) / 12 );
+		water_mesh_.quad_rows[y].first_quad_number= (q - quads) / 12;
 		water_mesh_.quad_rows[y].quad_count= 0;
 
 		for( unsigned int x= 0; x< size_x; x++ )
@@ -588,7 +594,7 @@ void mf_Renderer::CreateViewMatrix( float* out_matrix, bool water_reflection )
 	const float fov= 80.0f * MF_DEG2RAD;
 	Mat4Perspective( pers_mat,
 		float(main_loop->ViewportWidth())/ float(main_loop->ViewportHeight()),
-		fov, 0.5f, 2048.0f );
+		fov, 0.5f, GetSceneRadius() * g_zfar_scaler );
 
 	Mat4RotateZ( rot_z_mat, -player_->Angle()[2] );
 	Mat4RotateX( rot_x_mat, water_reflection ? player_->Angle()[0] : -player_->Angle()[0] );
@@ -631,21 +637,35 @@ void mf_Renderer::CreateTerrainMatrix( float* out_matrix )
 void mf_Renderer::GetTerrainMeshShift( float* out_shift )
 {
 	const float cell_step= float(MF_TERRAIN_CHUNK_SIZE_CL);
+	static const float half_terrain_size_cl[]=
+	{
+		float(MF_TERRAIN_MESH_SIZE_X_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / 2),
+		float(MF_TERRAIN_MESH_SIZE_Y_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / 2)
+	};
 	for( unsigned int i= 0; i< 2; i++ )
 	{
 		out_shift[i]= floorf( player_->Pos()[i] / ( level_->TerrainCellSize() * cell_step ) ) * cell_step
-			- float(MF_TERRAIN_MESH_SIZE_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / 2);
+			- half_terrain_size_cl[i];
 		if( out_shift[i] < 0.0f ) out_shift[i]= 0.0f;
 		out_shift[i]+= 0.0005f; // compenstation of GPU accuracy problems
 	}
 }
 
+float mf_Renderer::GetSceneRadius()
+{
+	float d[3];
+	d[0]= float(MF_TERRAIN_MESH_SIZE_X_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL) * level_->TerrainCellSize();
+	d[1]= float(MF_TERRAIN_MESH_SIZE_X_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL) * level_->TerrainCellSize();
+	d[2]= level_->TerrainAmplitude();
+	return Vec3Len(d) * 0.5f;
+}
+
 void mf_Renderer::CalculateWaterMeshVisiblyPart( unsigned int* first_quad, unsigned int* quad_count )
 {
-	const unsigned int water_raw_distance= ( MF_TERRAIN_MESH_SIZE_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / 2 ) / MF_WATER_QUAD_SIZE_CL + 2;
+	const unsigned int water_raw_distance_y= ( MF_TERRAIN_MESH_SIZE_Y_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / 2 ) / MF_WATER_QUAD_SIZE_CL + 2;
 	int cam_y= int( player_->Pos()[1] / level_->TerrainCellSize() ) / MF_WATER_QUAD_SIZE_CL;
-	int y_min= cam_y - water_raw_distance;
-	int y_max= cam_y + water_raw_distance;
+	int y_min= cam_y - water_raw_distance_y;
+	int y_max= cam_y + water_raw_distance_y;
 	if( y_min < 0 ) y_min= 0;
 	else if( y_min >= int(water_mesh_.quad_row_count) ) y_min= water_mesh_.quad_row_count - 1;
 	if( y_max < 0 ) y_max= 0;
@@ -725,9 +745,7 @@ void mf_Renderer::DrawSun( bool draw_to_water_framebuffer )
 	float mat[16];
 	float translate_mat[16];
 	float translate_vec[3];
-	Vec3Mul( shadowmap_fbo_.sun_vector,
-		float(MF_TERRAIN_CHUNK_SIZE_CL * MF_TERRAIN_MESH_SIZE_CHUNKS) * level_->TerrainCellSize(),
-		translate_vec );
+	Vec3Mul( shadowmap_fbo_.sun_vector, GetSceneRadius() * g_sun_distance_scaler, translate_vec );
 	Vec3Add( translate_vec, player_->Pos() );
 	Mat4Translate( translate_mat, translate_vec );
 	Mat4Mul( translate_mat, view_matrix_, mat );
@@ -764,7 +782,7 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	float mat[16];
 	float translate_mat[16];
 	float scale_mat[16];
-	Mat4Scale( scale_mat, 1.5f * float(MF_TERRAIN_CHUNK_SIZE_CL * MF_TERRAIN_MESH_SIZE_CHUNKS ) * level_->TerrainCellSize() );
+	Mat4Scale( scale_mat, g_sky_radius_scaler * GetSceneRadius() );
 
 	float translate_vec[3];
 	translate_vec[0]= player_->Pos()[0];
@@ -926,11 +944,11 @@ void mf_Renderer::DrawShadows()
 		Mat4Mul( rot_z_mat, rot_x_mat, primary_proj_mat );
 
 		GetTerrainMeshShift( terrain_shift );
-		for( unsigned int i= 0; i< 2; i++ )
-		{
-			min[i]= terrain_shift[i] * level_->TerrainCellSize();
-			max[i]= ( terrain_shift[i] + float(MF_TERRAIN_CHUNK_SIZE_CL*MF_TERRAIN_MESH_SIZE_CHUNKS) ) * level_->TerrainCellSize();
-		}
+		min[0]= terrain_shift[0] * level_->TerrainCellSize();
+		min[1]= terrain_shift[1] * level_->TerrainCellSize();
+		max[0]= ( terrain_shift[0] + float(MF_TERRAIN_CHUNK_SIZE_CL*MF_TERRAIN_MESH_SIZE_X_CHUNKS) ) * level_->TerrainCellSize();
+		max[1]= ( terrain_shift[1] + float(MF_TERRAIN_CHUNK_SIZE_CL*MF_TERRAIN_MESH_SIZE_Y_CHUNKS) ) * level_->TerrainCellSize();
+
 		min[2]= 0.0f;
 		max[2]= level_->TerrainAmplitude();
 
