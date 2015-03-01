@@ -54,7 +54,7 @@ mf_Level::mf_Level()
 	terrain_size_[0]= 512;
 	terrain_size_[1]= 8192;
 	terrain_amplitude_= 144.0f;
-	terrain_ceil_size_= 2.0f;
+	terrain_cell_size_= 2.0f;
 	terrain_water_level_= terrain_amplitude_ / 9.0f;
 
 	terrain_heightmap_data_= new unsigned short[ terrain_size_[0] * terrain_size_[1] ];
@@ -62,15 +62,20 @@ mf_Level::mf_Level()
 
 	valley_way_points_= new ValleyWayPoint[ MF_MAX_VALLEY_WAY_POINTS ];
 	valley_way_point_count_= 0;
+
+	static_objects_count_= 512;
+	static_objects_= new mf_StaticLevelObject[ static_objects_count_ ];
+
 	GenTarrain();
+	PlaceStaticObjects();
 }
 
 mf_Level::~mf_Level()
 {
 	delete[] terrain_heightmap_data_;
 	delete[] terrain_normal_textures_map_;
-
 	delete[] valley_way_points_;
+	delete[] static_objects_;
 }
 
 void mf_Level::GenTarrain()
@@ -124,7 +129,7 @@ void mf_Level::GenTarrain()
 			{
 				-( val[2] + val[5] + val[8] - val[0] - val[3] - val[6] ) * ( 0.3333333f * 0.5f ),
 				-( val[6] + val[7] + val[8] - val[0] - val[1] - val[2] ) * ( 0.3333333f * 0.5f ),
-				terrain_ceil_size_
+				terrain_cell_size_
 			};
 			/*float normal[]=
 			{
@@ -301,5 +306,21 @@ void mf_Level::PlaceTextures()
 		for( unsigned int y= i*16; y< i*16 + 16; y++ )
 			for( unsigned int x= 0; x< 16; x++ )
 				terrain_normal_textures_map_[ (x + y * terrain_size_[0]) * 4 + 3 ]= (char)i;
+	}
+}
+
+void mf_Level::PlaceStaticObjects()
+{
+	for( unsigned int i= 0; i< static_objects_count_; i++ )
+	{
+		int x= RandI( 0, terrain_size_[0] - 1 );
+		int y= RandI( 0, terrain_size_[1] - 1 );
+
+		static_objects_[i].pos[0]= float(x) * terrain_cell_size_;
+		static_objects_[i].pos[1]= float(y) * terrain_cell_size_;
+		static_objects_[i].pos[2]= float(terrain_heightmap_data_[ x + y * terrain_size_[0] ]) * terrain_amplitude_ / float(0xFFFF);
+		static_objects_[i].scale= 1.0f;
+		static_objects_[i].z_angle= RandF( 0.0f, MF_2PI );
+		static_objects_[i].type= (mf_StaticLevelObject::Type) RandI( 0, mf_StaticLevelObject::LastType );
 	}
 }

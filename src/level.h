@@ -1,6 +1,21 @@
 #pragma once
 #include "micro-f.h"
 
+
+struct mf_StaticLevelObject
+{
+	enum Type
+	{
+		Palm= 0,
+		LastType
+	};
+	
+	Type type;
+	float pos[3]; // world space position
+	float scale;
+	float z_angle;
+};
+
 class mf_Level
 {
 public:
@@ -19,6 +34,7 @@ private:
 	void GenTarrain();
 	void GenValleyWayPoints();
 	void PlaceTextures();
+	void PlaceStaticObjects();
 
 private:
 	struct ValleyWayPoint
@@ -31,13 +47,16 @@ private:
 	 // combined data of terrain normals and textures. Format : n.x, n.y, n.z, texture_number
 	char* terrain_normal_textures_map_;
 	float terrain_amplitude_; // in meters
-	float terrain_ceil_size_; // in meters
+	float terrain_cell_size_; // in meters
 	float terrain_water_level_;
 
 	unsigned int terrain_size_[2];
 
 	ValleyWayPoint* valley_way_points_;
 	unsigned int valley_way_point_count_;
+
+	mf_StaticLevelObject* static_objects_;
+	unsigned int static_objects_count_;
 };
 
 inline const unsigned short* mf_Level::GetTerrianHeightmapData() const
@@ -67,7 +86,7 @@ inline float mf_Level::TerrainAmplitude() const
 
 inline float mf_Level::TerrainCellSize() const
 {
-	return terrain_ceil_size_;
+	return terrain_cell_size_;
 }
 
 inline float mf_Level::TerrainWaterLevel() const

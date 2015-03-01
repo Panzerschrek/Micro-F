@@ -44,6 +44,8 @@ void Mat4Perspective( float* m, float aspect, float fov, float z_near, float z_f
 void Mat4ToMat3( float* m );
 void Mat4ToMat3( const float* m_in, float* m_out );
 
+int RandI( int max );
+int RandI( int min, int max );
 float RandF( float max ); // returns value in range [0;max]
 float RandF( float min, float max ); // returns value in range [min;max]
 

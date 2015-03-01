@@ -238,6 +238,16 @@ void Mat4ToMat3( const float* m_in, float* m_out )
 			m_out[x + y*3]= m_in[ x + y*4 ];
 }
 
+int RandI( int max )
+{
+	return RandI( 0, max );
+}
+
+int RandI( int min, int max )
+{
+	return (max - min) * rand() / RAND_MAX + min;
+}
+
 float RandF( float max )
 {
 	return RandF( 0.0f, max );
