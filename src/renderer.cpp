@@ -107,7 +107,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
 	{ // test texture
-		mf_Texture tex( 9, 9 );
+		mf_Texture tex( 10, 10 );
 		GenF1949Texture( &tex );
 		tex.LinearNormalization(1.0f);
 
@@ -804,7 +804,7 @@ void mf_Renderer::DrawAircrafts()
 	Vec3Add( translate_vec, player_->Pos() );
 	Mat4Translate( translate_mat, translate_vec );
 
-	Mat4RotateZ( rot_z_mat, player_->Angle()[2] );
+	Mat4RotateZ( rot_z_mat, player_->Angle()[2] * 0.0f );
 
 	Mat4Mul( rot_z_mat, translate_mat, mat );
 	Mat4Mul( mat, view_matrix_ );

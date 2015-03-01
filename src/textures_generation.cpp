@@ -33,6 +33,30 @@ void GenF1949Texture( mf_Texture* tex )
 	tex->LinearNormalization(1.0f);
 }
 
+void GenF2xxxTexture( mf_Texture* tex )
+{
+	// source texture has size 512x512
+	const unsigned int tex_scaler= 1<< ( tex->SizeXLog2() - 9 );
+
+	static const float main_color[]= { 0.7f, 0.7f, 0.7f, 0.0f };
+	tex->Fill( main_color );
+
+	static const float outer_field_color[]= { 0.27f, 0.239f, 0.521f, 0.0f };
+	tex->FillRect( 1, 1, tex_scaler * 187, tex_scaler * 222, outer_field_color );
+
+	static const float inner_field_color[]= { 0.4f, 0.4f, 0.5f, 0.0f };
+	tex->FillRect( tex_scaler * 189, 1, tex_scaler * 195, tex_scaler * 222, inner_field_color );
+
+	static const float engine_color[]= { 1.0f, 0.7f, 0.65f, 0.0f };
+	tex->FillEllipse( 45 * tex_scaler, 294 * tex_scaler, 27 * tex_scaler, engine_color );
+
+	static const float antenna_color[]= { 0.2f, 0.2f, 0.2f,0.0f };
+	tex->FillRect( 137 * tex_scaler, 274 * tex_scaler, 53 * tex_scaler, 53 * tex_scaler, antenna_color );
+
+	//static const float antenna_ending_color[]= { 0.8f, 0.2f, 0.2f,0.0f };
+	//tex->FillEllipse( 159 * tex_scaler, 290 * tex_scaler, 5 * tex_scaler, antenna_ending_color );
+}
+
 void GenSunTexture( mf_Texture* tex )
 {
 	unsigned int size_x= 1 << tex->SizeXLog2();
