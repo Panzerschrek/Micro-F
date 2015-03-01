@@ -69,7 +69,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	// sky shader
 	sky_shader_.SetAttribLocation( "p", 0 );
 	sky_shader_.Create( mf_Shaders::sky_shader_v, mf_Shaders::sky_shader_f );
-	static const char* const sky_shader_unifroms[]= { "mat" };
+	static const char* const sky_shader_unifroms[]= { "mat", "sun" };
 	sky_shader_.FindUniforms( sky_shader_unifroms, sizeof(sky_shader_unifroms) / sizeof(char*) );
 
 	GenTerrainMesh();
@@ -78,7 +78,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 
 	{ // sky mesh
 		mf_DrawingModel model;
-		GenGeosphere( &model, 24, 32 );
+		GenGeosphere( &model, 40, 52 );
 		sky_vbo_.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
 		sky_vbo_.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
 
@@ -192,7 +192,7 @@ void mf_Renderer::DrawFrame()
 	CreateViewMatrix( view_matrix_, true );
 	DrawTerrain( true );
 	DrawSky( true );
-	DrawSun( true );
+	//DrawSun( true );
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
 
@@ -204,7 +204,7 @@ void mf_Renderer::DrawFrame()
 	DrawTerrain( false );
 	DrawAircrafts();
 	DrawSky( false );
-	DrawSun( false );
+	//DrawSun( false );
 	DrawWater();
 
 	{
@@ -269,7 +269,8 @@ void mf_Renderer::CreateWaterReflectionFramebuffer()
 void mf_Renderer::CreateShadowmapFramebuffer()
 {
 	shadowmap_fbo_.sun_azimuth= -MF_PI3;
-	shadowmap_fbo_.sun_elevation= MF_PI6;
+	//shadowmap_fbo_.sun_elevation= MF_PI6;
+	shadowmap_fbo_.sun_elevation= MF_PI4;
 
 	shadowmap_fbo_.sun_vector[0]= shadowmap_fbo_.sun_vector[1]= mf_Math::cos( shadowmap_fbo_.sun_elevation );
 	shadowmap_fbo_.sun_vector[2]= mf_Math::sin( shadowmap_fbo_.sun_elevation );
@@ -777,6 +778,8 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	Mat4Mul( mat, view_matrix_ );
 
 	sky_shader_.UniformMat4( "mat", mat );
+
+	sky_shader_.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
 
 	sky_vbo_.Bind();
 
