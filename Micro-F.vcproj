@@ -63,8 +63,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="opengl32.lib"
+				AdditionalOptions="opengl32.lib  dsound.lib dxguid.lib"
 				OutputFile="Micro-F_d.exe"
+				AdditionalLibraryDirectories="C:\SDK`s\DXSDK\lib\x86"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -147,9 +148,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="opengl32.lib"
+				AdditionalOptions="opengl32.lib  dsound.lib dxguid.lib"
 				OutputFile="Micro-F.exe"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="C:\SDK`s\DXSDK\lib\x86"
 				EnableUAC="false"
 				GenerateDebugInformation="false"
 				OptimizeReferences="2"
@@ -239,6 +241,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\sound_engine.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\text.cpp"
 				>
 			</File>
@@ -314,6 +320,10 @@
 			</File>
 			<File
 				RelativePath=".\src\shaders.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sound_engine.h"
 				>
 			</File>
 			<File
