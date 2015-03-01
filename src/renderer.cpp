@@ -78,7 +78,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 
 	{ // sky mesh
 		mf_DrawingModel model;
-		GenGeosphere( &model, 40, 52 );
+		GenGeosphere( &model, 48, 56 );
 		sky_vbo_.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
 		sky_vbo_.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
 
@@ -205,6 +205,7 @@ void mf_Renderer::DrawFrame()
 	DrawSun( false );
 	DrawWater();
 
+#ifdef MF_DEBUG
 	{
 		unsigned int first_water_quad, water_quad_count;
 		CalculateWaterMeshVisiblyPart( &first_water_quad, &water_quad_count );
@@ -212,6 +213,7 @@ void mf_Renderer::DrawFrame()
 		sprintf( str, "water quads: %d\n", water_quad_count );
 		text_->AddText( 0, 1, 1, mf_Text::default_color, str );
 	}
+#endif
 }
 
 void mf_Renderer::CreateWaterReflectionFramebuffer()
@@ -806,11 +808,16 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	sky_vbo_.Bind();
 
 	// draw only second part of vbo ( becouse sky is sphere, draw only height triangles )
+#ifdef MF_DEBUG
+	char str[64];
+	sprintf( str, "sky triangles: %d", sky_vbo_.IndexDataSize() / (3*sizeof(unsigned short)) * 11 / 16 );
+	text_->AddText( 0, 2, 1, mf_Text::default_color, str );
+#endif
 	glDrawElements(
 		GL_TRIANGLES,
-		sky_vbo_.IndexDataSize() / ( sizeof(unsigned short) * 3 / 4 ),
+		sky_vbo_.IndexDataSize() / ( sizeof(unsigned short) * 11 / 16 ),
 		GL_UNSIGNED_SHORT,
-		(void*)( sky_vbo_.IndexDataSize() * 1 / 4 ) );
+		(void*)( sky_vbo_.IndexDataSize() * 5 / 16 ) );
 }
 
 void mf_Renderer::DrawAircrafts()
