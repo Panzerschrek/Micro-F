@@ -9,6 +9,8 @@
 #include "text.h"
 #include "vertex_buffer.h"
 
+class mf_SoundEngine;
+
 
 struct mf_RenderingConfig
 {
@@ -67,6 +69,7 @@ private:
 	mf_Player player_;
 	mf_Level level_;
 	mf_Renderer* renderer_;
+	mf_SoundEngine* sound_engine_;
 
 	unsigned int prev_game_tick_;
 	float prev_tick_dt_;

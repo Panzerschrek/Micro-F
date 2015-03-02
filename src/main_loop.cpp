@@ -2,6 +2,7 @@
 
 #include "micro-f.h"
 #include "main_loop.h"
+#include "sound_engine.h"
 
 #include "mf_math.h"
 #include "shaders.h"
@@ -216,6 +217,12 @@ mf_MainLoop::mf_MainLoop()
 	fps_calc_.prev_calc_time= clock();
 	fps_calc_.frame_count_to_show= 0;
 	fps_calc_.current_calc_frame_count= 0;
+
+	sound_engine_= new mf_SoundEngine(hwnd_);
+
+	float orinet[]= { 0.0f, 0.0f, 0.0f };
+	sound_engine_->SetListenerOrinetation( orinet, orinet );
+	sound_engine_->CreateSoundSource( SoundTurbojetEngine );
 }
 
 mf_MainLoop::~mf_MainLoop()

@@ -1,6 +1,5 @@
 #include "micro-f.h"
 #include "main_loop.h"
-#include "sound_engine.h"
 
 const char* const intro_sting=
 "\"Micro-F\" - simple 96k game. (c) 2015 Artom \"Panzerschrek\" Kunz\n";
@@ -67,7 +66,6 @@ int main( int argc, char* argv[] )
 
 	mf_MainLoop::SetRenderingConfig( &cfg );
 
-	mf_SoundEngine sound_engine;
 	mf_MainLoop::Instance()->Loop();
 	mf_MainLoop::DeleteInstance();
 
