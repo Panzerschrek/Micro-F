@@ -10,7 +10,7 @@
 #include "vertex_buffer.h"
 
 class mf_SoundEngine;
-
+class mf_SoundSource;
 
 struct mf_RenderingConfig
 {
@@ -81,6 +81,8 @@ private:
 		unsigned int frame_count_to_show;
 		unsigned int current_calc_frame_count;
 	}fps_calc_;
+
+	mf_SoundSource* test_sound_;
 };
 
 inline unsigned int mf_MainLoop::ViewportWidth()

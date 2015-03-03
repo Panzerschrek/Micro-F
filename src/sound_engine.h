@@ -17,8 +17,12 @@ class mf_SoundSource
 public:
 	mf_SoundSource();
 	~mf_SoundSource();
-	void SetPosition( const float* pos );
-	void SetVelocity( const float* vel );
+
+	void Play();
+	void Pause();
+	void Stop();
+
+	void SetOrientation( const float* pos, const float* vel );
 
 private:
 	friend class mf_SoundEngine;
@@ -33,8 +37,8 @@ public:
 	mf_SoundEngine(HWND hwnd);
 	~mf_SoundEngine();
 
-	// input - xyz of position and vec3 of angles
-	void SetListenerOrinetation( const float* pos, const float* angle );
+	// input - xyz of position, vec3 of angles, vec3 of velocity
+	void SetListenerOrinetation( const float* pos, const float* angle, const float* vel );
 
 	mf_SoundSource* CreateSoundSource( mf_SoundType sound_type );
 	void DestroySoundSource( mf_SoundSource* source );

@@ -79,6 +79,27 @@ void mf_MainLoop::Loop()
 			game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
 		}// if normal dt
 
+		{ // sound setup
+			//test_sound->SetPosition( player_.Pos() );
+			static const float player_vel[]= { 0.0f, 0.0f, 0.0f };
+			sound_engine_->SetListenerOrinetation( player_.Pos(), player_.Angle(), player_vel );
+
+			static float pos[]= { 0.0f, 0.0f, 0.0f };
+			static const float vel[]= { 1.0f, 0.3f, 0.1f };
+			pos[0]+= vel[0] * prev_tick_dt_;
+			pos[1]+= vel[1] * prev_tick_dt_;
+			pos[2]+= vel[2] * prev_tick_dt_;
+			if (test_sound_ != NULL )
+			{
+				test_sound_->SetOrientation( pos, vel );
+			}
+			if (game_time_ > 300.0f && test_sound_ != NULL )
+			{
+				sound_engine_->DestroySoundSource( test_sound_ );
+				test_sound_= NULL;
+			}
+		}
+
 		text_->SetViewport( viewport_width_, viewport_height_ );
 		renderer_->DrawFrame();
 
@@ -219,10 +240,7 @@ mf_MainLoop::mf_MainLoop()
 	fps_calc_.current_calc_frame_count= 0;
 
 	sound_engine_= new mf_SoundEngine(hwnd_);
-
-	float orinet[]= { 0.0f, 0.0f, 0.0f };
-	sound_engine_->SetListenerOrinetation( orinet, orinet );
-	sound_engine_->CreateSoundSource( SoundTurbojetEngine );
+	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
 }
 
 mf_MainLoop::~mf_MainLoop()

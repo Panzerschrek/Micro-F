@@ -11,6 +11,28 @@ mf_SoundSource::~mf_SoundSource()
 {
 }
 
+void mf_SoundSource::Play()
+{
+	source_buffer_->Play( 0, 0, DSBPLAY_LOOPING );
+}
+
+void mf_SoundSource::Pause()
+{
+	source_buffer_->Stop();
+}
+
+void mf_SoundSource::Stop()
+{
+	source_buffer_->Stop();
+	source_buffer_->SetCurrentPosition(0);
+}
+
+void mf_SoundSource::SetOrientation( const float* pos, const float* vel )
+{
+	source_buffer_3d_->SetPosition( pos[0], pos[1], pos[2], DS3D_IMMEDIATE );
+	source_buffer_3d_->SetVelocity( vel[0], vel[1], vel[2], DS3D_IMMEDIATE );
+}
+
 mf_SoundEngine::mf_SoundEngine(HWND hwnd)
 	: sound_source_count_(0)
 {
@@ -43,22 +65,45 @@ mf_SoundEngine::~mf_SoundEngine()
 	direct_sound_p_->Release();
 }
 
-void mf_SoundEngine::SetListenerOrinetation( const float* pos, const float* angle )
+void mf_SoundEngine::SetListenerOrinetation( const float* pos, const float* angle, const float* vel )
 {
-	(void)angle;
-	listener_p_->SetPosition( pos[0], pos[1], pos[2], DS3D_IMMEDIATE );
+	static const float init_front_vec[]= { 0.0f, 1.0f, 1.0f };
+	static const float init_top_vec[]= { 0.0f, 0.0f, -1.0f };
+	float front_vec[3];
+	float top_vec[3];
+
+	float mat[16];
+	float rot_x_mat[16];
+	float rot_y_mat[16];
+	float rot_z_mat[16];
+	//y * x * z
+	Mat4RotateX( rot_x_mat, angle[0] );
+	Mat4RotateY( rot_y_mat, angle[1] );
+	Mat4RotateZ( rot_z_mat, angle[2] );
+
+	Mat4Mul( rot_y_mat, rot_x_mat, mat );
+	Mat4Mul( mat, rot_z_mat );
+	Vec3Mat4Mul( init_front_vec, mat, front_vec );
+	Vec3Mat4Mul( init_top_vec, mat, top_vec );
+
+	listener_p_->SetOrientation( front_vec[0], front_vec[1], front_vec[2], top_vec[0], top_vec[1], top_vec[2], DS3D_DEFERRED );
+	listener_p_->SetPosition( pos[0], pos[1], pos[2], DS3D_DEFERRED );
+	listener_p_->SetVelocity( vel[0], vel[1], vel[2], DS3D_DEFERRED );
+	listener_p_->CommitDeferredSettings();
 }
 
 mf_SoundSource* mf_SoundEngine::CreateSoundSource( mf_SoundType sound_type )
 {
+	if ( sound_source_count_ == MF_MAX_PARALLEL_SOUNDS )
+		return NULL;
+
 	mf_SoundSource* src= &sound_sources_[ sound_source_count_++ ];
 
 	direct_sound_p_->DuplicateSoundBuffer( sound_buffers_[ sound_type ].buffer, &src->source_buffer_ );
 	src->source_buffer_->QueryInterface( IID_IDirectSound3DBuffer8, (LPVOID*) &src->source_buffer_3d_ );
 
-	src->source_buffer_3d_->SetMaxDistance( 200.0f, DS3D_IMMEDIATE );
-	src->source_buffer_3d_->SetMinDistance( 20.0f, DS3D_IMMEDIATE );
-	src->source_buffer_3d_->SetPosition( 0.0f, 5.0f, 0.0f, DS3D_IMMEDIATE );
+	src->source_buffer_3d_->SetMaxDistance( 50.0f, DS3D_IMMEDIATE );
+	src->source_buffer_3d_->SetMinDistance( 10.0f, DS3D_IMMEDIATE );
 	src->source_buffer_->Play( 0, 0, DSBPLAY_LOOPING );
 
 	return src;
@@ -66,7 +111,15 @@ mf_SoundSource* mf_SoundEngine::CreateSoundSource( mf_SoundType sound_type )
 
 void mf_SoundEngine::DestroySoundSource( mf_SoundSource* source )
 {
-	(void)source;
+	source->source_buffer_->Stop();
+	source->source_buffer_->Release();
+
+	unsigned int i= source - sound_sources_;
+	if( i != sound_source_count_ - 1 )
+	{
+		sound_sources_[i]= sound_sources_[ sound_source_count_ - 1 ];
+	}
+	sound_source_count_--;
 }
 
 void mf_SoundEngine::GenSounds()
@@ -78,7 +131,7 @@ void mf_SoundEngine::GenSounds()
 
 	short* data= new short[ sample_count ];
 
-	const float note_freq= 523.25f;
+	const float note_freq= 500.0f;//523.25f;
 	for( unsigned int i= 0; i< sample_count; i++ )
 	{
 		float s= mf_Math::sin( MF_2PI * note_freq * float(i) / float(buffer_freq) );
