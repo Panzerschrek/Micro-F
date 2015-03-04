@@ -3,17 +3,11 @@
 
 #include "mf_math.h"
 
-mf_SoundSource::mf_SoundSource()
-{
-}
-
-mf_SoundSource::~mf_SoundSource()
-{
-}
+#define MF_SND_PRIORITY 0//0xFFFFFFFF
 
 void mf_SoundSource::Play()
 {
-	source_buffer_->Play( 0, 0, DSBPLAY_LOOPING );
+	source_buffer_->Play( 0, MF_SND_PRIORITY, DSBPLAY_LOOPING );
 }
 
 void mf_SoundSource::Pause()
@@ -33,11 +27,14 @@ void mf_SoundSource::SetOrientation( const float* pos, const float* vel )
 	source_buffer_3d_->SetVelocity( vel[0], vel[1], vel[2], DS3D_IMMEDIATE );
 }
 
+void mf_SoundSource::SetPitch( float pitch )
+{
+	source_buffer_->SetFrequency( (unsigned int)(float(samples_per_second_) * pitch) );
+}
+
 mf_SoundEngine::mf_SoundEngine(HWND hwnd)
 	: sound_source_count_(0)
 {
-	HRESULT ok= 0;
-
 	DirectSoundCreate8( &DSDEVID_DefaultPlayback, &direct_sound_p_, NULL );
 
 	direct_sound_p_->SetCooperativeLevel( hwnd, DSSCL_PRIORITY );
@@ -48,12 +45,17 @@ mf_SoundEngine::mf_SoundEngine(HWND hwnd)
 	primary_buffer_info.dwBufferBytes= 0;
 	primary_buffer_info.guid3DAlgorithm= GUID_NULL;
 	primary_buffer_info.lpwfxFormat= NULL;
-	primary_buffer_info.dwFlags= DSBCAPS_PRIMARYBUFFER | /*DSBCAPS_CTRLVOLUME*/DSBCAPS_CTRL3D;
+	primary_buffer_info.dwFlags= DSBCAPS_PRIMARYBUFFER | DSBCAPS_CTRL3D;
 
-	ok= direct_sound_p_->CreateSoundBuffer( &primary_buffer_info, &primary_sound_buffer_p_, NULL );
+	direct_sound_p_->CreateSoundBuffer( &primary_buffer_info, &primary_sound_buffer_p_, NULL );
 
-	ok= primary_sound_buffer_p_->QueryInterface( IID_IDirectSound3DListener8, (LPVOID*) &listener_p_ );
-	ok= primary_sound_buffer_p_->Play( 0, 0, DSBPLAY_LOOPING );
+	WAVEFORMATEX format;
+	DWORD written;
+	primary_sound_buffer_p_->GetFormat( &format, sizeof(format), &written );
+	samples_per_second_= format.nSamplesPerSec;
+
+	primary_sound_buffer_p_->QueryInterface( IID_IDirectSound3DListener8, (LPVOID*) &listener_p_ );
+	primary_sound_buffer_p_->Play( 0, 0, DSBPLAY_LOOPING );
 
 	GenSounds();
 }
@@ -102,10 +104,27 @@ mf_SoundSource* mf_SoundEngine::CreateSoundSource( mf_SoundType sound_type )
 	direct_sound_p_->DuplicateSoundBuffer( sound_buffers_[ sound_type ].buffer, &src->source_buffer_ );
 	src->source_buffer_->QueryInterface( IID_IDirectSound3DBuffer8, (LPVOID*) &src->source_buffer_3d_ );
 
-	src->source_buffer_3d_->SetMaxDistance( 50.0f, DS3D_IMMEDIATE );
-	src->source_buffer_3d_->SetMinDistance( 10.0f, DS3D_IMMEDIATE );
-	src->source_buffer_->Play( 0, 0, DSBPLAY_LOOPING );
+	{
+		DSEFFECTDESC param;
+		param.dwSize= sizeof(DSEFFECTDESC);
+		param.dwFlags= 0;
+		param.dwReserved2= param.dwReserved1= 0;
+		param.guidDSFXClass = GUID_DSFX_STANDARD_ECHO;
+		int ok= ((LPDIRECTSOUNDBUFFER8)src->source_buffer_)->SetFX(1, &param, NULL );
+		if (ok == CO_E_NOTINITIALIZED ) printf("CO_E_NOTINITIALIZED");
+		if (ok == DSERR_CONTROLUNAVAIL ) printf("DSERR_CONTROLUNAVAIL");
+		if (ok == DSERR_GENERIC ) printf("DSERR_GENERIC");
+		if (ok == DSERR_INVALIDPARAM ) printf("DSERR_INVALIDPARAM");
+		if (ok == DSERR_INVALIDCALL ) printf("DSERR_INVALIDCALL");
+		if (ok == DSERR_NOINTERFACE ) printf("DSERR_NOINTERFACE");
+		if (ok == DSERR_PRIOLEVELNEEDED ) printf("DSERR_PRIOLEVELNEEDED");
+	}
 
+	src->source_buffer_3d_->SetMaxDistance( 5000.0f, DS3D_IMMEDIATE );
+	src->source_buffer_3d_->SetMinDistance( 200.0f, DS3D_IMMEDIATE );
+	src->source_buffer_->Play( 0, MF_SND_PRIORITY, DSBPLAY_LOOPING );
+
+	src->samples_per_second_= samples_per_second_;
 	return src;
 }
 
@@ -125,32 +144,31 @@ void mf_SoundEngine::DestroySoundSource( mf_SoundSource* source )
 void mf_SoundEngine::GenSounds()
 {
 	const float sound_length= 0.5f;
-	const unsigned int buffer_freq= 22050;
 
-	unsigned int sample_count= (unsigned int)( float(buffer_freq) * sound_length );
+	unsigned int sample_count= (unsigned int)( float(samples_per_second_) * sound_length );
 
 	short* data= new short[ sample_count ];
 
 	const float note_freq= 500.0f;//523.25f;
 	for( unsigned int i= 0; i< sample_count; i++ )
 	{
-		float s= mf_Math::sin( MF_2PI * note_freq * float(i) / float(buffer_freq) );
+		float s= mf_Math::sin( MF_2PI * note_freq * float(i) / float(samples_per_second_) );
 		data[i]= (short)( s * 32766.9f );
 	}
 
 	WAVEFORMATEX sound_format;
 	ZeroMemory( &sound_format, sizeof(WAVEFORMATEX) );
-	sound_format.nSamplesPerSec= buffer_freq;
+	sound_format.nSamplesPerSec= samples_per_second_;
 	sound_format.wFormatTag= WAVE_FORMAT_PCM;
 	sound_format.nChannels= 1;
-	sound_format.nAvgBytesPerSec= buffer_freq * sizeof(short);
+	sound_format.nAvgBytesPerSec= samples_per_second_ * sizeof(short);
 	sound_format.wBitsPerSample= 16;
 	sound_format.nBlockAlign= 2;
 
 	DSBUFFERDESC secondary_buffer_info;
 	ZeroMemory( &secondary_buffer_info, sizeof(DSBUFFERDESC) );
 	secondary_buffer_info.dwSize= sizeof(DSBUFFERDESC);
-	secondary_buffer_info.dwFlags= /*DSBCAPS_CTRLFREQUENCY | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN |*/ DSBCAPS_CTRL3D;
+	secondary_buffer_info.dwFlags= DSBCAPS_CTRL3D | DSBCAPS_CTRLFREQUENCY;
 	secondary_buffer_info.dwBufferBytes= sample_count * sizeof(short);
 	secondary_buffer_info.lpwfxFormat= &sound_format;
 
@@ -169,7 +187,6 @@ void mf_SoundEngine::GenSounds()
 	memcpy( buff_data1, data, sample_count * sizeof(short) );
 
 	sound_buffers_[0].buffer->Unlock( buff_data1, buff_size1, NULL, 0 );
-
 	sound_buffers_[0].length= sound_length;
 
 	delete[] data;

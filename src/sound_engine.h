@@ -15,20 +15,19 @@ enum mf_SoundType
 class mf_SoundSource
 {
 public:
-	mf_SoundSource();
-	~mf_SoundSource();
-
 	void Play();
 	void Pause();
 	void Stop();
 
 	void SetOrientation( const float* pos, const float* vel );
+	void SetPitch( float pitch );
 
 private:
 	friend class mf_SoundEngine;
 
 	LPDIRECTSOUNDBUFFER source_buffer_;
 	LPDIRECTSOUND3DBUFFER source_buffer_3d_;
+	unsigned int samples_per_second_;
 };
 
 class mf_SoundEngine
@@ -50,6 +49,7 @@ private:
 	LPDIRECTSOUND8 direct_sound_p_;
 	LPDIRECTSOUNDBUFFER primary_sound_buffer_p_;
 	LPDIRECTSOUND3DLISTENER listener_p_;
+	unsigned int samples_per_second_;
 
 	struct
 	{

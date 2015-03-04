@@ -91,6 +91,7 @@ void mf_MainLoop::Loop()
 			pos[2]+= vel[2] * prev_tick_dt_;
 			if (test_sound_ != NULL )
 			{
+				test_sound_->SetPitch( 1.0f - game_time_ * 0.01f );
 				test_sound_->SetOrientation( pos, vel );
 			}
 			if (game_time_ > 300.0f && test_sound_ != NULL )
