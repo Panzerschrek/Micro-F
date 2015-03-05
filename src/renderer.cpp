@@ -276,10 +276,7 @@ void mf_Renderer::CreateShadowmapFramebuffer()
 	shadowmap_fbo_.sun_azimuth= -MF_PI3;
 	shadowmap_fbo_.sun_elevation= MF_PI6;
 
-	shadowmap_fbo_.sun_vector[0]= shadowmap_fbo_.sun_vector[1]= mf_Math::cos( shadowmap_fbo_.sun_elevation );
-	shadowmap_fbo_.sun_vector[2]= mf_Math::sin( shadowmap_fbo_.sun_elevation );
-	shadowmap_fbo_.sun_vector[0]*= -mf_Math::sin( shadowmap_fbo_.sun_azimuth );
-	shadowmap_fbo_.sun_vector[1]*= mf_Math::cos( shadowmap_fbo_.sun_azimuth );
+	SphericalCoordinatesToVec( shadowmap_fbo_.sun_azimuth, shadowmap_fbo_.sun_elevation, shadowmap_fbo_.sun_vector );
 
 	shadowmap_fbo_.sun_light_intensity[0]= 0.9f;
 	shadowmap_fbo_.sun_light_intensity[1]= 0.9f;

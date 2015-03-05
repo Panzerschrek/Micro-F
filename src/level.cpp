@@ -202,6 +202,8 @@ void mf_Level::GenTarrain()
 
 void mf_Level::GenValleyWayPoints()
 {
+	mf_Rand randomizer;
+
 	const float y_range[]= {128.0f, 256.0f };
 	const float x_amplitude= 128.0f;
 
@@ -210,8 +212,8 @@ void mf_Level::GenValleyWayPoints()
 	float x_center= float(terrain_size_[0]/2);
 	while( y < terrain_size_[1] - 32 )
 	{
-		float x= x_center + RandF( -x_amplitude, x_amplitude );
-		float dy= RandF( y_range[0], y_range[1] );
+		float x= x_center + randomizer.RandF( -x_amplitude, x_amplitude );
+		float dy= randomizer.RandF( y_range[0], y_range[1] );
 
 		y+= (unsigned int)(dy);
 		if( y >= terrain_size_[1] -32)
@@ -219,7 +221,7 @@ void mf_Level::GenValleyWayPoints()
 
 		valley_way_points_[ valley_way_point_count_ ].x= (unsigned int)(x);
 		valley_way_points_[ valley_way_point_count_ ].y= y;
-		valley_way_points_[ valley_way_point_count_ ].h= (unsigned int)( 0.0f, RandF( float(0xFFFF/12) ) );
+		valley_way_points_[ valley_way_point_count_ ].h= (unsigned int)( randomizer.RandF( 0.0f, float(0xFFFF/12) ) );
 		valley_way_point_count_++;
 	}
 
@@ -311,16 +313,17 @@ void mf_Level::PlaceTextures()
 
 void mf_Level::PlaceStaticObjects()
 {
+	mf_Rand randomizer;
 	for( unsigned int i= 0; i< static_objects_count_; i++ )
 	{
-		int x= RandI( 0, terrain_size_[0] - 1 );
-		int y= RandI( 0, terrain_size_[1] - 1 );
+		int x= randomizer.RandI( 0, terrain_size_[0] - 1 );
+		int y= randomizer.RandI( 0, terrain_size_[1] - 1 );
 
 		static_objects_[i].pos[0]= float(x) * terrain_cell_size_;
 		static_objects_[i].pos[1]= float(y) * terrain_cell_size_;
 		static_objects_[i].pos[2]= float(terrain_heightmap_data_[ x + y * terrain_size_[0] ]) * terrain_amplitude_ / float(0xFFFF);
 		static_objects_[i].scale= 1.0f;
-		static_objects_[i].z_angle= RandF( 0.0f, MF_2PI );
-		static_objects_[i].type= (mf_StaticLevelObject::Type) RandI( 0, mf_StaticLevelObject::LastType );
+		static_objects_[i].z_angle= randomizer.RandF( 0.0f, MF_2PI );
+		static_objects_[i].type= (mf_StaticLevelObject::Type) randomizer.RandI( 0, mf_StaticLevelObject::LastType );
 	}
 }

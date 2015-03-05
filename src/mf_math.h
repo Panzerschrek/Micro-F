@@ -21,12 +21,16 @@ void Vec3Add( const float* v0, const float* v1, float* v_dst );
 void Vec3Sub( float* v0, const float* v1 );
 void Vec3Sub( const float* v0, const float* v1, float* v_dst );
 float Vec3Dot( const float* v0, const float* v1 );
+void Vec3Cross( const float* v0, const float* v1, float* v_dst );
 float Vec3Len( const float* v );
 float Distance( const float* v0, const float* v1 );
 void Vec3Normalize( float* v );
 
+void SphericalCoordinatesToVec( float longitude, float latitude, float* out_vec );
+
 void Mat4Identity( float* m );
 void Mat4Transpose( float* m );
+void Mat4Invert( const float* m, float* out_m );
 void Mat4Scale( float* mat, const float* scale );
 void Mat4Scale( float* mat, float scale );
 void Vec3Mat4Mul( const float* v, const float* m, float* v_dst );
@@ -40,14 +44,10 @@ void Mat4RotateY( float* m, float a );
 void Mat4RotateZ( float* m, float a );
 void Mat4Translate( float* m, const float* v );
 void Mat4Perspective( float* m, float aspect, float fov, float z_near, float z_far );
+void Mat4RotateAroundVector( float* m, const float* vec, float angle );
 
 void Mat4ToMat3( float* m );
 void Mat4ToMat3( const float* m_in, float* m_out );
-
-int RandI( int max );
-int RandI( int min, int max );
-float RandF( float max ); // returns value in range [0;max]
-float RandF( float min, float max ); // returns value in range [min;max]
 
 // special namespace for replasement for std::math functions
 namespace mf_Math
@@ -168,5 +168,20 @@ inline float exp( float x )
 	return ::exp(x);
 }
 
-
 } // namespace mf_Math
+
+class mf_Rand
+{
+public:
+	mf_Rand( unsigned int seeed= 0 );
+
+	unsigned int Rand();
+	float RandF( float max );
+	float RandF( float min, float max );
+	unsigned int RandI( unsigned int min, unsigned int max );
+	unsigned int RandI( unsigned int max );
+
+	static const unsigned int rand_max_;
+private:
+	unsigned int r;
+};
