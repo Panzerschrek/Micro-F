@@ -3,7 +3,8 @@
 
 #include "mf_math.h"
 
-#define MF_SND_PRIORITY 0//0xFFFFFFFF
+#define MF_SND_PRIORITY 0
+#define MF_SOUND_MAX_DISTANCE 4000.0f
 
 void mf_SoundSource::Play()
 {
@@ -30,6 +31,11 @@ void mf_SoundSource::SetOrientation( const float* pos, const float* vel )
 void mf_SoundSource::SetPitch( float pitch )
 {
 	source_buffer_->SetFrequency( (unsigned int)(float(samples_per_second_) * pitch) );
+}
+
+void mf_SoundSource::SetVolume( float volume )
+{
+	source_buffer_3d_->SetMinDistance( mf_Math::sqrt(volume), DS3D_IMMEDIATE );
 }
 
 mf_SoundEngine::mf_SoundEngine(HWND hwnd)
@@ -104,24 +110,7 @@ mf_SoundSource* mf_SoundEngine::CreateSoundSource( mf_SoundType sound_type )
 	direct_sound_p_->DuplicateSoundBuffer( sound_buffers_[ sound_type ].buffer, &src->source_buffer_ );
 	src->source_buffer_->QueryInterface( IID_IDirectSound3DBuffer8, (LPVOID*) &src->source_buffer_3d_ );
 
-	{
-		DSEFFECTDESC param;
-		param.dwSize= sizeof(DSEFFECTDESC);
-		param.dwFlags= 0;
-		param.dwReserved2= param.dwReserved1= 0;
-		param.guidDSFXClass = GUID_DSFX_STANDARD_ECHO;
-		int ok= ((LPDIRECTSOUNDBUFFER8)src->source_buffer_)->SetFX(1, &param, NULL );
-		if (ok == CO_E_NOTINITIALIZED ) printf("CO_E_NOTINITIALIZED");
-		if (ok == DSERR_CONTROLUNAVAIL ) printf("DSERR_CONTROLUNAVAIL");
-		if (ok == DSERR_GENERIC ) printf("DSERR_GENERIC");
-		if (ok == DSERR_INVALIDPARAM ) printf("DSERR_INVALIDPARAM");
-		if (ok == DSERR_INVALIDCALL ) printf("DSERR_INVALIDCALL");
-		if (ok == DSERR_NOINTERFACE ) printf("DSERR_NOINTERFACE");
-		if (ok == DSERR_PRIOLEVELNEEDED ) printf("DSERR_PRIOLEVELNEEDED");
-	}
-
-	src->source_buffer_3d_->SetMaxDistance( 5000.0f, DS3D_IMMEDIATE );
-	src->source_buffer_3d_->SetMinDistance( 200.0f, DS3D_IMMEDIATE );
+	src->source_buffer_3d_->SetMaxDistance( MF_SOUND_MAX_DISTANCE, DS3D_IMMEDIATE );
 	src->source_buffer_->Play( 0, MF_SND_PRIORITY, DSBPLAY_LOOPING );
 
 	src->samples_per_second_= samples_per_second_;

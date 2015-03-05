@@ -21,6 +21,7 @@ public:
 
 	void SetOrientation( const float* pos, const float* vel );
 	void SetPitch( float pitch );
+	void SetVolume( float volume ); // 1.0f means original volume in distance 1n, 4.0f in distance 2m, etc. square root law.
 
 private:
 	friend class mf_SoundEngine;
