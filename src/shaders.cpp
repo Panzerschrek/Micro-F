@@ -278,12 +278,12 @@ const char* const sky_shader_v=
 	"float thetaSun= acos(cosThetaSun);"
 	"vec3 zenith= perezZenith(thetaSun );"
 	"vec3 clrYxy= zenith * perezFunc(cosTheta,cosGamma) / perezFunc(1.0,cosThetaSun);"
-	"clrYxy[0]*=smoothstep(0.0,0.05,cosThetaSun);" // make sure when thetaSun > PI/2 we have black color
+	"clrYxy[0]*=smoothstep(0.0,0.01,cosThetaSun);" // make sure when thetaSun > PI/2 we have black color
 	"return clrYxy;"
 "}"
 "void main()"
 "{"
-	"float cosTheta=max((p.z+0.05)/1.05,0.01);" // poniženije linii gorizonta, t. k. v igre samolöt videt daleko i cutj niže sebä
+	"float cosTheta=max((p.z+0.01)/1.01,0.01);" // poniženije linii gorizonta, t. k. v igre samolöt videt daleko i cutj niže sebä
 	"fc=perezSky(cosTheta,dot(sun,p),sun.z);"
 	"gl_Position=mat*vec4(p,1.0);"
 "}"
