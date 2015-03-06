@@ -184,6 +184,15 @@ void mf_Renderer::Resize()
 
 void mf_Renderer::DrawFrame()
 {
+	const static float rotate_vec[]= { 1.0f, 1.0f, 1.0f };
+	float sun_vec[3]= { 1.0f, 1.3f, 0.9f };
+	Vec3Normalize( sun_vec );
+//	SphericalCoordinatesToVec( 0.0f, MF_PI6, sun_vec );
+
+	float rot_mat[16];
+	Mat4RotateAroundVector( rot_mat, rotate_vec, float(clock())/2000.0f );
+	Vec3Mat4Mul( sun_vec, rot_mat, shadowmap_fbo_.sun_vector );
+
 	glBindFramebuffer( GL_FRAMEBUFFER, shadowmap_fbo_.fbo_id );
 	glViewport( 0, 0, shadowmap_fbo_.size[0], shadowmap_fbo_.size[1] );
 	glClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
@@ -842,6 +851,15 @@ void mf_Renderer::DrawAircrafts()
 	float rot_z_mat[16];
 	float mat[16];
 
+	float axis_mat[16];
+	Mat4Identity( axis_mat );
+	VEC3_CPY( &axis_mat[0], player_->GetAircraft()->AxisVec(0) );
+	VEC3_CPY( &axis_mat[4], player_->GetAircraft()->AxisVec(1) );
+	VEC3_CPY( &axis_mat[8], player_->GetAircraft()->AxisVec(2) );
+
+	float common_rotate_mat[16];
+	Mat4Invert( axis_mat, common_rotate_mat );
+
 	float translate_vec[3];
 	translate_vec[0]= translate_vec[1]= mf_Math::cos( player_->Angle()[0] );
 	translate_vec[2]= mf_Math::sin( player_->Angle()[0] );
@@ -851,12 +869,15 @@ void mf_Renderer::DrawAircrafts()
 	Vec3Add( translate_vec, player_->Pos() );
 	Mat4Translate( translate_mat, translate_vec );
 
-	Mat4RotateZ( rot_z_mat, player_->Angle()[2] * 0.0f );
+	//Mat4RotateZ( rot_z_mat, player_->Angle()[2] * 0.0f );
 
-	Mat4Mul( rot_z_mat, translate_mat, mat );
+	//Mat4Mul( rot_z_mat, translate_mat, mat );
+	//Mat4Mul( mat, view_matrix_ );
+
+	//Mat4ToMat3( rot_z_mat, normal_mat );
+
+	Mat4Mul( common_rotate_mat, translate_mat, mat );
 	Mat4Mul( mat, view_matrix_ );
-
-	Mat4ToMat3( rot_z_mat, normal_mat );
 
 	aircraft_shader_.Bind();
 	aircraft_shader_.UniformMat4( "mat", mat );

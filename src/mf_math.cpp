@@ -83,6 +83,18 @@ void SphericalCoordinatesToVec( float longitude, float latitude, float* out_vec 
 	out_vec[1]*= +mf_Math::cos( longitude );
 }
 
+void VecToSphericalCoordinates( const float* vec, float* out_longitude, float* out_latitude )
+{
+	*out_latitude= asin( vec[2] );
+	if ( vec[2] < 0.0f ) *out_latitude= -*out_latitude;
+
+	float lat_cos= 1.0f - vec[2] * vec[2];
+	float vec_y= vec[1] / lat_cos;
+
+	*out_longitude= acos(vec_y);
+	if ( vec[0] < 0.0f ) *out_longitude=  MF_2PI - *out_longitude;
+}
+
 void Vec3Normalize( float* v )
 {
 	float l= 1.0f / Vec3Len(v);
@@ -358,20 +370,22 @@ void Mat4RotateAroundVector( float* m, const float* vec, float angle )
 		1.0f, 0.0f, 0.0f,
 		1.0f, 0.0f, 0.0f
 	};
-	unsigned int max_component3= max_component * 3;
+	float second_basis_vector_correctied[3];
 
 	// get third basis vector
 	float thirt_basis_vector[3];
-	Vec3Cross( normalized_vec, &second_basis_vectors[max_component3], thirt_basis_vector );
+	Vec3Cross( normalized_vec, &second_basis_vectors[max_component * 3], thirt_basis_vector );
+	// corect second basis vector ( for true orthogonal space )
+	Vec3Cross( thirt_basis_vector, normalized_vec, second_basis_vector_correctied );
 
 	float convert_to_vector_space_matrix[16];
 	Mat4Identity( convert_to_vector_space_matrix );
 	convert_to_vector_space_matrix[ 0]= normalized_vec[0];
 	convert_to_vector_space_matrix[ 4]= normalized_vec[1];
 	convert_to_vector_space_matrix[ 8]= normalized_vec[2];
-	convert_to_vector_space_matrix[ 1]= second_basis_vectors[max_component3+0];
-	convert_to_vector_space_matrix[ 5]= second_basis_vectors[max_component3+1];
-	convert_to_vector_space_matrix[ 9]= second_basis_vectors[max_component3+2];
+	convert_to_vector_space_matrix[ 1]= second_basis_vector_correctied[0];
+	convert_to_vector_space_matrix[ 5]= second_basis_vector_correctied[1];
+	convert_to_vector_space_matrix[ 9]= second_basis_vector_correctied[2];
 	convert_to_vector_space_matrix[ 2]= thirt_basis_vector[0];
 	convert_to_vector_space_matrix[ 6]= thirt_basis_vector[1];
 	convert_to_vector_space_matrix[10]= thirt_basis_vector[2];

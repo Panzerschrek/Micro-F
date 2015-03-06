@@ -27,6 +27,7 @@ float Distance( const float* v0, const float* v1 );
 void Vec3Normalize( float* v );
 
 void SphericalCoordinatesToVec( float longitude, float latitude, float* out_vec );
+void VecToSphericalCoordinates( const float* vec, float* out_longitude, float* out_latitude );
 
 void Mat4Identity( float* m );
 void Mat4Transpose( float* m );

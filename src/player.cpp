@@ -12,6 +12,8 @@ mf_Player::mf_Player()
 {
 	pos_[0]= pos_[1]= pos_[2]= 0.0f;
 	angle_[0]= angle_[1]= angle_[2]= 0.0f;
+
+	aircraft_.SetPos( pos_ );
 }
 
 mf_Player::~mf_Player()
@@ -30,7 +32,7 @@ void mf_Player::Tick( float dt )
 
 	const float rot_speed= 1.75f;
 	angle_[0]+= dt * rot_speed * rotate_vec[0];
-	angle_[1]+= dt * rot_speed * rotate_vec[1];
+	//angle_[1]+= dt * rot_speed * rotate_vec[1];
 	angle_[2]+= dt * rot_speed * rotate_vec[2];
 	
 	if( angle_[2] > MF_2PI ) angle_[2]-= MF_2PI;
@@ -59,5 +61,7 @@ void mf_Player::Tick( float dt )
 	pos_[0]+= tmp * move_vector[0];
 	pos_[1]+= tmp * move_vector[1];
 	pos_[2]+= tmp * move_vector[2];
+
+	aircraft_.Tick( dt );
 }
 
