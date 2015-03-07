@@ -13,4 +13,6 @@ extern const unsigned char icosahderon[];
 
 extern const unsigned char star[];
 
+extern const unsigned char* aircraft_models[];
+
 } // namespace mf_Models

@@ -7,8 +7,9 @@ static const float g_roll_rotate_speed=  1.0f;
 static const float g_pitch_rotate_speed= 2.0f;
 static const float g_yaw_rotate_speed=   0.5f;
 
-mf_Aircraft::mf_Aircraft()
-	: pitch_factor_(0.0f)
+mf_Aircraft::mf_Aircraft( Type type )
+	: type_(type)
+	, pitch_factor_(0.0f)
 	, yaw_factor_  (0.0f)
 	, roll_factor_ (0.0f)
 {

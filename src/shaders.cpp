@@ -12,6 +12,7 @@ common uniforms names:
 "nmat" - normal matrix
 "smat" - shadow matrix
 "tex" - diffuse texture
+"texn" - number of layer in texture array
 "sun" - normalized vector of directional light source (sun/moon/etc)
 "sl" - color of directional light
 "al" - color of ambient light
@@ -189,26 +190,27 @@ const char* const models_shader_v=
 "#version 330\n"
 "uniform mat4 mat;" // view matrix
 "uniform mat3 nmat;" // normal matrix
+"uniform float texn;" // texture number ( in array of textures )
 "in vec3 p;" // position
 "in vec3 n;" // normal
 "in vec2 tc;" // texture coord
 "out vec3 fn;" // fragment normal
-"out vec2 ftc;" // fragment tex coord
+"out vec3 ftc;" // fragment tex coord
 "void main()"
 "{"
 	"fn=nmat*n;"
-	"ftc=tc;"
+	"ftc=vec3(tc,texn);"
 	"gl_Position=mat*vec4(p,1.0);"
 "}";
 
 const char* const models_shader_f=
 "#version 330\n"
-"uniform sampler2D tex;" // diffuse texture
+"uniform sampler2DArray tex;" // diffuse texture
 "uniform vec3 sun;"
 "uniform vec3 sl;" //sun light
 "uniform vec3 al;" // ambient light
 "in vec3 fn;" // fragment normal
-"in vec2 ftc;" // fragment tex coord
+"in vec3 ftc;" // fragment tex coord
 "out vec4 c_;" // out color
 "void main()"
 "{"

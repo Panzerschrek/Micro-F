@@ -43,7 +43,7 @@ private:
 	void DrawTerrain( bool draw_to_water_framebuffer );
 	void DrawSun( bool draw_to_water_framebuffer );
 	void DrawSky(  bool draw_to_water_framebuffer );
-	void DrawAircrafts();
+	void DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count, bool draw_to_water_framebuffer );
 	void DrawWater();
 	void DrawShadows();
 
@@ -108,8 +108,9 @@ private:
 	struct
 	{
 		unsigned int model_count;
-		mf_AircratfModelInfo models[ MF_MAX_AIRCRAFT_MODELS ];
+		mf_AircratfModelInfo models[ mf_Aircraft::LastType ];
 		mf_VertexBuffer vbo;
+		GLuint textures_array;
 	} aircrafts_data_;
 	mf_GLSLProgram aircraft_shader_;
 

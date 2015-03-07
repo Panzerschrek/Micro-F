@@ -1,4 +1,5 @@
 #include "models.h"
+#include "../src/aircraft.h"
 
 namespace mf_Models
 {
@@ -22,5 +23,11 @@ const unsigned char icosahedron[]=
 const unsigned char star[]=
 #include "star.h"
 ;
+
+const unsigned char* aircraft_models[mf_Aircraft::LastType]=
+{
+	f1949,
+	f2xxx
+};
 
 } // namespace mf_Models

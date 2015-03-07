@@ -4,10 +4,19 @@
 class mf_Aircraft
 {
 public:
-	mf_Aircraft();
+	enum Type
+	{
+		F1949,
+		F2XXX,
+		LastType
+	};
+
+	mf_Aircraft( Type type = F1949 );
 	~mf_Aircraft();
 
 	void Tick( float dt );
+
+	const Type GetType() const;
 
 	const float* Pos() const;
 	const float* Angle() const;
@@ -15,6 +24,8 @@ public:
 	const float* Velocity() const;
 
 	unsigned int HP() const;
+
+	void SetType( Type type );
 
 	void SetPos( const float* pos );
 	void SetVelocity( const float* vel );
@@ -24,6 +35,7 @@ public:
 	void SetRollFactor( float roll );
 
 private:
+	Type type_;
 	float pos_[3];
 	float angle_[3];
 	float velocity_[3];
@@ -43,6 +55,11 @@ private:
 	unsigned int hp_; // [0;1]
 
 };
+
+inline const mf_Aircraft::Type mf_Aircraft::GetType() const
+{
+	return type_;
+}
 
 inline const float* mf_Aircraft::Pos() const
 {
@@ -67,6 +84,11 @@ inline const float* mf_Aircraft::Velocity() const
 inline unsigned int mf_Aircraft::HP() const
 {
 	return hp_;
+}
+
+inline void mf_Aircraft::SetType( Type type )
+{
+	type_= type;
 }
 
 inline void mf_Aircraft::SetPos( const float* pos )

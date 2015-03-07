@@ -3,7 +3,7 @@
 #include "textures_generation.h"
 #include "texture.h"
 #include "mf_math.h"
-
+#include "aircraft.h"
 
 static const float g_dirt_color[]= { 0.588f, 0.349f, 0.211f, 0.0f };
 
@@ -13,9 +13,9 @@ void GenF1949Texture( mf_Texture* tex )
 
 	static const float plane_color[]= { 0.2f, 0.4f, 0.1f, 0.0f };
 	tex->Fill( plane_color );
-	static const float turbine_back_color[]= { 0.3f, 0.1f, 0.7f, 0.0f };
+	static const float turbine_back_color[]= { 0.7f, 0.1f, 0.3f, 0.0f };
 	tex->FillRect( 1 * tex_scaler, 1 * tex_scaler, 34 * tex_scaler, 35 * tex_scaler, turbine_back_color );
-	static const float turbine_front_color[]= { 0.7f, 0.1f, 0.3f, 0.0f };
+	static const float turbine_front_color[]= { 0.3f, 0.1f, 0.7f, 0.0f };
 	tex->FillRect( 27 * tex_scaler, 36 * tex_scaler, 71 * tex_scaler, 81 * tex_scaler, turbine_front_color );
 	static const float window_color[]= {0.5f, 0.5f, 0.9f, 1.0f };
 	tex->FillRect( 207 * tex_scaler, 1 * tex_scaler, 49 * tex_scaler, 88 * tex_scaler, window_color );
@@ -33,7 +33,7 @@ void GenF1949Texture( mf_Texture* tex )
 	tex->LinearNormalization(1.0f);
 }
 
-void GenF2xxxTexture( mf_Texture* tex )
+void GenF2XXXTexture( mf_Texture* tex )
 {
 	// source texture has size 512x512
 	const unsigned int tex_scaler= 1<< ( tex->SizeXLog2() - 9 );
@@ -163,4 +163,10 @@ void (* const terrain_texture_gen_func[])(mf_Texture* t)=
 	GenDirtWithGrassTexture,
 	GenSandTexture,
 	GenRockTexture
+};
+
+void (* const aircraft_texture_gen_func[mf_Aircraft::LastType])(mf_Texture* t)=
+{
+	GenF1949Texture,
+	GenF2XXXTexture
 };
