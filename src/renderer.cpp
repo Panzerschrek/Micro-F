@@ -104,8 +104,8 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_R16,
 		level_->TerrainSizeX(), level_->TerrainSizeY(), 0,
 		GL_RED, GL_UNSIGNED_SHORT, level_->GetTerrianHeightmapData() );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
 	// terrain normalmap
 	glGenTextures( 1, &terrain_normal_map_texture_ );
@@ -113,12 +113,11 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8_SNORM,
 		level->TerrainSizeX(), level->TerrainSizeY(), 0,
 		GL_RGBA, GL_BYTE, level->GetTerrainNormalTextureMap() );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
 	{ // test texture
-		mf_Texture tex( 10, 10 );
-		GenF1949Texture( &tex );
+		/*mf_Texture tex( 4, 4 );
 		tex.LinearNormalization(1.0f);
 
 		glGenTextures( 1, &test_texture_ );
@@ -128,26 +127,28 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 			GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-		glGenerateMipmap(GL_TEXTURE_2D);
+		glGenerateMipmap(GL_TEXTURE_2D);*/
 	}
 
 	{ // aircraft textures
 		mf_Texture tex( 10, 10 );
+		const unsigned int size_x= 1 << tex.SizeXLog2();
+		const unsigned int size_y= 1 << tex.SizeYLog2();
 
 		glGenTextures( 1, &aircrafts_data_.textures_array );
 		glBindTexture( GL_TEXTURE_2D_ARRAY, aircrafts_data_.textures_array );
 		glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8,
-		1 << tex.SizeXLog2(), 1 << tex.SizeYLog2(), mf_Aircraft::LastType,
+		size_x, size_y, mf_Aircraft::LastType,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		for (unsigned int i= 0; i< mf_Aircraft::LastType; i++ )
 		{
 			aircraft_texture_gen_func[i]( &tex );
 			tex.LinearNormalization( 1.0f );
 			glTexSubImage3D( GL_TEXTURE_2D_ARRAY, 0,
 				0, 0, i,
-				1 << tex.SizeXLog2(), 1 << tex.SizeYLog2(), 1,
+				size_y, size_y, 1,
 				GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
 		}
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
@@ -165,10 +166,10 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 			GL_RGBA, GL_UNSIGNED_BYTE, sun_tex.GetNormalizedData() );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-		glGenerateMipmap(GL_TEXTURE_2D);
+		glGenerateMipmap( GL_TEXTURE_2D );
 	}
 
-	{
+	{ // terrain textures
 		const unsigned int terrain_texture_size_log2= 9;
 		const unsigned int terrain_texture_size= 1 << terrain_texture_size_log2;
 		glGenTextures( 1, &terrain_textures_array_ );
@@ -862,8 +863,8 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	sky_shader_.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
 
 	{ // setup Perez sky model parameters
-		const float tu= 1.8f; // now ( while we not use HDR ) it is optimal paremeter
-		const float sky_k[]=
+		static const float tu= 1.8f; // now ( while we not use HDR ) it is optimal paremeter
+		static const float sky_k[]=
 		{
 			 0.17872f * tu - 1.46303f,
 			-0.35540f * tu + 0.42749f,
