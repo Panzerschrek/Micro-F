@@ -3,33 +3,31 @@
 
 namespace Mat4InvertData
 {
-	static const float sign02[]= { 1.0f, -1.0f, 1.0f, -1.0f };
-	static const float sign13[]= { -1.0f, 1.0f, -1.0f, 1.0f };
-	static const double sign02_d[]= { 1.0, -1.0, 1.0, -1.0 };
-	static const double sign13_d[]= { -1.0, 1.0, -1.0, 1.0 };
-	static const unsigned char indeces0[]=
+
+	static const char sign[]=
+	{
+		1, -1, 1, -1,
+		-1, 1, -1, 1,
+		1, -1, 1, -1,
+		-1, 1, -1, 1
+	};
+	static const unsigned char indeces[]=
 	{
 		5, 6, 7, 9, 10, 11, 13, 14, 15,
 		4, 6, 7, 8, 10, 11, 12, 14, 15,
 		4, 5, 7, 8,  9, 11, 12, 13, 15,
-		4, 5, 6, 8,  9, 10, 12, 13, 14
-	};
-	static const unsigned char indeces1[]=
-	{
+		4, 5, 6, 8,  9, 10, 12, 13, 14,
+	
 		1, 2, 3, 9, 10, 11, 13, 14, 15,
 		0, 2, 3, 8, 10, 11, 12, 14, 15,
 		0, 1, 3, 8,  9, 11, 12, 13, 15,
-		0, 1, 2, 8,  9, 10, 12, 13, 14
-	};
-	static const unsigned char indeces2[]=
-	{
+		0, 1, 2, 8,  9, 10, 12, 13, 14,
+
 		1, 2, 3, 5, 6, 7, 13, 14, 15,
 		0, 2, 3, 4, 6, 7, 12, 14, 15,
 		0, 1, 3, 4, 5, 7, 12, 13, 15,
-		0, 1, 2, 4, 5, 6, 12, 13, 14
-	};
-	static const unsigned char indeces3[]=
-	{
+		0, 1, 2, 4, 5, 6, 12, 13, 14,
+
 		1, 2, 3, 5, 6, 7, 9, 10, 11,
 		0, 2, 3, 4, 6, 7, 8, 10, 11,
 		0, 1, 3, 4, 5, 7, 8,  9, 11,
@@ -172,29 +170,11 @@ void Mat4Invert( const float* m, float* out_m )
 {
 	float mat3x3[9];
 
-	for( unsigned int i= 0, i9= 0; i< 4; i++, i9+= 9 )
+	for( unsigned int i= 0, i9= 0; i< 16; i++, i9+= 9 )
 	{
 		for( unsigned int j= 0; j< 9; j++ )
-			mat3x3[j]= m[ Mat4InvertData::indeces0[i9+j] ];
-		out_m[i  ]= Mat4InvertData::sign02[i] * Mat3Det(mat3x3);
-	}
-	for( unsigned int i= 0, i9= 0; i< 4; i++, i9+= 9 )
-	{
-		for( unsigned int j= 0; j< 9; j++ )
-			mat3x3[j]= m[ Mat4InvertData::indeces1[i9+j] ];
-		out_m[i+4]= Mat4InvertData::sign13[i] * Mat3Det(mat3x3);
-	}
-	for( unsigned int i= 0, i9= 0; i< 4; i++, i9+= 9 )
-	{
-		for( unsigned int j= 0; j< 9; j++ )
-			mat3x3[j]= m[ Mat4InvertData::indeces2[i9+j] ];
-		out_m[i+8]= Mat4InvertData::sign02[i] * Mat3Det(mat3x3);
-	}
-	for( unsigned int i= 0, i9= 0; i< 4; i++, i9+= 9 )
-	{
-		for( unsigned int j= 0; j< 9; j++ )
-			mat3x3[j]= m[ Mat4InvertData::indeces3[i9+j] ];
-		out_m[i+12]= Mat4InvertData::sign13[i] * Mat3Det(mat3x3);
+			mat3x3[j]= m[ Mat4InvertData::indeces[i9+j] ];
+		out_m[i]= float(Mat4InvertData::sign[i]) * Mat3Det(mat3x3);
 	}
 
 	float det= out_m[0] * m[0] + out_m[1] * m[1] + out_m[2] * m[2] + out_m[3] * m[3];
@@ -441,29 +421,11 @@ void DoubleMat4Invert( const double* m, double* out_m )
 {
 	double mat3x3[9];
 
-	for( unsigned int i= 0, i9= 0; i< 4; i++, i9+= 9 )
+	for( unsigned int i= 0, i9= 0; i< 16; i++, i9+= 9 )
 	{
 		for( unsigned int j= 0; j< 9; j++ )
-			mat3x3[j]= m[ Mat4InvertData::indeces0[i9+j] ];
-		out_m[i  ]= Mat4InvertData::sign02_d[i] * DoubleMat3Det(mat3x3);
-	}
-	for( unsigned int i= 0, i9= 0; i< 4; i++, i9+= 9 )
-	{
-		for( unsigned int j= 0; j< 9; j++ )
-			mat3x3[j]= m[ Mat4InvertData::indeces1[i9+j] ];
-		out_m[i+4]= Mat4InvertData::sign13_d[i] * DoubleMat3Det(mat3x3);
-	}
-	for( unsigned int i= 0, i9= 0; i< 4; i++, i9+= 9 )
-	{
-		for( unsigned int j= 0; j< 9; j++ )
-			mat3x3[j]= m[ Mat4InvertData::indeces2[i9+j] ];
-		out_m[i+8]= Mat4InvertData::sign02_d[i] * DoubleMat3Det(mat3x3);
-	}
-	for( unsigned int i= 0, i9= 0; i< 4; i++, i9+= 9 )
-	{
-		for( unsigned int j= 0; j< 9; j++ )
-			mat3x3[j]= m[ Mat4InvertData::indeces3[i9+j] ];
-		out_m[i+12]= Mat4InvertData::sign13_d[i] * DoubleMat3Det(mat3x3);
+			mat3x3[j]= m[ Mat4InvertData::indeces[i9+j] ];
+		out_m[i]= double(Mat4InvertData::sign[i]) * DoubleMat3Det(mat3x3);
 	}
 
 	double det= out_m[0] * m[0] + out_m[1] * m[1] + out_m[2] * m[2] + out_m[3] * m[3];
@@ -477,7 +439,7 @@ void DoubleMat4Invert( const double* m, double* out_m )
 
 // mf_Rand class
 
-const unsigned int mf_Rand::rand_max_= 0xFFFF;
+const unsigned int mf_Rand::rand_max_= 0x7FFF;
 
 mf_Rand::mf_Rand( unsigned int seed )
 	: r(seed)
