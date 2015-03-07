@@ -203,6 +203,15 @@ const char* const models_shader_v=
 	"gl_Position=mat*vec4(p,1.0);"
 "}";
 
+const char* const models_shadowmap_shader_v=
+"#version 330\n"
+"uniform mat4 mat;" // view matrix
+"in vec3 p;" // position
+"void main()"
+"{"
+	"gl_Position=mat*vec4(p,1.0);"
+"}";
+
 const char* const models_shader_f=
 "#version 330\n"
 "uniform sampler2DArray tex;" // diffuse texture

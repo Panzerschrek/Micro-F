@@ -66,6 +66,11 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 		/*vert*/ "mat", "nmat", "texn",/*frag*/ "tex", "sun", "sl", "al" };
 	aircraft_shader_.FindUniforms( aircraft_shader_uniforms, sizeof(aircraft_shader_uniforms) / sizeof(char*) );
 
+	// aircraft shadow shader
+	aircraft_shadowmap_shader_.SetAttribLocation( "p", 0 );
+	aircraft_shadowmap_shader_.Create( mf_Shaders::models_shadowmap_shader_v, NULL );
+	aircraft_shadowmap_shader_.FindUniform( "mat" );
+
 	// sun shader
 	sun_shader_.Create( mf_Shaders::sun_shader_v, mf_Shaders::sun_shader_f );
 	static const char* const sun_shader_uniforms[]= { "mat", "s", "tex", "i" };
@@ -1094,4 +1099,45 @@ void mf_Renderer::DrawShadows()
 		water_mesh_.vbo.Bind();
 		glDrawArrays( GL_TRIANGLES, first_quad * 6 , quad_count * 6 );
 	} // draw water
+	{ // draw aircrafts
+		aircraft_shadowmap_shader_.Bind();
+		aircrafts_data_.vbo.Bind();
+
+		const mf_Aircraft* aircrafts[1];
+		unsigned int aircraft_count= 1;
+		aircrafts[0]= player_->GetAircraft();
+		for( unsigned int i= 0; i< aircraft_count; i++ )
+		{
+			const mf_Aircraft* aircraft= aircrafts[i];
+
+			float translate_mat[16];
+			float axis_mat[16];
+			float common_rotate_mat[16];
+			float mat[16];
+
+			Mat4Identity( axis_mat );
+			axis_mat[ 0]= aircraft->AxisVec(0)[0];
+			axis_mat[ 4]= aircraft->AxisVec(0)[1];
+			axis_mat[ 8]= aircraft->AxisVec(0)[2];
+			axis_mat[ 1]= aircraft->AxisVec(1)[0];
+			axis_mat[ 5]= aircraft->AxisVec(1)[1];
+			axis_mat[ 9]= aircraft->AxisVec(1)[2];
+			axis_mat[ 2]= aircraft->AxisVec(2)[0];
+			axis_mat[ 6]= aircraft->AxisVec(2)[1];
+			axis_mat[10]= aircraft->AxisVec(2)[2];
+			Mat4Invert( axis_mat, common_rotate_mat );
+
+			Mat4Translate( translate_mat, aircraft->Pos() );
+
+			Mat4Mul( common_rotate_mat, translate_mat, mat );
+			Mat4Mul( mat, projection_final_mat );
+
+			aircraft_shadowmap_shader_.UniformMat4( "mat", mat );
+
+			glDrawElements( GL_TRIANGLES,
+				aircrafts_data_.models[ aircraft->GetType() ].index_count,
+				GL_UNSIGNED_SHORT,
+				(void*) ( aircrafts_data_.models[ aircraft->GetType() ].first_index * sizeof(unsigned short) ) );
+		}
+	} // draw aircrafts
 }

@@ -113,6 +113,7 @@ private:
 		GLuint textures_array;
 	} aircrafts_data_;
 	mf_GLSLProgram aircraft_shader_;
+	mf_GLSLProgram aircraft_shadowmap_shader_;
 
 	GLuint sun_texture_;
 	mf_GLSLProgram sun_shader_;
