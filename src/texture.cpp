@@ -10,6 +10,8 @@ mf_Texture::mf_Texture( unsigned int size_x_log2, unsigned int size_y_log2 )
 {
 	size_log2_[0]= size_x_log2;
 	size_log2_[1]= size_y_log2;
+	size_[0]= 1 << size_x_log2;
+	size_[1]= 1 << size_y_log2;
 }
 
 mf_Texture::~mf_Texture()
@@ -22,8 +24,8 @@ mf_Texture::~mf_Texture()
 void mf_Texture::Noise( unsigned int octave_count )
 {
 	float* d= data_;
-	for( unsigned int y= 0, y_end= 1<<size_log2_[1]; y< y_end; y++ )
-		for( unsigned int x= 0, x_end= 1<<size_log2_[0]; x< x_end; x++, d+= 4 )
+	for( unsigned int y= 0; y< size_[1]; y++ )
+		for( unsigned int x= 0; x< size_[0]; x++, d+= 4 )
 		{
 			d[0]= d[1]= d[2]= d[3]=
 				float( FinalNoise( x, y, octave_count ) ) / float(0xFFFF);
@@ -52,12 +54,12 @@ void mf_Texture::RandomPoints()
 
 void mf_Texture::GenNormalMap()
 {
-	unsigned int size_x1= (1<<size_log2_[0]) - 1;
-	unsigned int size_y1= (1<<size_log2_[1]) - 1;
+	unsigned int size_x1= size_[0] - 1;
+	unsigned int size_y1= size_[1] - 1;
 
 	float* d= data_;
-	for( unsigned int y= 0, y_end= 1<<size_log2_[1]; y< y_end; y++ )
-		for( unsigned int x= 0, x_end= 1<<size_log2_[0]; x< x_end; x++, d+= 4 )
+	for( unsigned int y= 0; y< size_[1]; y++ )
+		for( unsigned int x= 0; x< size_[0]; x++, d+= 4 )
 		{
 			float val[8];
 			unsigned int ys= ((y-1)&(size_y1)) << size_log2_[0];
@@ -95,8 +97,8 @@ void mf_Texture::Gradient( unsigned int x0, unsigned int y0, unsigned int x1, un
 	float end_point_inv_len= 1.0f / ( Vec3Dot( plane_normal, end_point ) + plane_k );
 
 	float* d= data_;
-	for( unsigned int y= 0, y_end= 1<<size_log2_[1]; y< y_end; y++ )
-		for( unsigned int x= 0, x_end= 1<<size_log2_[0]; x< x_end; x++, d+= 4 )
+	for( unsigned int y= 0; y< size_[1]; y++ )
+		for( unsigned int x= 0; x< size_[0]; x++, d+= 4 )
 		{
 			float vec[]= { float(x), float(y), 0.0f };
 			float k= ( Vec3Dot( vec, plane_normal ) + plane_k ) * end_point_inv_len;
@@ -109,8 +111,8 @@ void mf_Texture::Gradient( unsigned int x0, unsigned int y0, unsigned int x1, un
 
 void mf_Texture::RadialGradient( int center_x, int center_y, int radius, const float* color0, const float* color1 )
 {
-	int size_x1= (1<<size_log2_[0]) - 1;
-	int size_y1= (1<<size_log2_[1]) - 1;
+	int size_x1= size_[0] - 1;
+	int size_y1= size_[1] - 1;
 	float inv_radius_f= 1.0f / float(radius);
 
 	for( int y= center_y - radius, y_end= center_y + radius; y<= y_end; y++ )
@@ -134,7 +136,7 @@ void mf_Texture::RadialGradient( int center_x, int center_y, int radius, const f
 
 void mf_Texture::Fill( const float* color )
 {
-	FillRect( 0, 0, 1<<size_log2_[0], 1<<size_log2_[1], color );
+	FillRect( 0, 0, size_[0], size_[1], color );
 }
 
 void mf_Texture::FillRect( unsigned int x, unsigned int y, unsigned int width, unsigned int height, const float* color )
@@ -154,8 +156,8 @@ void mf_Texture::FillRect( unsigned int x, unsigned int y, unsigned int width, u
 
 void mf_Texture::FillEllipse( int center_x, int center_y, int radius, const float* color, float scale_x, float scale_y )
 {
-	int size_x1= (1<<size_log2_[0]) - 1;
-	int size_y1= (1<<size_log2_[1]) - 1;
+	int size_x1= size_[0] - 1;
+	int size_y1= size_[1] - 1;
 	float radius2= float(radius * radius);
 	float scale_x2= scale_x * scale_x;
 	float scale_y2= scale_y * scale_y;
@@ -182,8 +184,8 @@ void mf_Texture::FillEllipse( int center_x, int center_y, int radius, const floa
 
 void mf_Texture::DrawLine( unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, const float* color )
 {
-	unsigned int size_x1= (1<<size_log2_[0]) - 1;
-	unsigned int size_y1= (1<<size_log2_[1]) - 1;
+	unsigned int size_x1= size_[0] - 1;
+	unsigned int size_y1= size_[1] - 1;
 
 	if( abs( int(x0 - x1) ) > abs( int(y0 - y1) ) )
 	{
@@ -263,14 +265,14 @@ void mf_Texture::SinWaveDeformX( float amplitude, float freq, float phase )
 {
 	float* new_data= new float[ 1<<( size_log2_[0] + size_log2_[1] + 2) ];
 
-	unsigned int size_y1= (1<<size_log2_[1]) - 1;
+	unsigned int size_y1= size_[1] - 1;
 
 	float omega= freq * MF_2PI;
-	for( unsigned int x= 0, x_end= 1<<size_log2_[0]; x< x_end; x++ )
+	for( unsigned int x= 0; x< size_[0]; x++ )
 	{
 		int dy= int( amplitude * mf_Math::sin( omega * float(x) + phase ) );
 
-		for( unsigned int y= 0, y_end= 1<<size_log2_[1]; y< y_end; y++ )
+		for( unsigned int y= 0; y< size_[1]; y++ )
 		{
 			unsigned int k= x + ( ( (y+dy) & size_y1 ) << size_log2_[0] );
 			k*= 4;
@@ -290,14 +292,14 @@ void mf_Texture::SinWaveDeformY( float amplitude, float freq, float phase )
 	float* new_data= new float[ 1<<( size_log2_[0] + size_log2_[1] + 2) ];
 	float* dst= new_data;
 
-	unsigned int size_x1 = (1<<size_log2_[0]) - 1;
+	unsigned int size_x1 = size_[0] - 1;
 
 	float omega= freq * MF_2PI;
-	for( unsigned int y= 0, y_end= 1<<size_log2_[1]; y< y_end; y++ )
+	for( unsigned int y= 0; y< size_[1]; y++ )
 	{
 		int dx= int( amplitude * mf_Math::sin( omega * float(y) + phase ) );
 
-		for( unsigned int x= 0, x_end= 1<<size_log2_[0]; x< x_end; x++, dst+= 4 )
+		for( unsigned int x= 0; x< size_[0]; x++, dst+= 4 )
 		{
 			unsigned int k= ( (x+dx) & size_x1 ) + (y<<size_log2_[0]);
 			k*= 4;
@@ -319,7 +321,6 @@ void mf_Texture::Rotate( float deg )
 {
 	float* new_data= new float[ 1<<(size_log2_[0] + size_log2_[1] + 2) ];
 	float* d= new_data;
-	unsigned int size_x= 1 << size_log2_[0];
 	unsigned int size_x1= (1 << size_log2_[0]) - 1;
 	unsigned int size_y1= (1 << size_log2_[1]) - 1;
 
@@ -328,15 +329,15 @@ void mf_Texture::Rotate( float deg )
 	float xc= float(1<<size_log2_[0]) * 0.5f;
 	float yc= float(1<<size_log2_[1]) * 0.5f;
 
-	for( unsigned int y= 0, y_end= 1<<size_log2_[1]; y< y_end; y++ )
-		for( unsigned int x= 0, x_end= 1<<size_log2_[0]; x< x_end; x++, d+= 4 )
+	for( unsigned int y= 0; y< size_[1]; y++ )
+		for( unsigned int x= 0; x< size_[0]; x++, d+= 4 )
 		{
 			float mx= float(x) - xc;
 			float my= float(y) - yc;
 			float fx= mx * c - my * s + xc;
 			float fy= mx * s + my * c + yc;
 			
-			const float* d_src= data_ + ( (((unsigned int)(fx))&size_x1) + (((unsigned int)(fy))&size_y1) * size_x ) * 4;
+			const float* d_src= data_ + ( (((unsigned int)(fx))&size_x1) + (((unsigned int)(fy))&size_y1) * size_[0] ) * 4;
 			for( unsigned int j= 0; j< 4; j++ )
 				d[j]= d_src[j];
 		}
@@ -347,16 +348,16 @@ void mf_Texture::Rotate( float deg )
 
 void mf_Texture::Shift( unsigned int dx, unsigned int dy )
 {
-	unsigned int size_x1= (1 << size_log2_[0]) - 1;
-	unsigned int size_y1= (1 << size_log2_[1]) - 1;
+	unsigned int size_x1= size_[0] - 1;
+	unsigned int size_y1= size_[1] - 1;
 	
 	float* new_data= new float[ 1<<(size_log2_[0] + size_log2_[1] + 2) ];
 	float* d= new_data;
 
-	for( unsigned int y= 0, y_end= 1<<size_log2_[1]; y< y_end; y++ )
+	for( unsigned int y= 0; y< size_[1]; y++ )
 	{
 		unsigned int y1= (y+dy) & size_y1;
-		for( unsigned int x= 0, x_end= 1<<size_log2_[0]; x< x_end; x++, d+= 4 )
+		for( unsigned int x= 0; x< size_[0]; x++, d+= 4 )
 		{
 			unsigned int k= ((x+dx)&size_x1) + ( y1 << size_log2_[0] );
 			k*= 4;
@@ -528,10 +529,8 @@ void mf_Texture::Mix( const float* color0, const float* color1, const float* sub
 
 void mf_Texture::DrawText( unsigned int x, unsigned int y, unsigned int size, const float* color, const char* text )
 {
-	unsigned int size_x= 1 << size_log2_[0];
-	unsigned int size_y= 1 << size_log2_[1];
-	unsigned int size_x1= size_x - 1;
-	unsigned int size_y1= size_y - 1;
+	unsigned int size_x1= size_[0] - 1;
+	unsigned int size_y1= size_[1] - 1;
 
 	unsigned int d;
 	unsigned int  x0= x;

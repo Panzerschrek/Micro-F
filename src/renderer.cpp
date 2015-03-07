@@ -132,13 +132,11 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 
 	{ // aircraft textures
 		mf_Texture tex( 10, 10 );
-		const unsigned int size_x= 1 << tex.SizeXLog2();
-		const unsigned int size_y= 1 << tex.SizeYLog2();
 
 		glGenTextures( 1, &aircrafts_data_.textures_array );
 		glBindTexture( GL_TEXTURE_2D_ARRAY, aircrafts_data_.textures_array );
 		glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8,
-		size_x, size_y, mf_Aircraft::LastType,
+		tex.SizeX(), tex.SizeY(), mf_Aircraft::LastType,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
 		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
@@ -148,7 +146,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 			tex.LinearNormalization( 1.0f );
 			glTexSubImage3D( GL_TEXTURE_2D_ARRAY, 0,
 				0, 0, i,
-				size_y, size_y, 1,
+				tex.SizeX(), tex.SizeY(), 1,
 				GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
 		}
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
@@ -162,7 +160,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 		glGenTextures( 1, &sun_texture_ );
 		glBindTexture( GL_TEXTURE_2D, sun_texture_ );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-			1 << sun_tex.SizeXLog2(), 1 << sun_tex.SizeYLog2(), 0,
+			sun_tex.SizeX(), sun_tex.SizeY(), 0,
 			GL_RGBA, GL_UNSIGNED_BYTE, sun_tex.GetNormalizedData() );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );

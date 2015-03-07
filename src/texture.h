@@ -10,6 +10,8 @@ public:
 	const float* GetData() const;
 	float* GetData();
 	const unsigned char* GetNormalizedData() const;
+	unsigned int SizeX() const;
+	unsigned int SizeY() const;
 	unsigned int SizeXLog2() const;
 	unsigned int SizeYLog2() const;
 
@@ -66,6 +68,7 @@ private:
 private:
 	float* data_;
 	unsigned char* normalized_data_;
+	unsigned int size_[2];
 	unsigned int size_log2_[2];
 };
 
@@ -82,6 +85,16 @@ inline float* mf_Texture::GetData()
 inline const unsigned char* mf_Texture::GetNormalizedData() const
 {
 	return normalized_data_;
+}
+
+inline unsigned int mf_Texture::SizeX() const
+{
+	return size_[0];
+}
+
+inline unsigned int mf_Texture::SizeY() const
+{
+	return size_[1];
 }
 
 inline unsigned int mf_Texture::SizeXLog2() const
