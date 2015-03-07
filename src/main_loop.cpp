@@ -118,6 +118,19 @@ void mf_MainLoop::Loop()
 			text_->AddText( 0, 0, 1, mf_Text::default_color, fps_str );
 		}
 
+		{
+			const float* vel= player_.GetAircraft()->Velocity();
+			float horizontal_speed= mf_Math::sqrt( vel[0] * vel[0] + vel[1] * vel[1] );
+
+			float lon, lat;
+			VecToSphericalCoordinates( player_.GetAircraft()->AxisVec(1), &lon, &lat );
+			char str[128];
+			sprintf( str,
+				"horizontal speed: %3.2f\nvertical speed: %3.2f\nazimuth: %3.1f\nelevation: %3.1f",
+				horizontal_speed, vel[2], lon * MF_RAD2DEG, lat * MF_RAD2DEG );
+			text_->AddText( 1, 3, 1, mf_Text::default_color, str );
+		}
+
 		text_->Draw();
 
 		SwapBuffers( hdc_ );
