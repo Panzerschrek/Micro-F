@@ -44,6 +44,7 @@ private:
 	void DrawSun( bool draw_to_water_framebuffer );
 	void DrawSky(  bool draw_to_water_framebuffer );
 	void DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count, bool draw_to_water_framebuffer );
+	void DrawLevelStaticObjects( bool draw_to_water_framebuffer );
 	void DrawWater();
 	void DrawShadows();
 
@@ -121,5 +122,7 @@ private:
 	mf_GLSLProgram sky_shader_;
 	mf_VertexBuffer sky_vbo_;
 
-	GLuint test_texture_;
+	mf_VertexBuffer level_static_objects_vbo_;
+	mf_GLSLProgram level_static_objects_shader_;
+	//GLuint test_texture_;
 };

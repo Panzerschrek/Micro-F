@@ -71,6 +71,14 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	aircraft_shadowmap_shader_.Create( mf_Shaders::models_shadowmap_shader_v, NULL );
 	aircraft_shadowmap_shader_.FindUniform( "mat" );
 
+	level_static_objects_shader_.SetAttribLocation( "p", 0 );
+	level_static_objects_shader_.SetAttribLocation( "n", 1 );
+	level_static_objects_shader_.SetAttribLocation( "tc", 2 );
+	level_static_objects_shader_.Create( mf_Shaders::static_models_shader_v, mf_Shaders::models_shader_f );
+	static const char* const static_objects_shader_uniforms[]= {
+		/*vert*/ "mat", "nmat", "texn",/*frag*/ "tex", "sun", "sl", "al" };
+	level_static_objects_shader_.FindUniforms( static_objects_shader_uniforms, sizeof(static_objects_shader_uniforms) / sizeof(char*) );
+
 	// sun shader
 	sun_shader_.Create( mf_Shaders::sun_shader_v, mf_Shaders::sun_shader_f );
 	static const char* const sun_shader_uniforms[]= { "mat", "s", "tex", "i" };
@@ -96,6 +104,27 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 		unsigned int shift;
 		shift= (char*)vert.pos - (char*)&vert;
 		sky_vbo_.VertexAttrib( 0, 3, GL_FLOAT, false, shift );
+	}
+
+	{ // static level meshes
+		mf_DrawingModel model;
+		GenCylinder( &model, 12, 8, true );
+		static const float scale_vec[]= { 1.0f, 2.0f, 6.0f };
+		static const float shift_vec[]= { 0.0f, 0.0f, 1.0f };
+		model.Shift( shift_vec );
+		model.Scale( scale_vec );
+
+		level_static_objects_vbo_.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
+		level_static_objects_vbo_.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
+
+		mf_DrawingModelVertex vert;
+		unsigned int shift;
+		shift= (char*)vert.pos - (char*)&vert;
+		level_static_objects_vbo_.VertexAttrib( 0, 3, GL_FLOAT, false, shift );
+		shift= (char*)vert.normal - (char*)&vert;
+		level_static_objects_vbo_.VertexAttrib( 1, 3, GL_FLOAT, false, shift );
+		shift= (char*)vert.tex_coord - (char*)&vert;
+		level_static_objects_vbo_.VertexAttrib( 2, 2, GL_FLOAT, false, shift );
 	}
 
 	// terrain heightmap
@@ -225,6 +254,7 @@ void mf_Renderer::DrawFrame()
 		aircrafts[0]= player_->GetAircraft();
 		DrawAircrafts( aircrafts, 1, true );
 	}
+	DrawLevelStaticObjects( true );
 	DrawSky( true );
 	DrawSun( true );
 
@@ -241,6 +271,7 @@ void mf_Renderer::DrawFrame()
 		aircrafts[0]= player_->GetAircraft();
 		DrawAircrafts( aircrafts, 1, false );
 	}
+	DrawLevelStaticObjects( false );
 	DrawSky( false );
 	DrawSun( false );
 	DrawWater();
@@ -955,6 +986,52 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 			GL_UNSIGNED_SHORT,
 			(void*) ( aircrafts_data_.models[ aircraft->GetType() ].first_index * sizeof(unsigned short) ) );
 	}
+	glDisable( GL_CULL_FACE );
+}
+
+void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
+{
+	level_static_objects_shader_.Bind();
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D_ARRAY, aircrafts_data_.textures_array );
+	level_static_objects_shader_.UniformInt( "tex", 0 );
+
+	level_static_objects_shader_.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
+	level_static_objects_shader_.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
+	level_static_objects_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
+
+	level_static_objects_shader_.UniformFloat( "texn", 0.1f );
+
+	glEnable( GL_CULL_FACE );
+	if (draw_to_water_framebuffer ) glCullFace( GL_FRONT );
+	else glCullFace( GL_BACK );
+	level_static_objects_vbo_.Bind();
+
+	const mf_StaticLevelObject* objects= level_->GetStaticObjects();
+	for( unsigned int i= 0; i< level_->StaticObjectsCount(); i++ )
+	{
+		float tmp_mat[16];
+		float mat[16];
+		float translate_mat[16];
+		float rot_z_mat[16];
+		float normal_mat[9];
+
+		Mat4Translate( translate_mat, objects[i].pos );
+		Mat4RotateZ( rot_z_mat, objects[i].z_angle );
+		Mat4Mul( rot_z_mat, translate_mat, tmp_mat );
+		Mat4Mul( tmp_mat, view_matrix_, mat );
+
+		Mat4ToMat3( rot_z_mat, normal_mat );
+
+		level_static_objects_shader_.UniformMat4( "mat", mat );
+		level_static_objects_shader_.UniformMat3( "nmat", normal_mat );
+
+		glDrawElements( GL_TRIANGLES,
+			level_static_objects_vbo_.IndexDataSize() / sizeof(unsigned short),
+			GL_UNSIGNED_SHORT,
+			0 );
+	} // for static objects
 	glDisable( GL_CULL_FACE );
 }
 

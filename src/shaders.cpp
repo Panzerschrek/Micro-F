@@ -203,15 +203,6 @@ const char* const models_shader_v=
 	"gl_Position=mat*vec4(p,1.0);"
 "}";
 
-const char* const models_shadowmap_shader_v=
-"#version 330\n"
-"uniform mat4 mat;" // view matrix
-"in vec3 p;" // position
-"void main()"
-"{"
-	"gl_Position=mat*vec4(p,1.0);"
-"}";
-
 const char* const models_shader_f=
 "#version 330\n"
 "uniform sampler2DArray tex;" // diffuse texture
@@ -225,6 +216,33 @@ const char* const models_shader_f=
 "{"
 	"float l= max(0.0,dot(sun,normalize(fn)));"
 	"c_=vec4(texture(tex,ftc).xyz*(al+sl*l),0.5);"
+"}";
+
+const char* const models_shadowmap_shader_v=
+"#version 330\n"
+"uniform mat4 mat;" // view matrix
+"in vec3 p;" // position
+"void main()"
+"{"
+	"gl_Position=mat*vec4(p,1.0);"
+"}";
+
+
+const char* const static_models_shader_v=
+"#version 330\n"
+"uniform mat4 mat[16];" // view matrix
+"uniform mat3 nmat[16];" // normal matrix
+"uniform float texn[16];" // texture number ( in array of textures )
+"in vec3 p;" // position
+"in vec3 n;" // normal
+"in vec2 tc;" // texture coord
+"out vec3 fn;" // fragment normal
+"out vec3 ftc;" // fragment tex coord
+"void main()"
+"{"
+	"fn=nmat[gl_InstanceID]*n;"
+	"ftc=vec3(tc,texn[gl_InstanceID]);"
+	"gl_Position=mat[gl_InstanceID]*vec4(p,1.0);"
 "}";
 
 const char* const sun_shader_v=

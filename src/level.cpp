@@ -63,7 +63,7 @@ mf_Level::mf_Level()
 	valley_way_points_= new ValleyWayPoint[ MF_MAX_VALLEY_WAY_POINTS ];
 	valley_way_point_count_= 0;
 
-	static_objects_count_= 512;
+	static_objects_count_= 4096;
 	static_objects_= new mf_StaticLevelObject[ static_objects_count_ ];
 
 	GenTarrain();

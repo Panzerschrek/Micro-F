@@ -30,6 +30,9 @@ public:
 	float TerrainCellSize() const;
 	float TerrainWaterLevel() const;
 
+	const mf_StaticLevelObject* GetStaticObjects() const;
+	unsigned int StaticObjectsCount() const;
+
 private:
 	void GenTarrain();
 	void GenValleyWayPoints();
@@ -92,4 +95,14 @@ inline float mf_Level::TerrainCellSize() const
 inline float mf_Level::TerrainWaterLevel() const
 {
 	return terrain_water_level_;
+}
+
+inline const mf_StaticLevelObject* mf_Level::GetStaticObjects() const
+{
+	return static_objects_;
+}
+
+inline unsigned int mf_Level::StaticObjectsCount() const
+{
+	return static_objects_count_;
 }
