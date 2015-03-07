@@ -51,8 +51,8 @@ static unsigned short FinalNoise(unsigned int x, unsigned int y)
 
 mf_Level::mf_Level()
 {
-	terrain_size_[0]= 512;//768;
-	terrain_size_[1]= 1024;//4096;
+	terrain_size_[0]= 1024;
+	terrain_size_[1]= 4096;
 	terrain_amplitude_= 144.0f;
 	terrain_cell_size_= 2.0f;
 	terrain_water_level_= terrain_amplitude_ / 9.0f;
@@ -204,8 +204,8 @@ void mf_Level::GenValleyWayPoints()
 {
 	mf_Rand randomizer;
 
-	const float y_range[]= {128.0f, 256.0f };
-	const float x_amplitude= 128.0f;
+	const float y_range[]= {96.0f, 128.0f };
+	const float x_amplitude= 144.0f;
 
 	unsigned int y= 16;
 
@@ -221,53 +221,77 @@ void mf_Level::GenValleyWayPoints()
 
 		valley_way_points_[ valley_way_point_count_ ].x= (unsigned int)(x);
 		valley_way_points_[ valley_way_point_count_ ].y= y;
-		valley_way_points_[ valley_way_point_count_ ].h= (unsigned int)( randomizer.RandF( 0.0f, float(0xFFFF/12) ) );
+		valley_way_points_[ valley_way_point_count_ ].h= randomizer.RandI( 0,0xFFFF/12 );
 		valley_way_point_count_++;
 	}
 
-	for( unsigned int i= 1; i< valley_way_point_count_ - 2; i++ )
+	for( unsigned int i= 1; i< valley_way_point_count_ - 3; i++ )
 	{
-		/*float dx0= float( int(valley_way_points_[i].x) - int(valley_way_points_[i-1].x) )
-			/ float( int(valley_way_points_[i].y) - int(valley_way_points_[i-1].y) );
-
-		float dx1= float( int(valley_way_points_[i+1].x) - int(valley_way_points_[i].x) )
-			/ float( int(valley_way_points_[i+1].y) - int(valley_way_points_[i].y) );
-
-		float dx2= float( int(valley_way_points_[i+2].x) - int(valley_way_points_[i+1].x) )
-			/ float( int(valley_way_points_[i+2].y) - int(valley_way_points_[i+1].y) );
-
-		float x0= float(valley_way_points_[i].x);
-		float x1= float(valley_way_points_[i].x);
-		float x2= float(valley_way_points_[i+1].x) - dx2 * float(int(valley_way_points_[i+1].y )- int(valley_way_points_[i].y) );
-
-		float k0= 0.5f;
-		float dk0= -0.5f / float( int(valley_way_points_[i+1].y) - int(valley_way_points_[i].y) );
-
-		for( int y= valley_way_points_[i].y; y< int(valley_way_points_[i+1].y); y++,
-			k0+= dk0, x0+= dx0, x1+= dx1, x2+= dx2 )
+		// search cubic spline for smoothing x(y) river function
+		double abcd[4];
 		{
-			float x_center_f= x0 * k0 + x1 * 0.5f + x2 * (0.5f - k0);
-			int x_center= int(x_center_f);
+			double xyzw[4];
+			double mat[16];
+			double invert_mat[16];
 
-			int width_2= 16;
-			for( int x= x_center - width_2; x< x_center + width_2; x++ )
+			mat[12]= 1.0;
+			mat[8]= double(valley_way_points_[i].y); // y0
+			mat[4]= mat[8] * mat[8]; // y0^2
+			mat[0]= mat[4] * mat[8]; // y0^3
+
+			mat[13]= 1.0;
+			mat[9]= double(valley_way_points_[i+1].y); // y1
+			mat[5]= mat[9] * mat[9]; // y1^2
+			mat[1]= mat[5] * mat[9]; // y1^3
+
+			double der0= double( int(valley_way_points_[i].x) - int(valley_way_points_[i-1].x) ) /
+				double( int(valley_way_points_[i].y) - int(valley_way_points_[i-1].y) );
+
+			double der1= double( int(valley_way_points_[i+1].x) - int(valley_way_points_[i].x) ) /
+				float( int(valley_way_points_[i+1].y) - int(valley_way_points_[i].y) );
+
+			double der2= double( int(valley_way_points_[i+2].x) - int(valley_way_points_[i+1].x) ) /
+				float( int(valley_way_points_[i+2].y) - int(valley_way_points_[i+1].y) );
+
+			xyzw[0]= double(valley_way_points_[i  ].x);
+			xyzw[1]= double(valley_way_points_[i+1].x);
+			xyzw[2]= 0.5 * ( der0 + der1 );
+			xyzw[3]= 0.5 * ( der1 + der2 );
+
+			mat[14]= 0.0;
+			mat[10]= 1.0;
+			mat[6 ]= 2.0 * double(valley_way_points_[i].y);
+			mat[2 ]= double(valley_way_points_[i].y) * double(valley_way_points_[i].y) * 3.0;
+
+			mat[15]= 0.0;
+			mat[11]= 1.0;
+			mat[7 ]= 2.0 * double(valley_way_points_[i+1].y);
+			mat[3 ]= double(valley_way_points_[i+1].y) * double(valley_way_points_[i+1].y) * 3.0;
+
+			DoubleMat4Invert( mat, invert_mat );
+			for( unsigned int i= 0; i< 4; i++ )
 			{
-				terrain_heightmap_data_[ x + y * terrain_size_[0] ]= 0x7F;
+				abcd[i]=
+					xyzw[0] * invert_mat[i  ] + xyzw[1] * invert_mat[i+4] +
+					xyzw[2] * invert_mat[i+8] + xyzw[3] * invert_mat[i+12];
 			}
 		}
-*/
-		int dx= int(valley_way_points_[i+1].x - valley_way_points_[i].x);
+
 		int dy= int(valley_way_points_[i+1].y - valley_way_points_[i].y);
 		int dh= int(valley_way_points_[i+1].h - valley_way_points_[i].h);
-		int center_x_f16= valley_way_points_[i].x << 16;
-		int dx_f16= ( dx << 16 ) / dy;
 		float h_f= float(valley_way_points_[i].h);
 		float dh_f= float(dh) / float(dy);
-		for( int y= valley_way_points_[i].y; y< int(valley_way_points_[i+1].y); y++, center_x_f16+= dx_f16, h_f+= dh_f )
+		for( int y= valley_way_points_[i].y; y< int(valley_way_points_[i+1].y); y++, h_f+= dh_f )
 		{
-			int width_2= 48;
-			width_2= width_2 * int(mf_Math::sqrt(float(dx*dx + dy*dy))) / dy;
-			int x_center= center_x_f16 >> 16;
+			double y_d= double(y) + 0.5;
+			int x_center= int(
+				(y_d * abcd[0] * y_d * y_d) + (y_d * abcd[1] * y_d) + (y_d * abcd[2]) + (abcd[3]) );
+
+			static const float init_width2= 48.0f;
+			double der= 3.0 * y_d * y_d * abcd[0] + 2.0 * y_d * abcd[1] + abcd[2];
+			float inv_cos_a= mf_Math::sqrt( 1.0f + float(der * der) );
+			int width_2= int( init_width2 * inv_cos_a );
+
 			int h= int(h_f);
 			for( int x= x_center - width_2; x< x_center + width_2; x++ )
 			{

@@ -124,7 +124,6 @@ void Mat4Transpose( float* m )
 		}
 }
 
-
 static float Mat3Det( const float* m )
 {
 return
@@ -259,6 +258,12 @@ void Vec3Mat3Mul( float* v_dst, const float* m )
 		v[i]= v_dst[i];
 	
 	Vec3Mat3Mul( v, m, v_dst );
+}
+
+void Vec4Mat4Mul( const float* v, const float* m, float* v_dst )
+{
+	for( unsigned int i= 0; i< 4; i++ )
+		v_dst[i]= v[0] * m[i] + v[1] * m[i+4] + v[2] * m[i+8] + v[3] * m[i+12];
 }
 
 void Mat4Mul( const float* m0, const float* m1, float* m_dst )
@@ -415,6 +420,109 @@ void Mat4ToMat3( const float* m_in, float* m_out )
 	for( unsigned int y= 0; y< 3; y++ )
 		for( unsigned int x= 0; x< 3; x++ )
 			m_out[x + y*3]= m_in[ x + y*4 ];
+}
+
+void DoubleMat4Transpose( double* m )
+{
+	double tmp;
+	for( unsigned int j= 0; j< 3; j++ )
+		for( unsigned int i= j; i< 4; i++ )
+		{
+			tmp= m[i + j*4 ];
+			m[ i + j*4]= m[ j + i*4 ];
+			m[ j + i*4 ]= tmp;
+		}
+}
+
+// double matrix functions for terrain generation
+
+static double DoubleMat3Det( const double* m )
+{
+return
+	m[0] * ( m[4] * m[8] - m[5] * m[7] ) -
+	m[1] * ( m[3] * m[8] - m[5] * m[6] ) +
+	m[2] * ( m[3] * m[7] - m[4] * m[6] );
+}
+
+void DoubleMat4Invert( const double* m, double* out_m )
+{
+	double mat3x3[9];
+
+	mat3x3[0]= m[ 5]; mat3x3[1]= m[ 6]; mat3x3[2]= m[ 7];
+	mat3x3[3]= m[ 9]; mat3x3[4]= m[10]; mat3x3[5]= m[11];
+	mat3x3[6]= m[13]; mat3x3[7]= m[14]; mat3x3[8]= m[15];
+	out_m[ 0]= +DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 4]; mat3x3[1]= m[ 6]; mat3x3[2]= m[ 7];
+	mat3x3[3]= m[ 8]; mat3x3[4]= m[10]; mat3x3[5]= m[11];
+	mat3x3[6]= m[12]; mat3x3[7]= m[14]; mat3x3[8]= m[15];
+	out_m[ 1]= -DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 4]; mat3x3[1]= m[ 5]; mat3x3[2]= m[ 7];
+	mat3x3[3]= m[ 8]; mat3x3[4]= m[ 9]; mat3x3[5]= m[11];
+	mat3x3[6]= m[12]; mat3x3[7]= m[13]; mat3x3[8]= m[15];
+	out_m[ 2]= +DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 4]; mat3x3[1]= m[ 5]; mat3x3[2]= m[ 6];
+	mat3x3[3]= m[ 8]; mat3x3[4]= m[ 9]; mat3x3[5]= m[10];
+	mat3x3[6]= m[12]; mat3x3[7]= m[13]; mat3x3[8]= m[14];
+	out_m[ 3]= -DoubleMat3Det(mat3x3);
+
+	mat3x3[0]= m[ 1]; mat3x3[1]= m[ 2]; mat3x3[2]= m[ 3];
+	mat3x3[3]= m[ 9]; mat3x3[4]= m[10]; mat3x3[5]= m[11];
+	mat3x3[6]= m[13]; mat3x3[7]= m[14]; mat3x3[8]= m[15];
+	out_m[ 4]= -DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 0]; mat3x3[1]= m[ 2]; mat3x3[2]= m[ 3];
+	mat3x3[3]= m[ 8]; mat3x3[4]= m[10]; mat3x3[5]= m[11];
+	mat3x3[6]= m[12]; mat3x3[7]= m[14]; mat3x3[8]= m[15];
+	out_m[ 5]= +DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 0]; mat3x3[1]= m[ 1]; mat3x3[2]= m[ 3];
+	mat3x3[3]= m[ 8]; mat3x3[4]= m[ 9]; mat3x3[5]= m[11];
+	mat3x3[6]= m[12]; mat3x3[7]= m[13]; mat3x3[8]= m[15];
+	out_m[ 6]= -DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 0]; mat3x3[1]= m[ 1]; mat3x3[2]= m[ 2];
+	mat3x3[3]= m[ 8]; mat3x3[4]= m[ 9]; mat3x3[5]= m[10];
+	mat3x3[6]= m[12]; mat3x3[7]= m[13]; mat3x3[8]= m[14];
+	out_m[ 7]= +DoubleMat3Det(mat3x3);
+
+	mat3x3[0]= m[ 1]; mat3x3[1]= m[ 2]; mat3x3[2]= m[ 3];
+	mat3x3[3]= m[ 5]; mat3x3[4]= m[ 6]; mat3x3[5]= m[ 7];
+	mat3x3[6]= m[13]; mat3x3[7]= m[14]; mat3x3[8]= m[15];
+	out_m[ 8]= +DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 0]; mat3x3[1]= m[ 2]; mat3x3[2]= m[ 3];
+	mat3x3[3]= m[ 4]; mat3x3[4]= m[ 6]; mat3x3[5]= m[ 7];
+	mat3x3[6]= m[12]; mat3x3[7]= m[14]; mat3x3[8]= m[15];
+	out_m[ 9]= -DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 0]; mat3x3[1]= m[ 1]; mat3x3[2]= m[ 3];
+	mat3x3[3]= m[ 4]; mat3x3[4]= m[ 5]; mat3x3[5]= m[ 7];
+	mat3x3[6]= m[12]; mat3x3[7]= m[13]; mat3x3[8]= m[15];
+	out_m[10]= +DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 0]; mat3x3[1]= m[ 1]; mat3x3[2]= m[ 2];
+	mat3x3[3]= m[ 4]; mat3x3[4]= m[ 5]; mat3x3[5]= m[ 6];
+	mat3x3[6]= m[12]; mat3x3[7]= m[13]; mat3x3[8]= m[14];
+	out_m[11]= -DoubleMat3Det(mat3x3);
+
+	mat3x3[0]= m[ 1]; mat3x3[1]= m[ 2]; mat3x3[2]= m[ 3];
+	mat3x3[3]= m[ 5]; mat3x3[4]= m[ 6]; mat3x3[5]= m[ 7];
+	mat3x3[6]= m[ 9]; mat3x3[7]= m[10]; mat3x3[8]= m[11];
+	out_m[12]= -DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 0]; mat3x3[1]= m[ 2]; mat3x3[2]= m[ 3];
+	mat3x3[3]= m[ 4]; mat3x3[4]= m[ 6]; mat3x3[5]= m[ 7];
+	mat3x3[6]= m[ 8]; mat3x3[7]= m[10]; mat3x3[8]= m[11];
+	out_m[13]= +DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 0]; mat3x3[1]= m[ 1]; mat3x3[2]= m[ 3];
+	mat3x3[3]= m[ 4]; mat3x3[4]= m[ 5]; mat3x3[5]= m[ 7];
+	mat3x3[6]= m[ 8]; mat3x3[7]= m[ 9]; mat3x3[8]= m[11];
+	out_m[14]= -DoubleMat3Det(mat3x3);
+	mat3x3[0]= m[ 0]; mat3x3[1]= m[ 1]; mat3x3[2]= m[ 2];
+	mat3x3[3]= m[ 4]; mat3x3[4]= m[ 5]; mat3x3[5]= m[ 6];
+	mat3x3[6]= m[ 8]; mat3x3[7]= m[ 9]; mat3x3[8]= m[10];
+	out_m[15]= +DoubleMat3Det(mat3x3);
+
+	double det= out_m[0] * m[0] + out_m[1] * m[1] + out_m[2] * m[2] + out_m[3] * m[3];
+	double inv_det= 1.0f / det;
+
+	for( unsigned int i= 0; i< 16; i++ )
+		out_m[i]*= inv_det;
+
+	DoubleMat4Transpose(out_m);
 }
 
 // mf_Rand class

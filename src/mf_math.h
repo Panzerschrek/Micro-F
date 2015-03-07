@@ -38,6 +38,7 @@ void Vec3Mat4Mul( const float* v, const float* m, float* v_dst );
 void Vec3Mat4Mul( float* v_dst, const float* m );
 void Vec3Mat3Mul( const float* v, const float* m, float* v_dst );
 void Vec3Mat3Mul( float* v_dst, const float* m );
+void Vec4Mat4Mul( const float* v, const float* m, float* v_dst );
 void Mat4Mul( const float* m0, const float* m1, float* m_dst );
 void Mat4Mul( float* m0_dst, const float* m1 );
 void Mat4RotateX( float* m, float a );
@@ -49,6 +50,9 @@ void Mat4RotateAroundVector( float* m, const float* vec, float angle );
 
 void Mat4ToMat3( float* m );
 void Mat4ToMat3( const float* m_in, float* m_out );
+
+
+void DoubleMat4Invert( const double* m, double* out_m );
 
 // special namespace for replasement for std::math functions
 namespace mf_Math
@@ -167,6 +171,11 @@ inline float pow( float x, float y )
 inline float exp( float x )
 {
 	return ::exp(x);
+}
+
+inline float round( float x )
+{
+	return ::ceilf( x + 0.5f );
 }
 
 } // namespace mf_Math
