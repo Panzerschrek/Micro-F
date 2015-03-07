@@ -5,10 +5,18 @@
 class mf_Player
 {
 public:
+
+	enum ControlMode
+	{
+		ModeDebugFreeFlight,
+		ModeAircraftControl
+	};
+
 	mf_Player();
 	~mf_Player();
 
-	void Tick( float dt);
+	void SetControlMode( ControlMode mode );
+	void Tick( float dt );
 
 	const float* Pos() const;
 	const float* Angle() const;
@@ -49,6 +57,7 @@ public:
 	void RotateAnticlockwiseReleased();
 
 private:
+	ControlMode control_mode_;
 	mf_Aircraft aircraft_;
 
 	float pos_[3];
@@ -67,6 +76,10 @@ private:
 	bool rotate_clockwise_pressed_, rotate_anticlockwise_pressed_;
 };
 
+inline void mf_Player::SetControlMode( ControlMode mode )
+{
+	control_mode_= mode;
+}
 
 inline const float* mf_Player::Pos() const
 {
@@ -101,49 +114,41 @@ inline void mf_Player::SetPos( float x, float y, float z )
 inline void mf_Player::ForwardPressed()
 {
 	forward_pressed_= true;
-	aircraft_.SetPitchFactor( 1.0f );
 }
 
 inline void mf_Player::BackwardPressed()
 {
 	backward_pressed_= true;
-	aircraft_.SetPitchFactor( -1.0f );
 }
 
 inline void mf_Player::LeftPressed()
 {
 	left_pressed_= true;
-	aircraft_.SetYawFactor( -1.0f );
 }
 
 inline void mf_Player::RightPressed()
 {
 	right_pressed_= true;
-	aircraft_.SetYawFactor( 1.0f );
 }
 
 inline void mf_Player::ForwardReleased()
 {
 	forward_pressed_= false;
-	aircraft_.SetPitchFactor( 0.0f );
 }
 
 inline void mf_Player::BackwardReleased()
 {
 	backward_pressed_= false;
-	aircraft_.SetPitchFactor( 0.0f );
 }
 
 inline void mf_Player::LeftReleased()
 {
 	left_pressed_= false;
-	aircraft_.SetYawFactor( 0.0f );
 }
 
 inline void mf_Player::RightReleased()
 {
 	right_pressed_= false;
-	aircraft_.SetYawFactor( 0.0f );
 }
 
 inline void mf_Player::UpPressed()
@@ -209,23 +214,19 @@ inline void mf_Player::RotateRightReleased()
 inline void mf_Player::RotateClockwisePressed()
 {
 	rotate_clockwise_pressed_= true;
-	aircraft_.SetRollFactor( -1.0f );
 }
 
 inline void mf_Player::RotateAnticlockwisePressed()
 {
 	rotate_anticlockwise_pressed_= true;
-	aircraft_.SetRollFactor( 1.0f );
 }
 
 inline void mf_Player::RotateClockwiseReleased()
 {
 	rotate_clockwise_pressed_= false;
-	aircraft_.SetRollFactor( 0.0f );
 }
 
 inline void mf_Player::RotateAnticlockwiseReleased()
 {
 	rotate_anticlockwise_pressed_= false;
-	aircraft_.SetRollFactor( 0.0f );
 }

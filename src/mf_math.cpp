@@ -85,14 +85,13 @@ void SphericalCoordinatesToVec( float longitude, float latitude, float* out_vec 
 
 void VecToSphericalCoordinates( const float* vec, float* out_longitude, float* out_latitude )
 {
-	*out_latitude= asin( vec[2] );
-	if ( vec[2] < 0.0f ) *out_latitude= -*out_latitude;
+	*out_latitude= asin(vec[2]);
 
-	float lat_cos= 1.0f - vec[2] * vec[2];
-	float vec_y= vec[1] / lat_cos;
+	float lat_cos2= 1.0f - vec[2] * vec[2];
+	float vec_y= vec[1] / mf_Math::sqrt(lat_cos2);
 
 	*out_longitude= acos(vec_y);
-	if ( vec[0] < 0.0f ) *out_longitude=  MF_2PI - *out_longitude;
+	if ( vec[0] > 0.0f ) *out_longitude= MF_2PI - *out_longitude;
 }
 
 void Vec3Normalize( float* v )

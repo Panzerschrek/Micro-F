@@ -23,9 +23,13 @@
 printf( "%s%d\n", str, integer );\
 }
 
+#include <assert.h>
+#define MF_ASSERT(x) assert(x)
+
 #else // MF_DEBUG
 
 #define MF_DEBUG_INFO_STR(str)
 #define MF_DEBUG_INFO_STR_I(str,integer)
+#define MF_ASSERT(x)
 
 #endif // MF_DEBUG

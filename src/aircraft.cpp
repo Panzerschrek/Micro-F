@@ -3,6 +3,10 @@
 
 #include "mf_math.h"
 
+static const float g_roll_rotate_speed=  1.0f;
+static const float g_pitch_rotate_speed= 2.0f;
+static const float g_yaw_rotate_speed=   0.5f;
+
 mf_Aircraft::mf_Aircraft()
 	: pitch_factor_(0.0f)
 	, yaw_factor_  (0.0f)
@@ -28,38 +32,38 @@ mf_Aircraft::~mf_Aircraft()
 void mf_Aircraft::Tick( float dt )
 {
 	float axis_rotate_vec[3][3];
-	Vec3Mul( axis_[0], pitch_factor_, axis_rotate_vec[0] );
-	Vec3Mul( axis_[1], roll_factor_ , axis_rotate_vec[1] );
-	Vec3Mul( axis_[2], yaw_factor_  , axis_rotate_vec[2] );
+	Vec3Mul( axis_[0], pitch_factor_ * g_pitch_rotate_speed, axis_rotate_vec[0] );
+	Vec3Mul( axis_[1], roll_factor_  * g_roll_rotate_speed , axis_rotate_vec[1] );
+	Vec3Mul( axis_[2], yaw_factor_   * g_yaw_rotate_speed  , axis_rotate_vec[2] );
 
 	float rotate_vec[3];
 	Vec3Add( axis_rotate_vec[0], axis_rotate_vec[1], rotate_vec );
 	Vec3Add( rotate_vec, axis_rotate_vec[2] );
 
 	float vec_len= Vec3Len(rotate_vec);
-	float rot_angle= vec_len * 0.3f * dt;
+	float rot_angle= vec_len * dt;
 
-	float final_rotate_vec[3];
-	{
-		float axis_mat[16];
-		Mat4Identity( axis_mat );
-		VEC3_CPY( &axis_mat[0], axis_[0] );
-		VEC3_CPY( &axis_mat[4], axis_[1] );
-		VEC3_CPY( &axis_mat[8], axis_[2] );
-
-		float rotate_vec_to_world_space_rotate_mat[16];
-		Mat4Identity( rotate_vec_to_world_space_rotate_mat );
-		Mat4Invert( axis_mat, rotate_vec_to_world_space_rotate_mat );
-		Vec3Mat4Mul( rotate_vec, rotate_vec_to_world_space_rotate_mat, final_rotate_vec );
-	}
-
-	if ( vec_len > 0.01f )
+	if ( vec_len > 0.001f )
 	{
 		float rotate_mat[16];
-		Mat4RotateAroundVector( rotate_mat, final_rotate_vec, rot_angle );
+		Mat4RotateAroundVector( rotate_mat, rotate_vec, rot_angle );
 
+		// make final rotation
 		Vec3Mat4Mul( axis_[0], rotate_mat );
 		Vec3Mat4Mul( axis_[1], rotate_mat );
 		Vec3Mat4Mul( axis_[2], rotate_mat );
+
+		// make axis orthogonal and with identity vectors
+		Vec3Cross( axis_[0], axis_[1], axis_[2] );
+		Vec3Cross( axis_[1], axis_[2], axis_[0] );
+		Vec3Normalize( axis_[0] );
+		Vec3Normalize( axis_[1] );
+		Vec3Normalize( axis_[2] );
 	}
+
+	Vec3Mul( axis_[1], 50.0f, velocity_ );
+	
+	float d_pos[3];
+	Vec3Mul( velocity_, dt, d_pos );
+	Vec3Add( pos_, d_pos );
 }
