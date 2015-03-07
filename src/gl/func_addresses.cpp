@@ -82,20 +82,22 @@ PFNGLFENCESYNCPROC glFenceSync= NULL;
 
 void GetGLFunctions( void* (*GetProcAddressFunc)(const char*) )
 {
+	// commented lines - currently unused functions
+
 	#define GET_PROC_ADDRESS(x) (GetProcAddressFunc(#x))
 
 	glCreateShader= (PFNGLCREATESHADERPROC) GET_PROC_ADDRESS(glCreateShader);
-	glDeleteShader= (PFNGLDELETESHADERPROC ) GET_PROC_ADDRESS( glDeleteShader );
+	//glDeleteShader= (PFNGLDELETESHADERPROC ) GET_PROC_ADDRESS( glDeleteShader );
 	glShaderSource= ( PFNGLSHADERSOURCEPROC ) GET_PROC_ADDRESS( glShaderSource );
 	glCompileShader= ( PFNGLCOMPILESHADERPROC ) GET_PROC_ADDRESS( glCompileShader );
-	glReleaseShaderCompiler= ( PFNGLRELEASESHADERCOMPILERPROC ) GET_PROC_ADDRESS( glReleaseShaderCompiler );
+	//glReleaseShaderCompiler= ( PFNGLRELEASESHADERCOMPILERPROC ) GET_PROC_ADDRESS( glReleaseShaderCompiler );
 	glGetShaderiv= ( PFNGLGETSHADERIVPROC )GET_PROC_ADDRESS( glGetShaderiv );
 	glGetShaderInfoLog= (PFNGLGETSHADERINFOLOGPROC )GET_PROC_ADDRESS( glGetShaderInfoLog );
 
 
 	glCreateProgram= (PFNGLCREATEPROGRAMPROC) GET_PROC_ADDRESS( glCreateProgram );
-	glDeleteProgram= ( PFNGLDELETEPROGRAMPROC ) GET_PROC_ADDRESS( glDeleteProgram );
-	glDetachShader=(PFNGLDETACHSHADERPROC) GET_PROC_ADDRESS( glDetachShader );
+	//glDeleteProgram= ( PFNGLDELETEPROGRAMPROC ) GET_PROC_ADDRESS( glDeleteProgram );
+	//glDetachShader=(PFNGLDETACHSHADERPROC) GET_PROC_ADDRESS( glDetachShader );
 	glAttachShader=(PFNGLATTACHSHADERPROC) GET_PROC_ADDRESS( glAttachShader );
 	glLinkProgram= (PFNGLLINKPROGRAMPROC)	GET_PROC_ADDRESS( glLinkProgram );
 	glUseProgram= (PFNGLUSEPROGRAMPROC)		GET_PROC_ADDRESS( glUseProgram );
@@ -114,17 +116,17 @@ void GetGLFunctions( void* (*GetProcAddressFunc)(const char*) )
 	glBindBuffer= (PFNGLBINDBUFFERPROC ) GET_PROC_ADDRESS( glBindBuffer );
 	glBufferData= ( PFNGLBUFFERDATAPROC	) GET_PROC_ADDRESS( glBufferData );
 	glBufferSubData= (PFNGLBUFFERSUBDATAPROC ) GET_PROC_ADDRESS( glBufferSubData );
-	glDeleteBuffers= (PFNGLDELETEBUFFERSPROC ) GET_PROC_ADDRESS( glDeleteBuffers );
-	glTexBuffer= ( PFNGLTEXBUFFERPROC ) GET_PROC_ADDRESS( glTexBuffer );
+	//glDeleteBuffers= (PFNGLDELETEBUFFERSPROC ) GET_PROC_ADDRESS( glDeleteBuffers );
+	//glTexBuffer= ( PFNGLTEXBUFFERPROC ) GET_PROC_ADDRESS( glTexBuffer );
 
 	glGenVertexArrays= (PFNGLGENVERTEXARRAYSPROC ) GET_PROC_ADDRESS( glGenVertexArrays );
 	glBindVertexArray= ( PFNGLBINDVERTEXARRAYPROC ) GET_PROC_ADDRESS( glBindVertexArray );
-	glDeleteVertexArrays= ( PFNGLDELETEVERTEXARRAYSPROC	) GET_PROC_ADDRESS( glDeleteVertexArrays );
+	//glDeleteVertexArrays= ( PFNGLDELETEVERTEXARRAYSPROC	) GET_PROC_ADDRESS( glDeleteVertexArrays );
 
-	glMultiDrawElements= ( PFNGLMULTIDRAWELEMENTSPROC )  GET_PROC_ADDRESS( glMultiDrawElements );
-	glMultiDrawElementsBaseVertex= (PFNGLMULTIDRAWELEMENTSBASEVERTEXPROC) GET_PROC_ADDRESS( glMultiDrawElementsBaseVertex );
-	glMultiDrawArrays= ( PFNGLMULTIDRAWARRAYSPROC) GET_PROC_ADDRESS( glMultiDrawArrays );
-	glDrawElementsBaseVertex= ( PFNGLDRAWELEMENTSBASEVERTEXPROC ) GET_PROC_ADDRESS( glDrawElementsBaseVertex );
+	//glMultiDrawElements= ( PFNGLMULTIDRAWELEMENTSPROC )  GET_PROC_ADDRESS( glMultiDrawElements );
+	//glMultiDrawElementsBaseVertex= (PFNGLMULTIDRAWELEMENTSBASEVERTEXPROC) GET_PROC_ADDRESS( glMultiDrawElementsBaseVertex );
+	//glMultiDrawArrays= ( PFNGLMULTIDRAWARRAYSPROC) GET_PROC_ADDRESS( glMultiDrawArrays );
+	//glDrawElementsBaseVertex= ( PFNGLDRAWELEMENTSBASEVERTEXPROC ) GET_PROC_ADDRESS( glDrawElementsBaseVertex );
 
 	glGetUniformLocation= (	PFNGLGETUNIFORMLOCATIONPROC	 ) GET_PROC_ADDRESS( glGetUniformLocation );
 	glUniform1i= (PFNGLUNIFORM1IPROC ) GET_PROC_ADDRESS( glUniform1i );
@@ -146,14 +148,14 @@ void GetGLFunctions( void* (*GetProcAddressFunc)(const char*) )
 	glFramebufferTexture= (PFNGLFRAMEBUFFERTEXTUREPROC) GET_PROC_ADDRESS( glFramebufferTexture );
 	glFramebufferTexture2D= (PFNGLFRAMEBUFFERTEXTURE2DPROC) GET_PROC_ADDRESS( glFramebufferTexture2D );
 	glFramebufferTextureLayer= (PFNGLFRAMEBUFFERTEXTURELAYERPROC) GET_PROC_ADDRESS( glFramebufferTextureLayer );
-	glBindFragDataLocation= ( PFNGLBINDFRAGDATALOCATIONPROC )	GET_PROC_ADDRESS( glBindFragDataLocation );
-	glMinSampleShading= ( PFNGLMINSAMPLESHADINGPROC	) GET_PROC_ADDRESS( glMinSampleShading );
+	//glBindFragDataLocation= ( PFNGLBINDFRAGDATALOCATIONPROC )	GET_PROC_ADDRESS( glBindFragDataLocation );
+	//glMinSampleShading= ( PFNGLMINSAMPLESHADINGPROC	) GET_PROC_ADDRESS( glMinSampleShading );
 	glDrawBuffers= ( PFNGLDRAWBUFFERSPROC ) GET_PROC_ADDRESS( glDrawBuffers );
 
-	glDrawElementsInstanced= ( PFNGLDRAWELEMENTSINSTANCEDPROC )	GET_PROC_ADDRESS( glDrawElementsInstanced );
+	//glDrawElementsInstanced= ( PFNGLDRAWELEMENTSINSTANCEDPROC )	GET_PROC_ADDRESS( glDrawElementsInstanced );
 
 
-	glWaitSync= (PFNGLWAITSYNCPROC)    GET_PROC_ADDRESS( glWaitSync );
-	glFenceSync= (PFNGLFENCESYNCPROC) GET_PROC_ADDRESS( glFenceSync );
+	//glWaitSync= (PFNGLWAITSYNCPROC)    GET_PROC_ADDRESS( glWaitSync );
+	//glFenceSync= (PFNGLFENCESYNCPROC) GET_PROC_ADDRESS( glFenceSync );
 }
 
