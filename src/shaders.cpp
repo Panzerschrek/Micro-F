@@ -227,7 +227,6 @@ const char* const models_shadowmap_shader_v=
 	"gl_Position=mat*vec4(p,1.0);"
 "}";
 
-
 const char* const static_models_shader_v=
 "#version 330\n"
 "uniform mat4 mat[16];" // view matrix
@@ -243,6 +242,29 @@ const char* const static_models_shader_v=
 	"fn=nmat[gl_InstanceID]*n;"
 	"ftc=vec3(tc,texn[gl_InstanceID]);"
 	"gl_Position=mat[gl_InstanceID]*vec4(p,1.0);"
+"}";
+
+
+const char* const naviball_shader_v=
+"#version 330\n"
+"uniform mat4 mat;"
+"in vec3 p;" // position
+"in vec2 tc;" // texture coord
+"out vec2 ftc;" // fragment tex coord
+"void main()"
+"{"
+	"ftc=tc;"
+	"gl_Position=mat*vec4(p,1.0);"
+"}";
+
+const char* const naviball_shader_f=
+"#version 330\n"
+"uniform sampler2D tex;"
+"in vec2 ftc;" // texture coord
+"out vec4 c_;" // out color
+"void main()"
+"{"
+	"c_=texture(tex,ftc);"
 "}";
 
 const char* const sun_shader_v=

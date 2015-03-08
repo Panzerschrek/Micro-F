@@ -3,9 +3,9 @@
 #include "micro-f.h"
 #include "main_loop.h"
 #include "sound_engine.h"
+#include "gui.h"
 
 #include "mf_math.h"
-#include "shaders.h"
 
 #define WINDOW_CLASS "Micro-F"
 #define WINDOW_NAME "Micro-F"
@@ -118,7 +118,7 @@ void mf_MainLoop::Loop()
 			text_->AddText( 0, 0, 1, mf_Text::default_color, fps_str );
 		}
 
-		{
+		/*{
 			const float* vel= player_.GetAircraft()->Velocity();
 			float horizontal_speed= mf_Math::sqrt( vel[0] * vel[0] + vel[1] * vel[1] );
 
@@ -129,7 +129,8 @@ void mf_MainLoop::Loop()
 				"horizontal speed: %3.2f\nvertical speed: %3.2f\nazimuth: %3.1f\nelevation: %3.1f",
 				horizontal_speed, vel[2], lon * MF_RAD2DEG, lat * MF_RAD2DEG );
 			text_->AddText( 1, 3, 1, mf_Text::default_color, str );
-		}
+		}*/
+		gui_->Draw();
 
 		text_->Draw();
 
@@ -232,6 +233,7 @@ mf_MainLoop::mf_MainLoop()
 
 	text_= new mf_Text();
 	renderer_= new mf_Renderer( &player_, &level_, text_ );
+	gui_ = new mf_Gui( text_, &player_ );
 
 	/*player_.SetPos(
 		float(level_.TerrainSizeX()/2) * level_.TerrainCellSize(),

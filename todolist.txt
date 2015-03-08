@@ -3,6 +3,8 @@
 * razmescenije staticnyh modelej na urovne i ih risovanije
 * samozatenenije samolötov cerez stencil buffer
 * HDR
+* zvuki dlä samolötov
+* escö samolöty ( dolžno bytj ot tröh do päti )
 * AI
 * naviball
 	* [sdelano] tekstura

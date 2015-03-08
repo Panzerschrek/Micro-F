@@ -11,6 +11,7 @@
 
 class mf_SoundEngine;
 class mf_SoundSource;
+class mf_Gui;
 
 struct mf_RenderingConfig
 {
@@ -70,6 +71,7 @@ private:
 	mf_Level level_;
 	mf_Renderer* renderer_;
 	mf_SoundEngine* sound_engine_;
+	mf_Gui* gui_;
 
 	unsigned int prev_game_tick_;
 	float prev_tick_dt_;

@@ -209,6 +209,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\gui.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\level.cpp"
 				>
 			</File>
@@ -288,6 +292,10 @@
 			</File>
 			<File
 				RelativePath=".\src\glsl_program.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\gui.h"
 				>
 			</File>
 			<File
