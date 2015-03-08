@@ -5,6 +5,7 @@
 * HDR
 * AI
 * naviball
+	* [sdelano] tekstura
 * gui
-* sozdanije nebesnoj sfery tesseläçije ikosaedra
+* [sdelano] sozdanije nebesnoj sfery tesseläçije ikosaedra
 * zvözdy, luna

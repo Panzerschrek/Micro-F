@@ -7,6 +7,32 @@
 
 static const float g_dirt_color[]= { 0.588f, 0.349f, 0.211f, 0.0f };
 
+
+void GenNaviballTexture( mf_Texture* tex )
+{
+	static const float sky_color[]= { 0.125f, 0.62f, 0.96f, 0.0f };
+	static const float ground_color[]= { 0.7f, 0.45f, 0.07f, 0.0f };
+	static const float line_color[]= { 0.8f, 0.8f, .8f, 0.8f };
+
+	tex->FillRect( 0, 0, tex->SizeX(), tex->SizeY() / 2, ground_color );
+	tex->FillRect( 0, tex->SizeY() / 2, tex->SizeX(), tex->SizeY() / 2, sky_color );
+
+	unsigned int deg= 0;
+	unsigned int d_deg= 45;
+	for( unsigned int i= 0; i< 8; i++, deg+= d_deg )
+	{
+		//tex->DrawLine( 0, i * tex->SizeY() / 8, tex->SizeX(), (i+1) * tex->SizeY() / 8, line_color );
+		unsigned int dy= i * tex->SizeY() / 8;
+		unsigned int dx= i * tex->SizeX() / 8;
+		tex->DrawLine( 0, dy, tex->SizeX(), dy, line_color );
+		tex->DrawLine( dx, 0, dx, tex->SizeY(), line_color );
+
+		char str[16];
+		sprintf( str, "%d", deg );
+		tex->DrawText( dx + 4, tex->SizeY() / 2 + 4, 1, line_color, str );
+	}
+}
+
 void GenF1949Texture( mf_Texture* tex )
 {
 	const unsigned int tex_scaler= 1<< ( tex->SizeXLog2() - 8 );
