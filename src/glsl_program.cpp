@@ -97,6 +97,14 @@ void mf_GLSLProgram::UniformInt( const char* name, int i )
 	glUniform1i( GetUniformId(name), i );
 }
 
+void mf_GLSLProgram::UniformIntArray( const char* name, unsigned int count, const int* i )
+{
+	int id= GetUniformId(name);
+	for( unsigned int j= 0; j< count; j++ )
+		glUniform1i( id + j, i[j] );
+}
+
+
 void mf_GLSLProgram::UniformMat4( const char* name, const float* mat )
 {
 	glUniformMatrix4fv( GetUniformId(name), 1, GL_FALSE, mat );

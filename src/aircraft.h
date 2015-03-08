@@ -23,6 +23,8 @@ public:
 	const float* AxisVec( unsigned int vec ) const;
 	const float* Velocity() const;
 
+	float Throttle() const;
+
 	unsigned int HP() const;
 
 	void SetType( Type type );
@@ -50,6 +52,7 @@ private:
 	float yaw_factor_;
 	float roll_factor_;
 
+	//[0;1]
 	float throttle_;
 
 	unsigned int hp_; // [0;1]
@@ -74,6 +77,11 @@ inline const float* mf_Aircraft::Angle() const
 inline const float* mf_Aircraft::AxisVec( unsigned int vec ) const
 {
 	return axis_[vec];
+}
+
+inline float mf_Aircraft::Throttle() const
+{
+	return throttle_;
 }
 
 inline const float* mf_Aircraft::Velocity() const

@@ -1,6 +1,7 @@
 ﻿Tekuscije zadaci, otcasti v porädke poniženija prioriteta:
 
 * razmescenije staticnyh modelej na urovne i ih risovanije
+* stolknovenije s landšaftom
 * samozatenenije samolötov cerez stencil buffer
 * HDR
 * zvuki dlä samolötov
@@ -8,6 +9,10 @@
 * AI
 * naviball
 	* [sdelano] tekstura
-* gui
+	* [sdelano] sam šar
+	* [sdelano] ikonki napravlenij
+	* nužno sdelatj povoroty kak v KSP
+* [v processe] gui
 * [sdelano] sozdanije nebesnoj sfery tesseläçije ikosaedra
-* zvözdy, luna
+* zvözdy
+* luna ( modelj + tekstura, generirujemaja po algoritmu generaçii tekstur dlä planet )

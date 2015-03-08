@@ -25,6 +25,7 @@ public:
 	};
 
 private:
+	void DrawControlPanel();
 	void DrawNaviball();
 
 private:
@@ -38,4 +39,10 @@ private:
 	mf_GLSLProgram naviball_icons_shader_;
 	GLuint naviball_icons_texture_array_;
 
+	mf_GLSLProgram gui_shader_;
+	mf_VertexBuffer common_vbo_;
+
+	GLuint control_panel_background_texture_;
+	GLuint throttle_bar_texture_;
+	GLuint throttle_indicator_texture_;
 };

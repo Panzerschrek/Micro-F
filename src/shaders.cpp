@@ -78,8 +78,28 @@ const char* const naviball_icon_shader_f=
 	"float x= texture(tex,vec3(gl_PointCoord.x, 1.0-gl_PointCoord.y,tn)).x;"
 	"if(x<0.1)discard;"
 	"c_=vec4(c,x);"
-"}"
-;
+"}";
+
+const char* const gui_shader_v=
+"#version 330\n"
+"in vec2 p;"
+"in vec3 tc;"
+"out vec3 ftc;"
+"void main()"
+"{"
+	"ftc=tc;"
+	"gl_Position=vec4(p,0.0,1.0);"
+"}";
+
+const char* const gui_shader_f=
+"#version 330\n"
+"uniform sampler2D tex[6];"
+"in vec3 ftc;"
+"out vec4 c_;"
+"void main()"
+"{"
+	"c_=texture(tex[uint(ftc.z)],ftc.xy);"
+"}";
 
 const char* const terrain_shader_v=
 "#version 330\n"

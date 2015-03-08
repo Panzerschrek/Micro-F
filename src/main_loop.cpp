@@ -141,7 +141,7 @@ void mf_MainLoop::Loop()
 
 mf_MainLoop::mf_MainLoop()
 	: viewport_width_(1024), viewport_height_(768)
-	, min_viewport_width_(640), min_viewport_height_(480)
+	, min_viewport_width_(800), min_viewport_height_(600)
 	, mouse_speed_x_( 1.0f * rendering_config_.mouse_speed_x )
 	, mouse_speed_y_( rendering_config_.mouse_speed_y * (rendering_config_.invert_mouse_y ? -1.0f :1.0f ) )
 	, fullscreen_(rendering_config_.fullscreen)

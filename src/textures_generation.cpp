@@ -7,6 +7,37 @@
 
 static const float g_dirt_color[]= { 0.588f, 0.349f, 0.211f, 0.0f };
 
+void GenControlPanelTexture( mf_Texture* tex )
+{
+	tex->Noise();
+	static const float mul_color[]= { 0.5f, 0.45f, 0.55f, 0.0f };
+	tex->Mul( mul_color );
+	static const float add_color[]= { 0.0f, 0.0f, 0.0f, 1.0f };
+	tex->Add( add_color );
+}
+
+void GenThrottleBarTexture( mf_Texture* tex )
+{
+	static const float bg_color[]= { 0.1f, 0.1f, 0.1f, 1.0f };
+	static const float line_color[]= { 0.5f, 0.5f, 0.5f, 1.0f };
+	tex->Fill( bg_color );
+	for( unsigned int i= 0; i< 10; i++ )
+	{
+		unsigned int dy= i * tex->SizeY() / 10;
+		tex->FillRect( 0, dy, tex->SizeX(), 2, line_color );
+		char str[16];
+		sprintf( str, "%d", i*10 );
+		tex->DrawText( 0, dy, 1, line_color, str );
+	}
+	tex->FillRect( 0, tex->SizeY() - 2, tex->SizeX(), 2, line_color );
+}
+
+void GenThrottleIndicatorTexture( mf_Texture* tex )
+{
+	static const float color[]= { 0.8f, 0.2f, 0.2f, 1.0f };
+	tex->Fill( color );
+}
+
 
 void GenNaviballTexture( mf_Texture* tex )
 {

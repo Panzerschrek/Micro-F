@@ -21,6 +21,7 @@ public:
 	void FindUniforms( const char* const* names, unsigned int count );
 
 	void UniformInt ( const char* name, int i );
+	void UniformIntArray ( const char* name, unsigned int count, const int* i );
 	void UniformMat4( const char* name, const float* mat );
 	void UniformMat3( const char* name, const float* mat );
 	void UniformMat4Array( const char* name, unsigned int count, const float* mat );

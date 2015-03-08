@@ -12,6 +12,7 @@ mf_Aircraft::mf_Aircraft( Type type )
 	, pitch_factor_(0.0f)
 	, yaw_factor_  (0.0f)
 	, roll_factor_ (0.0f)
+	, throttle_(1.0f)
 {
 	axis_[0][0]= 1.0f;
 	axis_[0][1]= 0.0f;
