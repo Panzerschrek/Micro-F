@@ -1,9 +1,14 @@
 #include "micro-f.h"
 #include "mf_math.h"
 
+#define MF_USE_D3DXMATH
+
+#ifdef MF_USE_D3DXMATH
+#include <d3dx9math.h>
+#endif
+
 namespace Mat4InvertData
 {
-
 	static const char sign[]=
 	{
 		1, -1, 1, -1,
@@ -91,9 +96,13 @@ float Vec3Dot( const float* v0, const float* v1 )
 
 void Vec3Cross( const float* v0, const float* v1, float* v_dst )
 {
+#ifdef MF_USE_D3DXMATH
+	D3DXVec3Cross( (D3DXVECTOR3*) v_dst, (D3DXVECTOR3*) v0, (D3DXVECTOR3*) v1 );
+#else
 	v_dst[0]= v0[1] * v1[2] - v0[2] * v1[1];
 	v_dst[1]= v0[2] * v1[0] - v0[0] * v1[2];
 	v_dst[2]= v0[0] * v1[1] - v0[1] * v1[0];
+#endif
 }
 
 float Vec3Len( const float* v )
@@ -139,11 +148,15 @@ void Vec3Normalize( float* v )
 
 void Mat4Identity( float* m )
 {
+#ifdef MF_USE_D3DXMATH
+	D3DXMatrixIdentity( (D3DXMATRIX*) m );
+#else
 	unsigned int i= 0;
 	for( i= 1; i< 15; i++ )
 		m[i]= 0.0f;
 	for( i= 0; i< 16; i+=5 )
 		m[i]= 1.0f;
+#endif
 }
 
 void Mat4Transpose( float* m )
@@ -168,6 +181,10 @@ return
 
 void Mat4Invert( const float* m, float* out_m )
 {
+#ifdef MF_USE_D3DXMATH
+	float det;
+	D3DXMatrixInverse( (D3DXMATRIX*) out_m, &det, (D3DXMATRIX*) m );
+#else
 	float mat3x3[9];
 
 	for( unsigned int i= 0, i9= 0; i< 16; i++, i9+= 9 )
@@ -184,6 +201,7 @@ void Mat4Invert( const float* m, float* out_m )
 		out_m[i]*= inv_det;
 
 	Mat4Transpose(out_m);
+#endif
 }
 
 void Mat4Scale( float* mat, const float* scale )
@@ -205,8 +223,12 @@ void Mat4Scale( float* mat, float scale )
 
 void Vec3Mat4Mul( const float* v, const float* m, float* v_dst )
 {
+#ifdef MF_USE_D3DXMATH
+	D3DXVec3TransformCoord( (D3DXVECTOR3*) v_dst, (D3DXVECTOR3*) v, (D3DXMATRIX*) m );
+#else
 	for( unsigned int i= 0; i< 3; i++ )
 		v_dst[i]= v[0] * m[i] + v[1] * m[i+4] + v[2] * m[i+8] + m[i+12];
+#endif
 }
 
 void Vec3Mat4Mul( float* v_dst, const float* m )
@@ -241,6 +263,9 @@ void Vec4Mat4Mul( const float* v, const float* m, float* v_dst )
 
 void Mat4Mul( const float* m0, const float* m1, float* m_dst )
 {
+#ifdef MF_USE_D3DXMATH
+	D3DXMatrixMultiply( (D3DXMATRIX*)m_dst, (D3DXMATRIX*)m0,(D3DXMATRIX*) m1 );
+#else
 	unsigned int i, j;
 
 	for( i= 0; i< 4; i++ )
@@ -250,6 +275,7 @@ void Mat4Mul( const float* m0, const float* m1, float* m_dst )
 				m0[ 0 + j ] * m1[ i ]     + m0[ 1 + j ] * m1[ 4 + i ] +
 				m0[ 2 + j ] * m1[ 8 + i ] + m0[ 3 + j ] * m1[ 12 + i ];
 		}
+#endif
 }
 
 void Mat4Mul( float* m0_dst, const float* m1 )
@@ -264,32 +290,44 @@ void Mat4Mul( float* m0_dst, const float* m1 )
 
 void Mat4RotateX( float* m, float a )
 {
+#ifdef MF_USE_D3DXMATH
+	D3DXMatrixRotationX( (D3DXMATRIX*)m, a );
+#else
 	Mat4Identity(m);
 	float s= mf_Math::sin(a), c= mf_Math::cos(a);
 	m[5 ]= c;
 	m[9 ]= -s;
 	m[6 ]= s;
 	m[10]= c;
+#endif
 }
 
 void Mat4RotateY( float* m, float a )
 {
+#ifdef MF_USE_D3DXMATH
+	D3DXMatrixRotationY( (D3DXMATRIX*)m, a );
+#else
 	Mat4Identity(m);
 	float s= mf_Math::sin(a), c= mf_Math::cos(a);
 	m[0]= c;
 	m[8]= s;
 	m[2]= -s;
 	m[10]= c;
+#endif
 }
 
 void Mat4RotateZ( float* m, float a )
 {
+#ifdef MF_USE_D3DXMATH
+	D3DXMatrixRotationZ( (D3DXMATRIX*)m, a );
+#else
 	Mat4Identity(m);
 	float s= mf_Math::sin(a), c= mf_Math::cos(a);
 	m[0]= c;
 	m[4]= -s;
 	m[1]= s;
 	m[5]= c;
+#endif
 }
 
 void Mat4Translate( float* m, const float* v )
@@ -302,6 +340,9 @@ void Mat4Translate( float* m, const float* v )
 
 void Mat4Perspective( float* m, float aspect, float fov, float z_near, float z_far )
 {
+#ifdef MF_USE_D3DXMATH
+	D3DXMatrixPerspectiveFovLH( (D3DXMATRIX*)m, fov, aspect, z_near, z_far );
+#else
 	float f= 1.0f / mf_Math::tan( fov * 0.5f );
 
 	m[0]= f / aspect;
@@ -316,6 +357,7 @@ void Mat4Perspective( float* m, float aspect, float fov, float z_near, float z_f
 	m[4]= m[6]= m[7]= 0.0f;
 	m[8]= m[9]= 0.0f;
 	m[12]= m[13]= m[15]= 0.0f;
+#endif
 }
 
 void Mat4RotateAroundVector( float* m, const float* vec, float angle )

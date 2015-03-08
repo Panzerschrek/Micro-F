@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="opengl32.lib  dsound.lib dxguid.lib"
+				AdditionalOptions="opengl32.lib  dsound.lib dxguid.lib d3dxmath.lib"
 				OutputFile="Micro-F_d.exe"
 				AdditionalLibraryDirectories="C:\SDK`s\DXSDK\lib\x86"
 				GenerateDebugInformation="true"
@@ -148,7 +148,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="opengl32.lib  dsound.lib dxguid.lib"
+				AdditionalOptions="opengl32.lib  dsound.lib dxguid.lib d3dx9.lib"
 				OutputFile="Micro-F.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="C:\SDK`s\DXSDK\lib\x86"
