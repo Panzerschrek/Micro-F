@@ -24,6 +24,10 @@ mf_Aircraft::mf_Aircraft( Type type )
 	axis_[2][0]= 0.0f;
 	axis_[2][1]= 0.0f;
 	axis_[2][2]= 1.0f;
+
+	velocity_[0]= 0.0f;
+	velocity_[1]= 0.0f;
+	velocity_[2]= 0.0f;
 }
 
 mf_Aircraft::~mf_Aircraft()
