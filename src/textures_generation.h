@@ -9,15 +9,27 @@ enum mf_TerrainTexture
 	TextureDirtWithGrass,
 	TextureSand,
 	TextureRock,
-	LastTexture
+	LastTerrainTexture
 };
+
+enum mf_GuiTexture
+{
+	TextureNaviball,
+	TextureControlPanel,
+	TextureThrottleBar,
+	TextureThrottleIndicator,
+	VerticalSpeedIndicator,
+	LastGuiTexture
+};
+
 extern void (* const terrain_texture_gen_func[])(mf_Texture* t);
 extern void (* const aircraft_texture_gen_func[])(mf_Texture* t);
+extern void (* const gui_texture_gen_func[])(mf_Texture* t);
 
+void GenNaviballTexture( mf_Texture* tex );
 void GenControlPanelTexture( mf_Texture* tex );
 void GenThrottleBarTexture( mf_Texture* tex );
 void GenThrottleIndicatorTexture( mf_Texture* tex );
-void GenNaviballTexture(  mf_Texture* tex );
 
 void GenF1949Texture( mf_Texture* tex );
 void GenF2XXXTexture( mf_Texture* tex );

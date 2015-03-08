@@ -324,7 +324,7 @@ void mf_Level::PlaceTextures()
 
 		}
 
-	for( unsigned int i= 0; i< LastTexture; i++ )
+	for( unsigned int i= 0; i< LastTerrainTexture; i++ )
 	{
 		for( unsigned int y= i*16; y< i*16 + 16; y++ )
 			for( unsigned int x= 0; x< 16; x++ )

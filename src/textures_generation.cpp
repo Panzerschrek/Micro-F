@@ -6,6 +6,38 @@
 #include "aircraft.h"
 
 static const float g_dirt_color[]= { 0.588f, 0.349f, 0.211f, 0.0f };
+static const float g_indicators_background_color[]= { 0.1f, 0.1f, 0.1f, 1.0f };
+static const float g_indicators_lines_color[]= { 0.5f, 0.5f, 0.5f, 1.0f };
+
+void GenNaviballTexture( mf_Texture* tex )
+{
+	static const float sky_color[]= { 0.125f, 0.62f, 0.96f, 0.0f };
+	static const float ground_color[]= { 0.7f, 0.45f, 0.07f, 0.0f };
+
+	tex->FillRect( 0, 0, tex->SizeX(), tex->SizeY() / 2, ground_color );
+	tex->FillRect( 0, tex->SizeY() / 2, tex->SizeX(), tex->SizeY() / 2, sky_color );
+
+	unsigned int deg= 270;
+	unsigned int d_deg= 45;
+	for( unsigned int i= 0; i< 8; i++, deg+= d_deg )
+	{
+		unsigned int dy= i * tex->SizeY() / 8;
+		unsigned int dx= i * tex->SizeX() / 8;
+		tex->DrawLine( 0, dy, tex->SizeX(), dy, g_indicators_lines_color );
+		if( i == 4 )
+		{
+			tex->DrawLine( 0, dy-1, tex->SizeX(), dy-1, g_indicators_lines_color );
+			tex->DrawLine( 0, dy+1, tex->SizeX(), dy+1, g_indicators_lines_color );
+		}
+		tex->DrawLine( dx, 0, dx, tex->SizeY(), g_indicators_lines_color );
+		if( (i&1) == 0 )
+			tex->DrawLine( dx-1, 0, dx-1, tex->SizeY(), g_indicators_lines_color );
+
+		char str[16];
+		sprintf( str, "%d", deg%360 );
+		tex->DrawText( dx + 4, tex->SizeY() / 2 + 4, 1, g_indicators_lines_color, str );
+	}
+}
 
 void GenControlPanelTexture( mf_Texture* tex )
 {
@@ -18,18 +50,16 @@ void GenControlPanelTexture( mf_Texture* tex )
 
 void GenThrottleBarTexture( mf_Texture* tex )
 {
-	static const float bg_color[]= { 0.1f, 0.1f, 0.1f, 1.0f };
-	static const float line_color[]= { 0.5f, 0.5f, 0.5f, 1.0f };
-	tex->Fill( bg_color );
+	tex->Fill( g_indicators_background_color );
 	for( unsigned int i= 0; i< 10; i++ )
 	{
 		unsigned int dy= i * tex->SizeY() / 10;
-		tex->FillRect( 0, dy, tex->SizeX(), 2, line_color );
+		tex->FillRect( 0, dy, tex->SizeX(), 2, g_indicators_lines_color );
 		char str[16];
 		sprintf( str, "%d", i*10 );
-		tex->DrawText( 0, dy, 1, line_color, str );
+		tex->DrawText( 0, dy, 1, g_indicators_lines_color, str );
 	}
-	tex->FillRect( 0, tex->SizeY() - 2, tex->SizeX(), 2, line_color );
+	tex->FillRect( 0, tex->SizeY() - 2, tex->SizeX(), 2, g_indicators_lines_color );
 }
 
 void GenThrottleIndicatorTexture( mf_Texture* tex )
@@ -38,35 +68,21 @@ void GenThrottleIndicatorTexture( mf_Texture* tex )
 	tex->Fill( color );
 }
 
-
-void GenNaviballTexture( mf_Texture* tex )
+void GenVerticalSpeedIndicatorTexture( mf_Texture* tex )
 {
-	static const float sky_color[]= { 0.125f, 0.62f, 0.96f, 0.0f };
-	static const float ground_color[]= { 0.7f, 0.45f, 0.07f, 0.0f };
-	static const float line_color[]= { 0.8f, 0.8f, .8f, 0.8f };
+	tex->Fill( g_indicators_background_color );
 
-	tex->FillRect( 0, 0, tex->SizeX(), tex->SizeY() / 2, ground_color );
-	tex->FillRect( 0, tex->SizeY() / 2, tex->SizeX(), tex->SizeY() / 2, sky_color );
-
-	unsigned int deg= 270;
-	unsigned int d_deg= 45;
-	for( unsigned int i= 0; i< 8; i++, deg+= d_deg )
+	float sx= float(tex->SizeX()-1);
+	float sy= float(tex->SizeY()-1);
+	for( int angle= -60; angle<= 60; angle+=30 )
 	{
-		unsigned int dy= i * tex->SizeY() / 8;
-		unsigned int dx= i * tex->SizeX() / 8;
-		tex->DrawLine( 0, dy, tex->SizeX(), dy, line_color );
-		if( i == 4 )
-		{
-			tex->DrawLine( 0, dy-1, tex->SizeX(), dy-1, line_color );
-			tex->DrawLine( 0, dy+1, tex->SizeX(), dy+1, line_color );
-		}
-		tex->DrawLine( dx, 0, dx, tex->SizeY(), line_color );
-		if( (i&1) == 0 )
-			tex->DrawLine( dx-1, 0, dx-1, tex->SizeY(), line_color );
-
-		char str[16];
-		sprintf( str, "%d", deg%360 );
-		tex->DrawText( dx + 4, tex->SizeY() / 2 + 4, 1, line_color, str );
+		float a= float(angle) * MF_DEG2RAD;
+		float dx= mf_Math::cos(a) * sx;
+		float dy= mf_Math::sin(a) * sy;
+		tex->DrawLine( tex->SizeX()-1, tex->SizeY()/2,
+			( tex->SizeX() - int(dx) )/2,
+			( tex->SizeY() + int(dy) )/2,
+			g_indicators_lines_color );
 	}
 }
 
@@ -232,4 +248,13 @@ void (* const aircraft_texture_gen_func[mf_Aircraft::LastType])(mf_Texture* t)=
 {
 	GenF1949Texture,
 	GenF2XXXTexture
+};
+
+void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
+{
+	GenNaviballTexture,
+	GenControlPanelTexture,
+	GenThrottleBarTexture,
+	GenThrottleIndicatorTexture,
+	GenVerticalSpeedIndicatorTexture
 };

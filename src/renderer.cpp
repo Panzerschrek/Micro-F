@@ -198,12 +198,12 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 		glGenTextures( 1, &terrain_textures_array_ );
 		glBindTexture( GL_TEXTURE_2D_ARRAY, terrain_textures_array_ );
 		glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8,
-			terrain_texture_size, terrain_texture_size, LastTexture,
+			terrain_texture_size, terrain_texture_size, LastTerrainTexture,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		mf_Texture tex( terrain_texture_size_log2, terrain_texture_size_log2 );
-		for( unsigned int i= 0; i< LastTexture; i++ )
+		for( unsigned int i= 0; i< LastTerrainTexture; i++ )
 		{
 			terrain_texture_gen_func[i]( &tex );
 			tex.LinearNormalization( 1.0f );

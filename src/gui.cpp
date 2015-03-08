@@ -33,13 +33,6 @@ struct mf_GuiVertex
 	float tex_coord[3];
 };
 
-static void Set2DTextureTrilinearFiltration()
-{
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-	glGenerateMipmap( GL_TEXTURE_2D );
-}
-
 mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 	: text_(text)
 	, player_(player)
@@ -85,17 +78,6 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 		common_vbo_.VertexAttrib( 1, 3, GL_FLOAT, false, shift );
 	}
 
-	{ // naviball texture
-		mf_Texture tex( 9, 9 );
-		GenNaviballTexture( &tex );
-		tex.LinearNormalization( 1.0f );
-
-		glGenTextures( 1, &naviball_texture_ );
-		glBindTexture( GL_TEXTURE_2D, naviball_texture_ );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-			tex.SizeX(), tex.SizeY(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
-		Set2DTextureTrilinearFiltration();
-	}
 	{ // naviball icons
 		unsigned char decompressed_data[ MF_GUI_ICON_SIZE * MF_GUI_ICON_SIZE * LastIcon ];
 		mfMonochromeImageTo8Bit( (unsigned char*)icons_data, decompressed_data, sizeof(decompressed_data) );
@@ -110,42 +92,28 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 	}
+
+	static const unsigned int textures_size_log2[]=
 	{
-		// control panel
-		mf_Texture tex( 8, 7 );
-		GenControlPanelTexture( &tex );
+		9, 9, // naviball
+		8, 7, // control panel
+		5, 8, // throttle bar
+		3, 3, // throttle indicator
+		7, 7  // vertical speed indicator
+	};
+	for( unsigned int i= 0; i< LastGuiTexture; i++ )
+	{
+		mf_Texture tex( textures_size_log2[i*2], textures_size_log2[i*2+1] );
+		gui_texture_gen_func[i]( &tex );
 		tex.LinearNormalization( 1.0f );
 
-		glGenTextures( 1, &control_panel_background_texture_ );
-		glBindTexture( GL_TEXTURE_2D, control_panel_background_texture_ );
+		glGenTextures( 1, &textures[i] );
+		glBindTexture( GL_TEXTURE_2D, textures[i] );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
 			tex.SizeX(), tex.SizeY(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
-		Set2DTextureTrilinearFiltration();
-	}
-	{
-		// throttle bar
-		mf_Texture tex( 5, 8 );
-		GenThrottleBarTexture( &tex );
-		tex.LinearNormalization( 1.0f );
-
-		glGenTextures( 1, &throttle_bar_texture_ );
-		glBindTexture( GL_TEXTURE_2D, throttle_bar_texture_ );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-			tex.SizeX(), tex.SizeY(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
-		Set2DTextureTrilinearFiltration();
-	}
-
-	{
-		// throttle indicator
-		mf_Texture tex( 4, 4 );
-		GenThrottleIndicatorTexture( &tex );
-		tex.LinearNormalization( 1.0f );
-
-		glGenTextures( 1, &throttle_indicator_texture_ );
-		glBindTexture( GL_TEXTURE_2D, throttle_indicator_texture_ );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-			tex.SizeX(), tex.SizeY(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
-		Set2DTextureTrilinearFiltration();
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glGenerateMipmap( GL_TEXTURE_2D );
 	}
 }
 
@@ -176,19 +144,17 @@ void mf_Gui::DrawControlPanel()
 {
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
 	const mf_Aircraft* aircraft= player_->GetAircraft();
+	const float tex_z_delta= 0.01f;
 
 	gui_shader_.Bind();
 
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, control_panel_background_texture_ );
-	glActiveTexture( GL_TEXTURE1 );
-	glBindTexture( GL_TEXTURE_2D, throttle_bar_texture_ );
-	glActiveTexture( GL_TEXTURE2 );
-	glBindTexture( GL_TEXTURE_2D, throttle_indicator_texture_ );
-
 	int textures_id[6];
-	for( unsigned int i= 0; i< 6; i++ )
+	for( unsigned int i= 0; i< LastGuiTexture; i++ )
+	{
+		glActiveTexture( GL_TEXTURE0 + i );
+		glBindTexture( GL_TEXTURE_2D, textures[i] );
 		textures_id[i]= i;
+	}
 	gui_shader_.UniformIntArray( "tex", 6, textures_id );
 
 	mf_GuiVertex vertices[256];
@@ -212,7 +178,7 @@ void mf_Gui::DrawControlPanel()
 	v[3].tex_coord[0]= 0.0f;
 	v[3].tex_coord[1]= 1.0f;
 	v[0].tex_coord[2]= v[1].tex_coord[2]=
-	v[2].tex_coord[2]= v[3].tex_coord[2]= 0.01f;
+	v[2].tex_coord[2]= v[3].tex_coord[2]= float(TextureControlPanel) + tex_z_delta;
 	v[4]= v[0];
 	v[5]= v[2];
 	v+= 6;
@@ -236,7 +202,7 @@ void mf_Gui::DrawControlPanel()
 	v[3].tex_coord[0]= 0.0f;
 	v[3].tex_coord[1]= 1.0f;
 	v[0].tex_coord[2]= v[1].tex_coord[2]=
-	v[2].tex_coord[2]= v[3].tex_coord[2]= 1.01f;
+	v[2].tex_coord[2]= v[3].tex_coord[2]= float(TextureThrottleBar) + tex_z_delta;
 	v[4]= v[0];
 	v[5]= v[2];
 	v+= 6;
@@ -254,7 +220,7 @@ void mf_Gui::DrawControlPanel()
 	v[0].tex_coord[0]= v[0].tex_coord[1]=
 	v[1].tex_coord[0]= v[1].tex_coord[1]=
 	v[2].tex_coord[0]= v[2].tex_coord[1]= 0.0f;
-	v[0].tex_coord[2]= v[1].tex_coord[2]= v[2].tex_coord[2]= 2.01f;
+	v[0].tex_coord[2]= v[1].tex_coord[2]= v[2].tex_coord[2]= float(TextureThrottleIndicator) + tex_z_delta;
 	v+= 3;
 	
 	common_vbo_.Bind();
@@ -281,7 +247,7 @@ void mf_Gui::DrawNaviball()
 		naviball_shader_.Bind();
 
 		glActiveTexture( GL_TEXTURE0 );
-		glBindTexture( GL_TEXTURE_2D, naviball_texture_ );
+		glBindTexture( GL_TEXTURE_2D, textures[TextureNaviball] );
 		naviball_shader_.UniformInt( "tex", 0 );
 
 		float tmp_mat[16];

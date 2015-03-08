@@ -3,6 +3,7 @@
 
 #include "glsl_program.h"
 #include "vertex_buffer.h"
+#include "textures_generation.h"
 
 class mf_Text;
 class mf_Player;
@@ -42,7 +43,9 @@ private:
 	mf_GLSLProgram gui_shader_;
 	mf_VertexBuffer common_vbo_;
 
-	GLuint control_panel_background_texture_;
-	GLuint throttle_bar_texture_;
-	GLuint throttle_indicator_texture_;
+	GLuint textures[LastGuiTexture];
+
+	//GLuint control_panel_background_texture_;
+	//GLuint throttle_bar_texture_;
+	//GLuint throttle_indicator_texture_;
 };
