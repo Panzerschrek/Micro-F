@@ -279,34 +279,31 @@ void mf_Level::GenValleyWayPoints()
 
 		int dy= int(valley_way_points_[i+1].y - valley_way_points_[i].y);
 		int dh= int(valley_way_points_[i+1].h - valley_way_points_[i].h);
-		float h_f= float(valley_way_points_[i].h);
-		float dh_f= float(dh) / float(dy);
-		for( int y= valley_way_points_[i].y; y< int(valley_way_points_[i+1].y); y++, h_f+= dh_f )
+		double h_d= double(valley_way_points_[i].h);
+		double dh_d= double(dh) / double(dy);
+		for( int y= valley_way_points_[i].y; y< int(valley_way_points_[i+1].y); y++, h_d+= dh_d )
 		{
 			double y_d= double(y) + 0.5;
-			int x_center= int(
-				(y_d * abcd[0] * y_d * y_d) + (y_d * abcd[1] * y_d) + (y_d * abcd[2]) + (abcd[3]) );
+			double x_center_d= (y_d * abcd[0] * y_d * y_d) + (y_d * abcd[1] * y_d) + (y_d * abcd[2]) + (abcd[3]);
+			int x_center= int(x_center_d);
 
-			static const float init_width2= 48.0f;
+			static const double init_width2= 48.0;
 			double der= 3.0 * y_d * y_d * abcd[0] + 2.0 * y_d * abcd[1] + abcd[2];
-			float inv_cos_a= mf_Math::sqrt( 1.0f + float(der * der) );
-			int width_2= int( init_width2 * inv_cos_a );
+			double inv_cos_a= mf_Math::sqrt( 1.0f + float(der * der) );
+			double width_d= init_width2 * inv_cos_a ;
+			int width_2= int( width_d );
 
-			int h= int(h_f);
 			for( int x= x_center - width_2; x< x_center + width_2; x++ )
 			{
 				int ind= x + y * terrain_size_[0];
-				int dw= abs(x_center - x);
-				int final_h= (
-						h * (width_2 - dw) +
-						terrain_heightmap_data_[ ind ] * dw
-					) / width_2;
-				terrain_heightmap_data_[ ind ]= (unsigned short) final_h;
 
-				terrain_normal_textures_map_[ ind * 4 + 3 ]= TextureDirt;
-			}
-		}
-	}
+				double dw= mf_Math::fabs( float( x_center_d - double(x) ) ) / width_d;
+				double height_k= dw * dw * ( 3.0 - 2.0 * dw );
+				double final_h= double(terrain_heightmap_data_[ ind ]) * height_k + (1.0 - height_k ) * h_d;
+				terrain_heightmap_data_[ ind ]= (unsigned short) final_h;
+			} // for x
+		} // for y
+	} // for segments of way
 }
 
 void mf_Level::PlaceTextures()
