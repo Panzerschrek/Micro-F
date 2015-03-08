@@ -1,0 +1,10 @@
+﻿Tekuscije zadaci, otcasti v porädke poniženija prioriteta:
+
+* razmescenije staticnyh modelej na urovne i ih risovanije
+* samozatenenije samolötov cerez stencil buffer
+* HDR
+* AI
+* naviball
+* gui
+* sozdanije nebesnoj sfery tesseläçije ikosaedra
+* zvözdy, luna

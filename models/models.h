@@ -9,7 +9,7 @@ extern const unsigned char f2xxx[];
 
 extern const unsigned char cube[];
 
-extern const unsigned char icosahderon[];
+extern const unsigned char icosahedron[];
 
 extern const unsigned char star[];
 

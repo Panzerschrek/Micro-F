@@ -152,7 +152,7 @@ void GetGLFunctions( void* (*GetProcAddressFunc)(const char*) )
 	//glMinSampleShading= ( PFNGLMINSAMPLESHADINGPROC	) GET_PROC_ADDRESS( glMinSampleShading );
 	glDrawBuffers= ( PFNGLDRAWBUFFERSPROC ) GET_PROC_ADDRESS( glDrawBuffers );
 
-	//glDrawElementsInstanced= ( PFNGLDRAWELEMENTSINSTANCEDPROC )	GET_PROC_ADDRESS( glDrawElementsInstanced );
+	glDrawElementsInstanced= ( PFNGLDRAWELEMENTSINSTANCEDPROC )	GET_PROC_ADDRESS( glDrawElementsInstanced );
 
 
 	//glWaitSync= (PFNGLWAITSYNCPROC)    GET_PROC_ADDRESS( glWaitSync );

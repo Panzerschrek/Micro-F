@@ -2,9 +2,14 @@
 #include "models_generation.h"
 
 #include "drawing_model.h"
+#include "../models/models.h"
 #include "mf_math.h"
 
-
+struct mf_BezierCurve
+{
+	float control_points[3][3];
+	float control_points_normals[3][3];
+};
 
 void GenGeosphere( mf_DrawingModel* model, unsigned int segments, unsigned int partition )
 {
@@ -156,10 +161,110 @@ void GenCylinder( mf_DrawingModel* model, unsigned int segments, unsigned int pa
 	model->SetIndexData( ind, index_count );
 }
 
+
+void GenSkySphere( mf_DrawingModel* model )
+{
+	const unsigned int partitiion= 18;
+
+	mf_DrawingModel icosahderon;
+	icosahderon.LoadFromMFMD( mf_Models::icosahedron );
+
+	// count of vertces and triangles in 1 tesseleted triangle
+	const unsigned int vertex_count= ( ( partitiion + 1 ) * ( partitiion + 2 ) ) / 2;
+	const unsigned int triangle_count= partitiion * partitiion;
+
+	unsigned int icosahderon_triangle_count= icosahderon.IndexCount() / 3;
+	mf_DrawingModelVertex* vertices= new mf_DrawingModelVertex[ vertex_count * icosahderon_triangle_count ];
+	unsigned short* indeces= new unsigned short[ 3 * triangle_count * icosahderon_triangle_count ];
+
+	mf_DrawingModelVertex* v= vertices;
+	unsigned short* ind= indeces;
+
+	const unsigned short* input_indeces= icosahderon.GetIndexData();
+	for( unsigned int i= 0; i< icosahderon_triangle_count; i++ )
+	{
+		const mf_DrawingModelVertex* input_v[3]=
+		{
+			&( (icosahderon.GetVertexData())[ input_indeces[0] ] ),
+			&( (icosahderon.GetVertexData())[ input_indeces[1] ] ),
+			&( (icosahderon.GetVertexData())[ input_indeces[2] ] )
+		};
+		input_indeces+= 3;
+
+		float yk= 0.0f;
+		float dyk= 1.0f / float(partitiion);
+		for( unsigned int y= 0; y<= partitiion; y++, yk+= dyk )
+		{
+			float pos_left[3];
+			float pos_right[3];
+			float tmp_pos_up[3];
+			Vec3Mul( input_v[0]->pos, 1.0f - yk, pos_left );
+			Vec3Mul( input_v[1]->pos, 1.0f - yk, pos_right );
+			Vec3Mul( input_v[2]->pos, yk, tmp_pos_up );
+			Vec3Add( pos_left, tmp_pos_up );
+			Vec3Add( pos_right, tmp_pos_up );
+
+			float dxk;
+			if( y != partitiion ) dxk= 1.0f / ( partitiion - y );
+			else dxk= 0.0f;
+			float xk= 0.0f;
+			for( unsigned int x= 0; x<= partitiion - y; x++, xk+= dxk, v++ )
+			{
+				Vec3Mul( pos_left, 1.0f - xk, v[0].pos );
+				float tmp_v[3];
+				Vec3Mul( pos_right, xk, tmp_v );
+				Vec3Add( v[0].pos, tmp_v );
+				Vec3Normalize( v[0].pos );
+				VEC3_CPY( v[0].normal, v[0].pos );
+			} // for x
+		} // for y
+
+		unsigned int first_vertex_ind= v - vertices - vertex_count;
+		// generate indeces
+		for( unsigned int y= 0; y< partitiion; y++ )
+		{
+			for( unsigned int x= 0; x< partitiion-y-1; x++ )
+			{
+				ind[0]= (unsigned short)( first_vertex_ind + x );
+				ind[1]= (unsigned short)( ind[0] + 1 );
+				ind[2]= (unsigned short)( ind[0] + partitiion - y + 1 );
+				
+				ind[3]= (unsigned short)( ind[1] );
+				ind[4]= (unsigned short)( ind[2] + 1 );
+				ind[5]= (unsigned short)( ind[2] );
+				ind+= 6;
+			}
+			ind[0]= (unsigned short)( first_vertex_ind + partitiion - y - 1 );
+			ind[1]= (unsigned short)( ind[0] + 1 );
+			ind[2]= (unsigned short)( ind[0] +  + partitiion - y + 1 );
+			ind+= 3;
+
+			first_vertex_ind+= partitiion - y + 1;
+		} // for y
+	} // for original triagles
+
+	model->SetVertexData( vertices, vertex_count * icosahderon_triangle_count );
+	model->SetIndexData( indeces, 3 * triangle_count * icosahderon_triangle_count );
+}
+
+/*void GenPalmLeaf( mf_DrawingModel* model, const mf_BezierCurve* curve, unsigned int segments )
+{
+	unsigned int vertex_count= ( segments + 1 ) * 2;
+	unsigned int index_count= segments * 6;
+
+	mf_DrawingModelVertex* v= new mf_DrawingModelVertex[ vertex_count ];
+	unsigned short* ind= new unsigned short[ index_count ];
+
+	for( unsigned int i= 0; i< segments + 1; i++ )
+	{
+	}
+}*/
+
 void GenPalm( mf_DrawingModel* model )
 {
-	static const float palm_size[]= { 0.2f, 0.2f, 8.0f };
-	static const float palm_shift[]= { 0.0f, 0.0f, 8.0f };
+	const float c_palm_height= 10.0f;
+	static const float palm_size[]= { 0.5f, 0.5f, c_palm_height * 0.5f };
+	static const float palm_shift[]= { 0.0f, 0.0f, c_palm_height * 0.5f };
 	GenCylinder( model, 12, 12, false );
 	model->Scale( palm_size );
 	model->Shift( palm_shift );
@@ -167,10 +272,12 @@ void GenPalm( mf_DrawingModel* model )
 	mf_DrawingModelVertex* v= (mf_DrawingModelVertex*) model->GetVertexData();
 	for( unsigned int i= 0; i< model->VertexCount(); i++ )
 	{
-		float xy_delta= 0.5f * v[i].pos[2] / ( palm_size[2] * 0.5f );
-		xy_delta= xy_delta * xy_delta;
-		v[i].pos[0]+= xy_delta;
-		v[i].pos[1]+= xy_delta;
+		float mult= (3.0f - v[i].pos[2] / c_palm_height ) * 0.333333f;
+		v[i].pos[0]*= mult;
+		v[i].pos[1]*= mult;
+
+		float x_delta= v[i].pos[2] / c_palm_height;
+		v[i].pos[0]+= x_delta * x_delta * ( c_palm_height * 0.25f );
 		//TODO: deform normal
 	}
 }

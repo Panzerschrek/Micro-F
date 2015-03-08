@@ -246,6 +246,12 @@ mf_MainLoop::mf_MainLoop()
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
 
+#ifdef MF_DEBUG
+	int max_unifroms= 0;
+	glGetIntegerv( GL_MAX_VERTEX_UNIFORM_COMPONENTS, &max_unifroms );
+	MF_DEBUG_INFO_STR_I( "max uniform components: ", max_unifroms );
+#endif
+
 	prev_game_tick_= clock();
 	game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
 

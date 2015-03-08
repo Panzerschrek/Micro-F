@@ -96,7 +96,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 
 	{ // sky mesh
 		mf_DrawingModel model;
-		GenGeosphere( &model, 48, 56 );
+		GenSkySphere( &model );
 		sky_vbo_.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
 		sky_vbo_.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
 
@@ -108,11 +108,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 
 	{ // static level meshes
 		mf_DrawingModel model;
-		GenCylinder( &model, 12, 8, true );
-		static const float scale_vec[]= { 1.0f, 2.0f, 6.0f };
-		static const float shift_vec[]= { 0.0f, 0.0f, 1.0f };
-		model.Shift( shift_vec );
-		model.Scale( scale_vec );
+		GenPalm( &model );
 
 		level_static_objects_vbo_.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
 		level_static_objects_vbo_.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
@@ -911,23 +907,22 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 			-0.04405f * tu - 1.65369f,
 			-0.01092f * tu + 0.05291f,
 		};
-		sky_shader_.UniformFloatAray( "sky_k", 15, sky_k );
+		sky_shader_.UniformFloatArray( "sky_k", 15, sky_k );
 		sky_shader_.UniformFloat( "tu", tu );
 	}
 
 	sky_vbo_.Bind();
 
-	// draw only second part of vbo ( becouse sky is sphere, draw only height triangles )
 #ifdef MF_DEBUG
 	char str[64];
-	sprintf( str, "sky triangles: %d", sky_vbo_.IndexDataSize() / (3*sizeof(unsigned short)) * 11 / 16 );
+	sprintf( str, "sky triangles: %d", sky_vbo_.IndexDataSize() / (3*sizeof(unsigned short)) );
 	text_->AddText( 0, 2, 1, mf_Text::default_color, str );
 #endif
 	glDrawElements(
 		GL_TRIANGLES,
-		sky_vbo_.IndexDataSize() / ( sizeof(unsigned short) * 11 / 16 ),
+		sky_vbo_.IndexDataSize() / sizeof(unsigned short),
 		GL_UNSIGNED_SHORT,
-		(void*)( sky_vbo_.IndexDataSize() * 5 / 16 ) );
+		0 );
 }
 
 void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count, bool draw_to_water_framebuffer )
@@ -991,6 +986,8 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 
 void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 {
+	const unsigned int objects_per_instance= 16;
+
 	level_static_objects_shader_.Bind();
 
 	glActiveTexture( GL_TEXTURE0 );
@@ -1001,36 +998,41 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	level_static_objects_shader_.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
 	level_static_objects_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
 
-	level_static_objects_shader_.UniformFloat( "texn", 0.1f );
-
 	glEnable( GL_CULL_FACE );
 	if (draw_to_water_framebuffer ) glCullFace( GL_FRONT );
 	else glCullFace( GL_BACK );
 	level_static_objects_vbo_.Bind();
 
 	const mf_StaticLevelObject* objects= level_->GetStaticObjects();
-	for( unsigned int i= 0; i< level_->StaticObjectsCount(); i++ )
+	unsigned int objects_count= level_->StaticObjectsCount();
+	for( unsigned int i= 0; i< objects_count; i+= objects_per_instance )
 	{
-		float tmp_mat[16];
-		float mat[16];
-		float translate_mat[16];
-		float rot_z_mat[16];
-		float normal_mat[9];
+		float mat[objects_per_instance][16];
+		float normal_mat[objects_per_instance][9];
+		float textures[objects_per_instance];
 
-		Mat4Translate( translate_mat, objects[i].pos );
-		Mat4RotateZ( rot_z_mat, objects[i].z_angle );
-		Mat4Mul( rot_z_mat, translate_mat, tmp_mat );
-		Mat4Mul( tmp_mat, view_matrix_, mat );
+		for( unsigned int j= 0; j< objects_per_instance && (i+j) < objects_count; j++ )
+		{
+			float translate_mat[16];
+			float rot_z_mat[16];
+			float tmp_mat[16];
+			Mat4Translate( translate_mat, objects[i+j].pos );
+			Mat4RotateZ( rot_z_mat, objects[i+j].z_angle );
+			Mat4Mul( rot_z_mat, translate_mat, tmp_mat );
+			Mat4Mul( tmp_mat, view_matrix_, mat[j] );
 
-		Mat4ToMat3( rot_z_mat, normal_mat );
+			Mat4ToMat3( rot_z_mat, normal_mat[j] );
+			textures[j]= 0.01f;
+		}
 
-		level_static_objects_shader_.UniformMat4( "mat", mat );
-		level_static_objects_shader_.UniformMat3( "nmat", normal_mat );
+		level_static_objects_shader_.UniformFloatArray( "texn", objects_per_instance, textures );
+		level_static_objects_shader_.UniformMat4Array( "mat", objects_per_instance, (float*)mat );
+		level_static_objects_shader_.UniformMat3Array( "nmat", objects_per_instance, (float*)normal_mat );
 
-		glDrawElements( GL_TRIANGLES,
+		glDrawElementsInstanced( GL_TRIANGLES,
 			level_static_objects_vbo_.IndexDataSize() / sizeof(unsigned short),
 			GL_UNSIGNED_SHORT,
-			0 );
+			0, objects_per_instance );
 	} // for static objects
 	glDisable( GL_CULL_FACE );
 }

@@ -4,7 +4,7 @@
 #include "mf_math.h"
 
 mf_Player::mf_Player()
-	: control_mode_(ModeAircraftControl)
+	: control_mode_(ModeDebugFreeFlight)
 	, aspect_(1.0f), fov_(MF_PI2)
 	, forward_pressed_(false), backward_pressed_(false), left_pressed_(false), right_pressed_(false)
 	, up_pressed_(false), down_pressed_(false)
