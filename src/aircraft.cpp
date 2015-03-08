@@ -62,7 +62,14 @@ void mf_Aircraft::Tick( float dt )
 		Vec3Normalize( axis_[2] );
 	}
 
-	Vec3Mul( axis_[1], 50.0f, velocity_ );
+	const float k= 0.95f;
+	const float speed= 50.0f;
+	float old_velocity[3];
+	float new_velocity[3];
+	Vec3Mul( velocity_, k, old_velocity );
+	Vec3Mul( axis_[1], speed * (1.0f-k), new_velocity ); 
+
+	Vec3Add( old_velocity, new_velocity, velocity_ );
 	
 	float d_pos[3];
 	Vec3Mul( velocity_, dt, d_pos );

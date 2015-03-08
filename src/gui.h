@@ -35,5 +35,7 @@ private:
 	mf_VertexBuffer naviball_vbo_;
 	GLuint naviball_texture_;
 
+	mf_GLSLProgram naviball_icons_shader_;
 	GLuint naviball_icons_texture_array_;
+
 };

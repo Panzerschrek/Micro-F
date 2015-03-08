@@ -6,6 +6,9 @@ namespace mf_Shaders
 extern const char* const text_shader_v;
 extern const char* const text_shader_f;
 
+extern const char* const naviball_icon_shader_v;
+extern const char* const naviball_icon_shader_f;
+
 extern const char* const terrain_shader_v;
 extern const char* const terrain_shader_f;
 

@@ -36,7 +36,7 @@ const char* const text_shader_v=
 "in vec4 c;"//in color
 "out vec4 fc;"//out color
 "out vec2 ftc;"//out texture coord
-"void main(void)"
+"void main()"
 "{"
 	"fc=c;"
 	"ftc=tc*vec2(1.0/96.0,1.0);"
@@ -50,10 +50,34 @@ const char* const text_shader_f=
 "in vec4 fc;"
 "in vec2 ftc;"
 "out vec4 c_;"
-"void main(void)"
+"void main()"
 "{"
 	"float x=texture(tex,ftc).x;"
 	"c_=vec4(fc.xyz*x,max(fc.a,x));"
+"}"
+;
+
+const char* const naviball_icon_shader_v=
+"#version 330\n"
+"uniform vec3 p;" // position
+"uniform float ps;" // point size
+"void main()"
+"{"
+	"gl_PointSize=ps;"
+	"gl_Position=vec4(p.xy,0.0,1.0);"
+"}";
+
+const char* const naviball_icon_shader_f=
+"#version 330\n"
+"uniform sampler2DArray tex;"
+"uniform vec3 c;" // input color
+"uniform float tn;" // point size
+"out vec4 c_;"
+"void main()"
+"{"
+	"float x= texture(tex,vec3(gl_PointCoord.x, 1.0-gl_PointCoord.y,tn)).x;"
+	"if(x<0.1)discard;"
+	"c_=vec4(c,x);"
 "}"
 ;
 

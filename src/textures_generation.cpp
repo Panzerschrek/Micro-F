@@ -17,7 +17,7 @@ void GenNaviballTexture( mf_Texture* tex )
 	tex->FillRect( 0, 0, tex->SizeX(), tex->SizeY() / 2, ground_color );
 	tex->FillRect( 0, tex->SizeY() / 2, tex->SizeX(), tex->SizeY() / 2, sky_color );
 
-	unsigned int deg= 0;
+	unsigned int deg= 270;
 	unsigned int d_deg= 45;
 	for( unsigned int i= 0; i< 8; i++, deg+= d_deg )
 	{
@@ -34,7 +34,7 @@ void GenNaviballTexture( mf_Texture* tex )
 			tex->DrawLine( dx-1, 0, dx-1, tex->SizeY(), line_color );
 
 		char str[16];
-		sprintf( str, "%d", deg );
+		sprintf( str, "%d", deg%360 );
 		tex->DrawText( dx + 4, tex->SizeY() / 2 + 4, 1, line_color, str );
 	}
 }
