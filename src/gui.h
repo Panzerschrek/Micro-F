@@ -16,6 +16,14 @@ public:
 
 	void Draw();
 
+	enum NaviBallIcons
+	{
+		IconDirection,
+		IconSpeed,
+		IconAntiSpeed,
+		LastIcon
+	};
+
 private:
 	void DrawNaviball();
 
@@ -26,4 +34,6 @@ private:
 	mf_GLSLProgram naviball_shader_;
 	mf_VertexBuffer naviball_vbo_;
 	GLuint naviball_texture_;
+
+	GLuint naviball_icons_texture_array_;
 };

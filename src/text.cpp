@@ -2,6 +2,8 @@
 #include "text.h"
 #include "shaders.h"
 
+#include "texture.h"
+
 #include "font_data.h"
 
 const unsigned char mf_Text::default_color[4]= {255, 255, 255, 32 };
@@ -12,9 +14,10 @@ void mf_Text::CreateTexture()
 	unsigned char* decompressed_font= new unsigned char[ MF_FONT_BITMAP_WIDTH * MF_FONT_BITMAP_HEIGHT ];
 	font_data_= decompressed_font;
 
-	for( unsigned int i= 0; i< MF_FONT_BITMAP_WIDTH * MF_FONT_BITMAP_HEIGHT / 8; i++ )
-		for( unsigned int j= 0; j< 8; j++ )
-			decompressed_font[ (i<<3) + (7-j) ]= ( (font_data[i] & (1<<j)) >> j ) * 255;
+	mfMonochromeImageTo8Bit( font_data, decompressed_font, MF_FONT_BITMAP_WIDTH * MF_FONT_BITMAP_HEIGHT );
+	//for( unsigned int i= 0; i< MF_FONT_BITMAP_WIDTH * MF_FONT_BITMAP_HEIGHT / 8; i++ )
+	//	for( unsigned int j= 0; j< 8; j++ )
+	//		decompressed_font[ (i<<3) + (7-j) ]= ( (font_data[i] & (1<<j)) >> j ) * 255;
 
 	glGenTextures( 1, &font_texture_id_ );
 

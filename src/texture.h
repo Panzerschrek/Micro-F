@@ -1,6 +1,8 @@
 #pragma once
 #include "micro-f.h"
 
+void mfMonochromeImageTo8Bit( const unsigned char* in_data, unsigned char* out_data, unsigned int out_data_size );
+
 class mf_Texture
 {
 public:

@@ -21,11 +21,17 @@ void GenNaviballTexture( mf_Texture* tex )
 	unsigned int d_deg= 45;
 	for( unsigned int i= 0; i< 8; i++, deg+= d_deg )
 	{
-		//tex->DrawLine( 0, i * tex->SizeY() / 8, tex->SizeX(), (i+1) * tex->SizeY() / 8, line_color );
 		unsigned int dy= i * tex->SizeY() / 8;
 		unsigned int dx= i * tex->SizeX() / 8;
 		tex->DrawLine( 0, dy, tex->SizeX(), dy, line_color );
+		if( i == 4 )
+		{
+			tex->DrawLine( 0, dy-1, tex->SizeX(), dy-1, line_color );
+			tex->DrawLine( 0, dy+1, tex->SizeX(), dy+1, line_color );
+		}
 		tex->DrawLine( dx, 0, dx, tex->SizeY(), line_color );
+		if( (i&1) == 0 )
+			tex->DrawLine( dx-1, 0, dx-1, tex->SizeY(), line_color );
 
 		char str[16];
 		sprintf( str, "%d", deg );

@@ -13,6 +13,18 @@
 #include "models_generation.h"
 #include "textures_generation.h"
 
+#define MF_GUI_ICON_SIZE 32
+
+static const unsigned char icons_data[mf_Gui::LastIcon][ MF_GUI_ICON_SIZE * MF_GUI_ICON_SIZE / 8 ]=
+{
+#include "../textures/aircraft_direction.h"
+,
+#include "../textures/front_speed.h"
+,
+#include "../textures/back_speed.h"
+};
+
+
 mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 	: text_(text)
 	, player_(player)
@@ -49,6 +61,21 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 		naviball_vbo_.VertexAttrib( 0, 3, GL_FLOAT, false, shift );
 		shift= (char*)vert.tex_coord - (char*)&vert;
 		naviball_vbo_.VertexAttrib( 2, 2, GL_FLOAT, false, shift );
+	}
+
+	{
+		unsigned char decompressed_data[ MF_GUI_ICON_SIZE * MF_GUI_ICON_SIZE * LastIcon ];
+		mfMonochromeImageTo8Bit( (unsigned char*)icons_data, decompressed_data, sizeof(decompressed_data) );
+
+		glGenTextures( 1, &naviball_icons_texture_array_ );
+		glBindTexture( GL_TEXTURE_2D_ARRAY, naviball_icons_texture_array_ );
+
+		glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_R8,
+			MF_GUI_ICON_SIZE, MF_GUI_ICON_SIZE, LastIcon,
+			0, GL_RED, GL_UNSIGNED_BYTE, decompressed_data );
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 	}
 }
 
@@ -93,12 +120,12 @@ void mf_Gui::DrawNaviball()
 	float scale_mat[16];
 	float scale_vec[3];
 
-	static const float translate_vec[]= { 0.0f, -0.5f, 0.0f };
+	static const float translate_vec[]= { 0.0f, -0.75f, 0.0f };
 	Mat4Translate( translate_mat, translate_vec );
 
-	const float c_naviball_scale= 0.25f;
-	scale_vec[0]= c_naviball_scale;
-	scale_vec[1]= c_naviball_scale * float(main_loop->ViewportWidth()) / float(main_loop->ViewportHeight());
+	const float c_naviball_scale= 0.22f;
+	scale_vec[0]= c_naviball_scale  * float(main_loop->ViewportHeight()) / float(main_loop->ViewportWidth());
+	scale_vec[1]= c_naviball_scale;
 	scale_vec[2]= c_naviball_scale;
 	Mat4Scale( scale_mat, scale_vec );
 
@@ -117,10 +144,17 @@ void mf_Gui::DrawNaviball()
 		axis_mat[ 6]= aircraft->AxisVec(2)[1];
 		axis_mat[10]= aircraft->AxisVec(2)[2];
 		Mat4Transpose( axis_mat );
+		Mat4Invert( axis_mat, tmp_mat );
 
 		Mat4RotateZ( z_rot_mat, MF_PI2 );
-		//memcpy( rotate_mat, axis_mat, sizeof(axis_mat) );
-		Mat4Mul( z_rot_mat, axis_mat, rotate_mat );
+		Mat4Mul( z_rot_mat, tmp_mat, rotate_mat );
+		/*float lon, lat;
+		VecToSphericalCoordinates( aircraft->AxisVec(1), &lon, &lat );
+		float rot_z[16];
+		float rot_x[16];
+		Mat4RotateX( rot_x, lat );
+		Mat4RotateZ( rot_z, lon );
+		Mat4Mul( rot_z, rot_x, rotate_mat );*/
 	}
 	{
 		Mat4RotateX( basis_change_mat, -MF_PI2 );
