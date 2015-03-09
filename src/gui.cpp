@@ -113,7 +113,8 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 		8, 7, // control panel
 		5, 8, // throttle bar
 		3, 3, // throttle indicator
-		7, 7  // vertical speed indicator
+		7, 7, // vertical speed indicator
+		8, 8 // naviball glass
 	};
 	for( unsigned int i= 0; i< LastGuiTexture; i++ )
 	{
@@ -152,6 +153,7 @@ void mf_Gui::Draw()
 
 	DrawControlPanel();
 	DrawNaviball();
+	DrawNaviballGlass();
 }
 
 void mf_Gui::DrawControlPanel()
@@ -162,12 +164,12 @@ void mf_Gui::DrawControlPanel()
 
 	gui_shader_.Bind();
 
-	int textures_id[6];
-	for( unsigned int i= 0; i< LastGuiTexture; i++ )
+	int textures_id[LastGuiTexture];
+	for( unsigned int i= TextureControlPanel; i< LastGuiTexture; i++ )
 	{
-		glActiveTexture( GL_TEXTURE0 + i );
+		glActiveTexture( GL_TEXTURE0 + i - TextureControlPanel );
 		glBindTexture( GL_TEXTURE_2D, textures[i] );
-		textures_id[i]= i;
+		textures_id[i]= i - TextureControlPanel ;
 	}
 	gui_shader_.UniformIntArray( "tex", 6, textures_id );
 
@@ -411,7 +413,7 @@ void mf_Gui::DrawNaviball()
 		glBindTexture( GL_TEXTURE_2D_ARRAY, naviball_icons_texture_array_ );
 		naviball_icons_shader_.UniformInt( "tex", 0 );
 
-		naviball_icons_shader_.UniformFloat( "ps", float(main_loop->ViewportHeight()) / 16.0f );
+		naviball_icons_shader_.UniformFloat( "ps", float(main_loop->ViewportHeight()) / 18.0f );
 
 		glEnable( GL_BLEND );
 		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -419,7 +421,7 @@ void mf_Gui::DrawNaviball()
 		glEnable( GL_PROGRAM_POINT_SIZE );
 		for( unsigned int i= 0; i< icon_count; i++ )
 		{
-			if (icons_pos[i][2] > -0.1f) continue;
+			if (icons_pos[i][2] > -0.11f) continue;
 			naviball_icons_shader_.UniformVec3( "p", icons_pos[i] );
 			naviball_icons_shader_.UniformVec3( "c", icons_color[i] );
 			naviball_icons_shader_.UniformFloat( "tn", float(icons_type[i]) + 0.01f );
@@ -429,4 +431,45 @@ void mf_Gui::DrawNaviball()
 		glEnable( GL_DEPTH_TEST );
 		glDisable( GL_BLEND );
 	} // draw icons
+}
+
+void mf_Gui::DrawNaviballGlass()
+{
+	mf_MainLoop* main_loop= mf_MainLoop::Instance();
+
+	mf_GuiVertex vertices[6];
+	mf_GuiVertex* v= vertices;
+
+	float k= float(main_loop->ViewportHeight()) / float(main_loop->ViewportWidth());
+	const float naviball_radius= 0.24f;
+	const float naviball_center[]= { 0.0f, -0.75f };
+	v[0].pos[0]= (naviball_center[0] - naviball_radius) * k;
+	v[0].pos[1]= naviball_center[1] - naviball_radius;
+	v[1].pos[0]= (naviball_center[0] + naviball_radius) * k;
+	v[1].pos[1]= naviball_center[1] - naviball_radius;
+	v[2].pos[0]= (naviball_center[0] + naviball_radius) * k;
+	v[2].pos[1]= naviball_center[1] + naviball_radius;
+	v[3].pos[0]= (naviball_center[0] - naviball_radius) * k;
+	v[3].pos[1]= naviball_center[1] + naviball_radius;
+	GenGuiQuadTextureCoords( v, TextureNaviballGlass );
+	v[4]= v[0];
+	v[5]= v[2];
+	v+= 6;
+
+	gui_shader_.Bind();
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, textures[TextureNaviballGlass] );
+	gui_shader_.UniformInt( "tex", 0 );
+
+	common_vbo_.Bind();
+	common_vbo_.VertexSubData( vertices, (v - vertices) * sizeof(mf_GuiVertex), 0 );
+
+	glDisable( GL_DEPTH_TEST );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+	glDrawArrays( GL_TRIANGLES, 0, v - vertices );
+
+	glDisable( GL_BLEND );
+	glEnable( GL_DEPTH_TEST );
 }

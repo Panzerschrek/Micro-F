@@ -19,6 +19,7 @@ enum mf_GuiTexture
 	TextureThrottleBar,
 	TextureThrottleIndicator,
 	TextureVerticalSpeedIndicator,
+	TextureNaviballGlass,
 	LastGuiTexture
 };
 
@@ -30,6 +31,7 @@ void GenNaviballTexture( mf_Texture* tex );
 void GenControlPanelTexture( mf_Texture* tex );
 void GenThrottleBarTexture( mf_Texture* tex );
 void GenThrottleIndicatorTexture( mf_Texture* tex );
+void GenVerticalSpeedIndicatorTexture( mf_Texture* tex );
 
 void GenF1949Texture( mf_Texture* tex );
 void GenF2XXXTexture( mf_Texture* tex );

@@ -28,6 +28,7 @@ public:
 private:
 	void DrawControlPanel();
 	void DrawNaviball();
+	void DrawNaviballGlass();
 
 private:
 	mf_Text* text_;

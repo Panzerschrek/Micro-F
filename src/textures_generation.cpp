@@ -100,6 +100,26 @@ void GenVerticalSpeedIndicatorTexture( mf_Texture* tex )
 	}
 }
 
+void GenNaviballGlassTexture( mf_Texture* tex )
+{
+	static const float c0[]= { 0.9f, 0.9f, 0.9f, 0.1f };
+	static const float c1[]= { 0.9f, 0.9f, 0.9f, 0.4f };
+	tex->Gradient( 0, 0, tex->SizeX(), tex->SizeY(), c0, c1 );
+	//tex->RadialGradient( tex->SizeX()/2, tex->SizeY()/3, tex->SizeX() * 3 / 4, c0, c1 );
+
+	const unsigned int border_size= 12;
+	mf_Texture tex2( tex->SizeXLog2(), tex->SizeYLog2() );
+	tex2.Fill( g_invisible_color );
+	static const float white_color[]= { 1.0f, 1.0f, 1.0f, 1.0f };
+	tex2.FillEllipse( tex->SizeX()/2, tex->SizeY()/2, tex->SizeX()/2 - border_size, white_color );
+	tex->Mul( &tex2 );
+
+	tex2.Fill( g_invisible_color );
+	tex2.FillEllipse( tex->SizeX()/2, tex->SizeY()/2, tex->SizeX()/2 - 1, g_indicators_border_color );
+	tex2.FillEllipse( tex->SizeX()/2, tex->SizeY()/2, tex->SizeX()/2 - border_size, g_invisible_color );
+	tex->Add( &tex2 );
+}
+
 void GenF1949Texture( mf_Texture* tex )
 {
 	const unsigned int tex_scaler= 1<< ( tex->SizeXLog2() - 8 );
@@ -270,5 +290,6 @@ void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 	GenControlPanelTexture,
 	GenThrottleBarTexture,
 	GenThrottleIndicatorTexture,
-	GenVerticalSpeedIndicatorTexture
+	GenVerticalSpeedIndicatorTexture,
+	GenNaviballGlassTexture
 };
