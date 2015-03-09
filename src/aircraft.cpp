@@ -44,7 +44,7 @@ mf_Aircraft::mf_Aircraft( Type type )
 	axis_[2][2]= 1.0f;
 
 	// mass/wings_area/velocity/trust/ - parameters of I-5 aircraft (Soviet Union, 1930)
-	max_engines_trust_= 5000.0f; // 5 kN
+	max_engines_trust_= 5000.0f;
 	wings_area_= 21.25f;
 	wings_span_length_= 10.24f;
 	mass_= 1355.0f;
