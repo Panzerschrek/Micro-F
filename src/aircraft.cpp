@@ -3,9 +3,9 @@
 
 #include "mf_math.h"
 
-static const float g_roll_rotate_speed=  1.0f;
-static const float g_pitch_rotate_speed= 2.0f;
-static const float g_yaw_rotate_speed=   0.5f;
+static const float g_roll_rotate_speed=  0.125f;
+static const float g_pitch_rotate_speed= 0.25f;
+static const float g_yaw_rotate_speed=   0.0625f;
 
 static const float g_gravitation[]= { 0.0f, 0.0f, -9.8f }; // m / s^2
 static const float g_air_weight_destiny= 1.225f; // kg / m^3
@@ -23,6 +23,11 @@ static float AngleOfAttackToLiftForceK( float angle )
 	if( k < 0.0f)
 		k= 0.0f;
 	return k;
+}
+
+static float AngleToAngularAcceleration( float angle )
+{
+	return -angle * mf_Math::fabs(angle) * 0.5f;
 }
 
 mf_Aircraft::mf_Aircraft( Type type )
@@ -68,8 +73,8 @@ mf_Aircraft::mf_Aircraft( Type type )
 	angular_speed_[1]= 0.0f;
 	angular_speed_[2]= 0.0f;
 	angular_acceleration_[0]= 0.0f;
+	angular_acceleration_[1]= 0.0f;
 	angular_acceleration_[2]= 0.0f;
-	angular_acceleration_[3]= 0.0f;
 
 }
 
@@ -79,34 +84,48 @@ mf_Aircraft::~mf_Aircraft()
 
 void mf_Aircraft::Tick( float dt )
 {
+	{ // calculate angular acceleration
+		angular_acceleration_[0]+= pitch_factor_ * g_pitch_rotate_speed;
+		angular_acceleration_[1]+= roll_factor_  * g_roll_rotate_speed ;
+		angular_acceleration_[2]+= yaw_factor_   * g_yaw_rotate_speed  ;
+
+		for( unsigned int i= 0; i< 3; i++ )
+			angular_speed_[i]+= angular_acceleration_[i] * dt;
+
+		angular_acceleration_[0]= 0.0f;
+		angular_acceleration_[1]= 0.0f;
+		angular_acceleration_[2]= 0.0f;
+	}
+
 	float axis_rotate_vec[3][3];
-	Vec3Mul( axis_[0], pitch_factor_ * g_pitch_rotate_speed, axis_rotate_vec[0] );
-	Vec3Mul( axis_[1], roll_factor_  * g_roll_rotate_speed , axis_rotate_vec[1] );
-	Vec3Mul( axis_[2], yaw_factor_   * g_yaw_rotate_speed  , axis_rotate_vec[2] );
+	for( unsigned int i= 0; i< 3; i++ )
+		Vec3Mul( axis_[i], angular_speed_[i], axis_rotate_vec[i] );
 
-	float rotate_vec[3];
-	Vec3Add( axis_rotate_vec[0], axis_rotate_vec[1], rotate_vec );
-	Vec3Add( rotate_vec, axis_rotate_vec[2] );
+	{ // rotate aircraft
+		float rotate_vec[3];
+		Vec3Add( axis_rotate_vec[0], axis_rotate_vec[1], rotate_vec );
+		Vec3Add( rotate_vec, axis_rotate_vec[2] );
 
-	float vec_len= Vec3Len(rotate_vec);
-	float rot_angle= vec_len * dt;
+		float vec_len= Vec3Len(rotate_vec);
+		float rot_angle= vec_len;
 
-	if ( vec_len > 0.001f )
-	{
-		float rotate_mat[16];
-		Mat4RotateAroundVector( rotate_mat, rotate_vec, rot_angle );
+		if ( vec_len > 0.001f )
+		{
+			float rotate_mat[16];
+			Mat4RotateAroundVector( rotate_mat, rotate_vec, rot_angle );
 
-		// make final rotation
-		Vec3Mat4Mul( axis_[0], rotate_mat );
-		Vec3Mat4Mul( axis_[1], rotate_mat );
-		Vec3Mat4Mul( axis_[2], rotate_mat );
+			// make final rotation
+			Vec3Mat4Mul( axis_[0], rotate_mat );
+			Vec3Mat4Mul( axis_[1], rotate_mat );
+			Vec3Mat4Mul( axis_[2], rotate_mat );
 
-		// make axis orthogonal and with identity vectors
-		Vec3Cross( axis_[0], axis_[1], axis_[2] );
-		Vec3Cross( axis_[1], axis_[2], axis_[0] );
-		Vec3Normalize( axis_[0] );
-		Vec3Normalize( axis_[1] );
-		Vec3Normalize( axis_[2] );
+			// make axis orthogonal and with identity vectors
+			Vec3Cross( axis_[0], axis_[1], axis_[2] );
+			Vec3Cross( axis_[1], axis_[2], axis_[0] );
+			Vec3Normalize( axis_[0] );
+			Vec3Normalize( axis_[1] );
+			Vec3Normalize( axis_[2] );
+		}
 	}
 
 	// calculations of position of aircraft before calculations of forces
@@ -128,9 +147,15 @@ void mf_Aircraft::Tick( float dt )
 	{
 		VEC3_CPY( acceleration_, g_gravitation );
 
+		// engines force
 		float engines_acceleration_vec_[3];
 		Vec3Mul( axis_[1], max_engines_trust_ * throttle_ / mass_, engines_acceleration_vec_ );
 		Vec3Add( acceleration_, engines_acceleration_vec_ );
+
+		// lift force
+		float velocity_vec_in_local_aircraft_space[3];
+		for( unsigned int i= 0; i< 3; i++ )
+			velocity_vec_in_local_aircraft_space[i]= Vec3Dot( axis_[i], velocity_ );
 
 		float lift_force_basis_vec[3];
 		Vec3Cross( axis_[0], velocity_, lift_force_basis_vec );
@@ -155,6 +180,7 @@ void mf_Aircraft::Tick( float dt )
 		Vec3Mul( lift_force_basis_vec, lift_force / mass_, lift_acceleration_vec );
 		Vec3Add( acceleration_, lift_acceleration_vec );
 
+		// drag force
 		float normalized_velocity_vec[3];
 		VEC3_CPY( normalized_velocity_vec, velocity_ );
 		Vec3Normalize( normalized_velocity_vec );
@@ -168,6 +194,16 @@ void mf_Aircraft::Tick( float dt )
 		float wings_drag_acceleration_vec[3];
 		Vec3Mul( normalized_velocity_vec, -wings_drag_force/ mass_, wings_drag_acceleration_vec );
 		Vec3Add( acceleration_, wings_drag_acceleration_vec );
+
+		//angular acceleration
+		{
+			float normalized_velocity_vec[3];
+			VEC3_CPY( normalized_velocity_vec, velocity_ );
+			float l= Vec3Len( normalized_velocity_vec );
+			Vec3Mul( normalized_velocity_vec, 1.0f / l );
+
+			angular_acceleration_[0]+= AngleToAngularAcceleration( angle_of_attack );
+		}
 
 #ifdef MF_DEBUG
 		debug_angle_of_attack_deg_= angle_of_attack * MF_RAD2DEG;
