@@ -68,7 +68,7 @@ void mf_Aircraft::Tick( float dt )
 	}
 
 	const float k= 0.95f;
-	const float speed= 50.0f;
+	const float speed= 50.0f * throttle_;
 	float old_velocity[3];
 	float new_velocity[3];
 	Vec3Mul( velocity_, k, old_velocity );
@@ -79,4 +79,18 @@ void mf_Aircraft::Tick( float dt )
 	float d_pos[3];
 	Vec3Mul( velocity_, dt, d_pos );
 	Vec3Add( pos_, d_pos );
+}
+
+void mf_Aircraft::ThrottleUp( float dt )
+{
+	const float throttle_up_speed= 0.75f;
+	throttle_+= dt * throttle_up_speed;
+	if( throttle_ > 1.0f ) throttle_= 1.0f;
+}
+
+void mf_Aircraft::ThrottleDown( float dt )
+{
+	const float throttle_down_speed= 1.0f;
+	throttle_-= dt * throttle_down_speed;
+	if( throttle_ < 0.0f ) throttle_= 0.0f;
 }

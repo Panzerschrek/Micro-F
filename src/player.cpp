@@ -79,6 +79,10 @@ void mf_Player::Tick( float dt )
 		if(rotate_clockwise_pressed_) roll_factor+= -1.0f;
 		if(rotate_anticlockwise_pressed_) roll_factor+= 1.0f;
 
+		if(up_pressed_) aircraft_.ThrottleUp( dt );
+		if(down_pressed_) aircraft_.ThrottleDown( dt );
+		
+
 		aircraft_.SetPitchFactor( pitch_factor );
 		aircraft_.SetRollFactor ( roll_factor  );
 		aircraft_.SetYawFactor  ( yaw_factor   );

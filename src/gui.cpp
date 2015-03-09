@@ -33,6 +33,20 @@ struct mf_GuiVertex
 	float tex_coord[3];
 };
 
+static void GenGuiQuadTextureCoords( mf_GuiVertex* v, mf_GuiTexture tex )
+{
+	v[0].tex_coord[0]= 0.0f;
+	v[0].tex_coord[1]= 0.0f;
+	v[1].tex_coord[0]= 1.0f;
+	v[1].tex_coord[1]= 0.0f;
+	v[2].tex_coord[0]= 1.0f;
+	v[2].tex_coord[1]= 1.0f;
+	v[3].tex_coord[0]= 0.0f;
+	v[3].tex_coord[1]= 1.0f;
+	v[0].tex_coord[2]= v[1].tex_coord[2]=
+	v[2].tex_coord[2]= v[3].tex_coord[2]= float(tex) + 0.01f;
+}
+
 mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 	: text_(text)
 	, player_(player)
@@ -161,67 +175,106 @@ void mf_Gui::DrawControlPanel()
 	mf_GuiVertex* v= vertices;
 
 	float k= float(main_loop->ViewportHeight()) / float(main_loop->ViewportWidth());
-	v[0].pos[0]= -0.4f * k;
-	v[0].pos[1]= -1.0f;
-	v[1].pos[0]=  0.5f * k;
-	v[1].pos[1]= -1.0f;
-	v[2].pos[0]=  0.5f * k;
-	v[2].pos[1]= -0.5f;
-	v[3].pos[0]= -0.4f * k;
-	v[3].pos[1]= -0.5f;
-	v[0].tex_coord[0]= 0.0f;
-	v[0].tex_coord[1]= 0.0f;
-	v[1].tex_coord[0]= 1.0f;
-	v[1].tex_coord[1]= 0.0f;
-	v[2].tex_coord[0]= 1.0f;
-	v[2].tex_coord[1]= 1.0f;
-	v[3].tex_coord[0]= 0.0f;
-	v[3].tex_coord[1]= 1.0f;
-	v[0].tex_coord[2]= v[1].tex_coord[2]=
-	v[2].tex_coord[2]= v[3].tex_coord[2]= float(TextureControlPanel) + tex_z_delta;
-	v[4]= v[0];
-	v[5]= v[2];
-	v+= 6;
 
-	const float throttle_bar_top= -0.52f;
-	const float throttle_bar_bottom= -0.98f;
-	v[0].pos[0]= -0.35f * k;
-	v[0].pos[1]= throttle_bar_bottom;
-	v[1].pos[0]= -0.3f * k;
-	v[1].pos[1]= throttle_bar_bottom;
-	v[2].pos[0]= -0.3f * k;
-	v[2].pos[1]= throttle_bar_top;
-	v[3].pos[0]= -0.35f * k;
-	v[3].pos[1]= throttle_bar_top;
-	v[0].tex_coord[0]= 0.0f;
-	v[0].tex_coord[1]= 0.0f;
-	v[1].tex_coord[0]= 1.0f;
-	v[1].tex_coord[1]= 0.0f;
-	v[2].tex_coord[0]= 1.0f;
-	v[2].tex_coord[1]= 1.0f;
-	v[3].tex_coord[0]= 0.0f;
-	v[3].tex_coord[1]= 1.0f;
-	v[0].tex_coord[2]= v[1].tex_coord[2]=
-	v[2].tex_coord[2]= v[3].tex_coord[2]= float(TextureThrottleBar) + tex_z_delta;
-	v[4]= v[0];
-	v[5]= v[2];
-	v+= 6;
+	// control panel
+	{
+		v[0].pos[0]= -0.4f * k;
+		v[0].pos[1]= -1.0f;
+		v[1].pos[0]=  0.5f * k;
+		v[1].pos[1]= -1.0f;
+		v[2].pos[0]=  0.5f * k;
+		v[2].pos[1]= -0.5f;
+		v[3].pos[0]= -0.4f * k;
+		v[3].pos[1]= -0.5f;
+		GenGuiQuadTextureCoords( v, TextureControlPanel );
+		v[4]= v[0];
+		v[5]= v[2];
+		v+= 6;
+	}
+	// throttle bar
+	{
+		const float throttle_bar_top= -0.52f;
+		const float throttle_bar_bottom= -0.98f;
+		v[0].pos[0]= -0.35f * k;
+		v[0].pos[1]= throttle_bar_bottom;
+		v[1].pos[0]= -0.3f * k;
+		v[1].pos[1]= throttle_bar_bottom;
+		v[2].pos[0]= -0.3f * k;
+		v[2].pos[1]= throttle_bar_top;
+		v[3].pos[0]= -0.35f * k;
+		v[3].pos[1]= throttle_bar_top;
+		GenGuiQuadTextureCoords( v, TextureThrottleBar );
+		v[4]= v[0];
+		v[5]= v[2];
+		v+= 6;
 
-	float throttle= aircraft->Throttle();
-	if( throttle < 0.02f ) throttle= 0.02f;
-	else if( throttle > 0.97f ) throttle= 0.98f;
-	float throttle_indicator_pos= throttle_bar_top * throttle + throttle_bar_bottom * ( 1.0f - throttle );
-	v[0].pos[0]= -0.305f * k;
-	v[0].pos[1]= throttle_indicator_pos;
-	v[1].pos[0]= -0.35f * k;
-	v[1].pos[1]= throttle_indicator_pos + 0.005f;
-	v[2].pos[0]= -0.35f * k;
-	v[2].pos[1]= throttle_indicator_pos - 0.005f;
-	v[0].tex_coord[0]= v[0].tex_coord[1]=
-	v[1].tex_coord[0]= v[1].tex_coord[1]=
-	v[2].tex_coord[0]= v[2].tex_coord[1]= 0.0f;
-	v[0].tex_coord[2]= v[1].tex_coord[2]= v[2].tex_coord[2]= float(TextureThrottleIndicator) + tex_z_delta;
-	v+= 3;
+		// throttle indicator
+		float throttle= aircraft->Throttle();
+		if( throttle < 0.02f ) throttle= 0.02f;
+		else if( throttle > 0.97f ) throttle= 0.98f;
+		float throttle_indicator_pos= throttle_bar_top * throttle + throttle_bar_bottom * ( 1.0f - throttle );
+		v[0].pos[0]= -0.305f * k;
+		v[0].pos[1]= throttle_indicator_pos;
+		v[1].pos[0]= -0.35f * k;
+		v[1].pos[1]= throttle_indicator_pos + 0.005f;
+		v[2].pos[0]= -0.35f * k;
+		v[2].pos[1]= throttle_indicator_pos - 0.005f;
+		v[0].tex_coord[0]= v[0].tex_coord[1]=
+		v[1].tex_coord[0]= v[1].tex_coord[1]=
+		v[2].tex_coord[0]= v[2].tex_coord[1]= 0.0f;
+		v[0].tex_coord[2]= v[1].tex_coord[2]= v[2].tex_coord[2]= float(TextureThrottleIndicator) + tex_z_delta;
+		v+= 3;
+	}
+	// vertical speed indicator
+	{
+		const float vertical_speed_indicator_center[]= { 0.35f, -0.65f };
+		const float vertical_speed_indicator_half_size= 0.11f;
+		v[0].pos[0]= ( vertical_speed_indicator_center[0] - vertical_speed_indicator_half_size ) * k;
+		v[0].pos[1]= vertical_speed_indicator_center[1] - vertical_speed_indicator_half_size;
+		v[1].pos[0]= ( vertical_speed_indicator_center[0] + vertical_speed_indicator_half_size ) * k;
+		v[1].pos[1]= vertical_speed_indicator_center[1] - vertical_speed_indicator_half_size;
+		v[2].pos[0]= ( vertical_speed_indicator_center[0] + vertical_speed_indicator_half_size ) * k;
+		v[2].pos[1]= vertical_speed_indicator_center[1] + vertical_speed_indicator_half_size;
+		v[3].pos[0]= ( vertical_speed_indicator_center[0] - vertical_speed_indicator_half_size ) * k;
+		v[3].pos[1]= vertical_speed_indicator_center[1] + vertical_speed_indicator_half_size;
+		GenGuiQuadTextureCoords( v, TextureVerticalSpeedIndicator );
+		v[4]= v[0];
+		v[5]= v[2];
+		v+= 6;
+
+		const float max_vertical_speed_indicator_angle= 135.0f * MF_DEG2RAD;
+		const float max_vertical_speed= 50.0f;
+		float v_speed_k= aircraft->Velocity()[2] / max_vertical_speed;
+		{
+			// make indicator logarithmic
+			float abs_k= mf_Math::fabs(v_speed_k);
+			abs_k= mf_Math::log( abs_k * 1.718281828f + 1.0f );
+			v_speed_k= abs_k * mf_Math::sign( v_speed_k );
+		}
+		if(v_speed_k > 1.0f) v_speed_k= 1.0f;
+		else if(v_speed_k< -1.0f) v_speed_k= -1.0f;
+		float vertical_speed_indicator_angle= max_vertical_speed_indicator_angle * v_speed_k;
+
+		static const float vertical_speed_indicator_arrow[]=
+		{
+			0.0f, -0.009f, 0.0f,
+			0.0f, +0.009f, 0.0f,
+			-vertical_speed_indicator_half_size * 0.9f, 0.0f, 0.0f
+		};
+		float vertical_speed_indicator_arraow_mat[16];
+		Mat4RotateZ( vertical_speed_indicator_arraow_mat, -vertical_speed_indicator_angle );
+		for( unsigned int i= 0; i< 3; i++ )
+		{
+			float tmp_v[3];
+			Vec3Mat4Mul( vertical_speed_indicator_arrow + i * 3, vertical_speed_indicator_arraow_mat, tmp_v );
+			v[i].pos[0]= ( tmp_v[0] + vertical_speed_indicator_center[0] ) * k;
+			v[i].pos[1]= tmp_v[1] + vertical_speed_indicator_center[1];
+			v[i].tex_coord[0]= 0.0f;
+			v[i].tex_coord[1]= 0.0f;
+			v[i].tex_coord[2]= float(TextureThrottleIndicator) + tex_z_delta;
+		}
+		v+= 3;
+	}
 	
 	common_vbo_.Bind();
 	common_vbo_.VertexSubData( vertices, (v - vertices) * sizeof(mf_GuiVertex), 0 );

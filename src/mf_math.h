@@ -48,6 +48,7 @@ void Mat4Translate( float* m, const float* v );
 void Mat4Perspective( float* m, float aspect, float fov, float z_near, float z_far );
 void Mat4RotateAroundVector( float* m, const float* vec, float angle );
 
+float Mat3Det( const float* m );
 void Mat4ToMat3( float* m );
 void Mat4ToMat3( const float* m_in, float* m_out );
 
@@ -158,6 +159,14 @@ inline float atan( float a )
 inline float acos( float x )
 {
 	float a= atan( sqrt( 1.0f - x * x ) / x );
+	if( x <= 0.0f )
+		a+= MF_PI;
+	return a;
+}
+
+inline float asin( float x )
+{
+	float a= atan( sqrt( 1.0f / ( 1.0f / (x*x) - 1.0f) ) );
 	if( x <= 0.0f )
 		a+= MF_PI;
 	return a;

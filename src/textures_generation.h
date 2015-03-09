@@ -18,7 +18,7 @@ enum mf_GuiTexture
 	TextureControlPanel,
 	TextureThrottleBar,
 	TextureThrottleIndicator,
-	VerticalSpeedIndicator,
+	TextureVerticalSpeedIndicator,
 	LastGuiTexture
 };
 

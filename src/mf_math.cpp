@@ -128,12 +128,12 @@ void SphericalCoordinatesToVec( float longitude, float latitude, float* out_vec 
 
 void VecToSphericalCoordinates( const float* vec, float* out_longitude, float* out_latitude )
 {
-	*out_latitude= asin(vec[2]);
+	*out_latitude= mf_Math::asin(vec[2]);
 
 	float lat_cos2= 1.0f - vec[2] * vec[2];
 	float vec_y= vec[1] / mf_Math::sqrt(lat_cos2);
 
-	*out_longitude= acos(vec_y);
+	*out_longitude= mf_Math::acos(vec_y);
 	if ( vec[0] > 0.0f ) *out_longitude= MF_2PI - *out_longitude;
 }
 
@@ -169,14 +169,6 @@ void Mat4Transpose( float* m )
 			m[ i + j*4]= m[ j + i*4 ];
 			m[ j + i*4 ]= tmp;
 		}
-}
-
-static float Mat3Det( const float* m )
-{
-return
-	m[0] * ( m[4] * m[8] - m[5] * m[7] ) -
-	m[1] * ( m[3] * m[8] - m[5] * m[6] ) +
-	m[2] * ( m[3] * m[7] - m[4] * m[6] );
 }
 
 void Mat4Invert( const float* m, float* out_m )
@@ -420,6 +412,14 @@ void Mat4RotateAroundVector( float* m, const float* vec, float angle )
 	Mat4Mul( mat, invert_transform_matrix, m );
 
 	// result matrix = convert_to_svector_space * rotate_x * convert_to_initial_space
+}
+
+float Mat3Det( const float* m )
+{
+return
+	m[0] * ( m[4] * m[8] - m[5] * m[7] ) -
+	m[1] * ( m[3] * m[8] - m[5] * m[6] ) +
+	m[2] * ( m[3] * m[7] - m[4] * m[6] );
 }
 
 void Mat4ToMat3( float* m )

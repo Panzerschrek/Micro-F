@@ -12,6 +12,7 @@
 	* [sdelano] sam šar
 	* [sdelano] ikonki napravlenij
 	* nužno sdelatj povoroty kak v KSP
+	* otobraženije vragov
 * [v processe] gui
 * [sdelano] sozdanije nebesnoj sfery tesseläçije ikosaedra
 * zvözdy

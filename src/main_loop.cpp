@@ -307,9 +307,9 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 			instance->player_.LeftReleased(); break;
 		case KEY('D'):
 			instance->player_.RightReleased(); break;
-		case VK_SPACE:
+		case VK_SHIFT:
 			instance->player_.UpReleased(); break;
-		case KEY('C'):
+		case VK_CONTROL:
 			instance->player_.DownReleased(); break;
 		case VK_LEFT:
 			instance->player_.RotateLeftReleased(); break;
@@ -339,9 +339,9 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 			instance->player_.LeftPressed(); break;
 		case KEY('D'):
 			instance->player_.RightPressed(); break;
-		case VK_SPACE:
+		case VK_SHIFT:
 			instance->player_.UpPressed(); break;
-		case KEY('C'):
+		case VK_CONTROL:
 			instance->player_.DownPressed(); break;
 		case VK_LEFT:
 			instance->player_.RotateLeftPressed(); break;

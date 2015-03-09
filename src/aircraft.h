@@ -32,6 +32,9 @@ public:
 	void SetPos( const float* pos );
 	void SetVelocity( const float* vel );
 
+	void ThrottleUp( float dt );
+	void ThrottleDown( float dt );
+
 	void SetPitchFactor( float pitch );
 	void SetYawFactor( float yaw );
 	void SetRollFactor( float roll );

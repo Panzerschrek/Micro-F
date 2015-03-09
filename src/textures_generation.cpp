@@ -8,11 +8,14 @@
 static const float g_dirt_color[]= { 0.588f, 0.349f, 0.211f, 0.0f };
 static const float g_indicators_background_color[]= { 0.1f, 0.1f, 0.1f, 1.0f };
 static const float g_indicators_lines_color[]= { 0.5f, 0.5f, 0.5f, 1.0f };
+static const float g_indicators_border_color[]= { 0.4f, 0.3f, 0.2f, 1.0f };
+static const float g_invisible_color[]= { 0.0f, 0.0f, 0.0f, 0.0f };
 
 void GenNaviballTexture( mf_Texture* tex )
 {
 	static const float sky_color[]= { 0.125f, 0.62f, 0.96f, 0.0f };
 	static const float ground_color[]= { 0.7f, 0.45f, 0.07f, 0.0f };
+	static const float line_color[]= { 0.9f, 0.9f, 0.9f, 1.0f };
 
 	tex->FillRect( 0, 0, tex->SizeX(), tex->SizeY() / 2, ground_color );
 	tex->FillRect( 0, tex->SizeY() / 2, tex->SizeX(), tex->SizeY() / 2, sky_color );
@@ -23,19 +26,19 @@ void GenNaviballTexture( mf_Texture* tex )
 	{
 		unsigned int dy= i * tex->SizeY() / 8;
 		unsigned int dx= i * tex->SizeX() / 8;
-		tex->DrawLine( 0, dy, tex->SizeX(), dy, g_indicators_lines_color );
+		tex->DrawLine( 0, dy, tex->SizeX(), dy, line_color );
 		if( i == 4 )
 		{
-			tex->DrawLine( 0, dy-1, tex->SizeX(), dy-1, g_indicators_lines_color );
-			tex->DrawLine( 0, dy+1, tex->SizeX(), dy+1, g_indicators_lines_color );
+			tex->DrawLine( 0, dy-1, tex->SizeX(), dy-1, line_color );
+			tex->DrawLine( 0, dy+1, tex->SizeX(), dy+1, line_color );
 		}
-		tex->DrawLine( dx, 0, dx, tex->SizeY(), g_indicators_lines_color );
+		tex->DrawLine( dx, 0, dx, tex->SizeY(), line_color );
 		if( (i&1) == 0 )
-			tex->DrawLine( dx-1, 0, dx-1, tex->SizeY(), g_indicators_lines_color );
+			tex->DrawLine( dx-1, 0, dx-1, tex->SizeY(), line_color );
 
 		char str[16];
 		sprintf( str, "%d", deg%360 );
-		tex->DrawText( dx + 4, tex->SizeY() / 2 + 4, 1, g_indicators_lines_color, str );
+		tex->DrawText( dx + 4, tex->SizeY() / 2 + 4, 1, line_color, str );
 	}
 }
 
@@ -46,6 +49,13 @@ void GenControlPanelTexture( mf_Texture* tex )
 	tex->Mul( mul_color );
 	static const float add_color[]= { 0.0f, 0.0f, 0.0f, 1.0f };
 	tex->Add( add_color );
+
+	const unsigned int border_size= 3;
+
+	tex->FillRect( 0, 0, tex->SizeX(), border_size, g_indicators_border_color );
+	tex->FillRect( 0, 0, border_size, tex->SizeY(), g_indicators_border_color );
+	tex->FillRect( 0, tex->SizeY() - border_size, tex->SizeX(), border_size, g_indicators_border_color );
+	tex->FillRect( tex->SizeX() - border_size, 0, border_size, tex->SizeY(), g_indicators_border_color );
 }
 
 void GenThrottleBarTexture( mf_Texture* tex )
@@ -70,16 +80,20 @@ void GenThrottleIndicatorTexture( mf_Texture* tex )
 
 void GenVerticalSpeedIndicatorTexture( mf_Texture* tex )
 {
-	tex->Fill( g_indicators_background_color );
+	tex->Fill( g_invisible_color );
+	tex->FillEllipse( tex->SizeX()/2, tex->SizeY()/2, tex->SizeX()/2 - 1, g_indicators_border_color );
+	tex->FillEllipse( tex->SizeX()/2, tex->SizeY()/2, tex->SizeX()/2 - 4, g_indicators_background_color );
 
-	float sx= float(tex->SizeX()-1);
-	float sy= float(tex->SizeY()-1);
-	for( int angle= -60; angle<= 60; angle+=30 )
+	float sx= float(tex->SizeX()-10);
+	float sy= float(tex->SizeY()-10);
+	float center_x= float(tex->SizeX()/2);
+	float center_y= float(tex->SizeY()/2);
+	for( int angle= -135; angle<= 135; angle+=45 )
 	{
 		float a= float(angle) * MF_DEG2RAD;
 		float dx= mf_Math::cos(a) * sx;
 		float dy= mf_Math::sin(a) * sy;
-		tex->DrawLine( tex->SizeX()-1, tex->SizeY()/2,
+		tex->DrawLine( int(center_x - dx * 0.4f), int(center_y + 0.4f * dy),
 			( tex->SizeX() - int(dx) )/2,
 			( tex->SizeY() + int(dy) )/2,
 			g_indicators_lines_color );
