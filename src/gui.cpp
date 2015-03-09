@@ -17,8 +17,6 @@
 
 static const unsigned char icons_data[mf_Gui::LastIcon][ MF_GUI_ICON_SIZE * MF_GUI_ICON_SIZE / 8 ]=
 {
-#include "../textures/aircraft_direction.h"
-,
 #include "../textures/front_speed.h"
 ,
 #include "../textures/back_speed.h"
@@ -377,35 +375,29 @@ void mf_Gui::DrawNaviball()
 		float icons_pos[ max_icons ][3];
 		const float* icons_color[ max_icons ];
 
-		unsigned int icon_count= 3;
-
-		icons_pos[0][0]= 0.0f;
-		icons_pos[0][1]= naviball_pos[1];
-		icons_pos[0][2]= -1.0f;
-		icons_type[0]= IconDirection;
-		icons_color[0]= direction_color;
+		unsigned int icon_count= 2;
 
 		float speed_vec[3];
 		VEC3_CPY( speed_vec, aircraft->Velocity() );
 		Vec3Normalize( speed_vec );
 		Vec3Mat4Mul( speed_vec, rot_mat_for_space_vectors );
 
-		icons_pos[1][0]= speed_vec[0];
-		icons_pos[1][1]= speed_vec[1];
-		icons_pos[1][2]= speed_vec[2];
-		icons_type[1]= IconSpeed;
-		icons_color[1]= speed_colord;
+		icons_pos[0][0]= speed_vec[0];
+		icons_pos[0][1]= speed_vec[1];
+		icons_pos[0][2]= speed_vec[2];
+		icons_type[0]= IconSpeed;
+		icons_color[0]= speed_colord;
 
 		VEC3_CPY( speed_vec, aircraft->Velocity() );
 		Vec3Normalize( speed_vec );
 		Vec3Mul( speed_vec, -1.0f );
 		Vec3Mat4Mul( speed_vec, rot_mat_for_space_vectors );
 
-		icons_pos[2][0]= speed_vec[0];
-		icons_pos[2][1]= speed_vec[1];
-		icons_pos[2][2]= speed_vec[2];
-		icons_type[2]= IconAntiSpeed;
-		icons_color[2]= speed_colord;
+		icons_pos[1][0]= speed_vec[0];
+		icons_pos[1][1]= speed_vec[1];
+		icons_pos[1][2]= speed_vec[2];
+		icons_type[1]= IconAntiSpeed;
+		icons_color[1]= speed_colord;
 
 		naviball_icons_shader_.Bind();
 

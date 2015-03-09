@@ -19,7 +19,6 @@ public:
 
 	enum NaviBallIcons
 	{
-		IconDirection,
 		IconSpeed,
 		IconAntiSpeed,
 		LastIcon

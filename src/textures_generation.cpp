@@ -105,19 +105,32 @@ void GenNaviballGlassTexture( mf_Texture* tex )
 	static const float c0[]= { 0.9f, 0.9f, 0.9f, 0.1f };
 	static const float c1[]= { 0.9f, 0.9f, 0.9f, 0.4f };
 	tex->Gradient( 0, 0, tex->SizeX(), tex->SizeY(), c0, c1 );
-	//tex->RadialGradient( tex->SizeX()/2, tex->SizeY()/3, tex->SizeX() * 3 / 4, c0, c1 );
+	
+	unsigned int size_x2= tex->SizeX()/2;
+	unsigned int size_y2= tex->SizeY()/2;
 
 	const unsigned int border_size= 12;
 	mf_Texture tex2( tex->SizeXLog2(), tex->SizeYLog2() );
 	tex2.Fill( g_invisible_color );
 	static const float white_color[]= { 1.0f, 1.0f, 1.0f, 1.0f };
-	tex2.FillEllipse( tex->SizeX()/2, tex->SizeY()/2, tex->SizeX()/2 - border_size, white_color );
+	tex2.FillEllipse( size_x2, size_y2, size_x2 - border_size, white_color );
 	tex->Mul( &tex2 );
 
 	tex2.Fill( g_invisible_color );
-	tex2.FillEllipse( tex->SizeX()/2, tex->SizeY()/2, tex->SizeX()/2 - 1, g_indicators_border_color );
-	tex2.FillEllipse( tex->SizeX()/2, tex->SizeY()/2, tex->SizeX()/2 - border_size, g_invisible_color );
+	tex2.FillEllipse( size_x2, size_y2, size_x2 - 1, g_indicators_border_color );
+	tex2.FillEllipse( size_x2, size_y2, size_x2 - border_size, g_invisible_color );
+
 	tex->Add( &tex2 );
+
+	static const float direction_color[4]= { 0.4f, 0.3f, 0.05f, 1.0f };
+	tex->FillRect( size_x2 - 32, size_y2, 24, 4, direction_color );
+	tex->FillRect( size_x2 + 8, size_y2, 24, 4, direction_color );
+	for( unsigned int i= 0; i< 4; i++ )
+	{
+		tex->DrawLine( size_x2 - 9, i + size_y2, size_x2, i + size_y2 - 12, direction_color );
+		tex->DrawLine( size_x2 + 9, i + size_y2, size_x2, i + size_y2 - 12, direction_color );
+	}
+	tex->FillRect( size_x2 - 2, size_y2 - 2, 4, 4, direction_color );
 }
 
 void GenF1949Texture( mf_Texture* tex )
