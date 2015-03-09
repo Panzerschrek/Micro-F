@@ -12,7 +12,15 @@ static const float g_gravitation[]= { 0.0f, 0.0f, -9.8f };
 static float AngleOfAttackToLiftForceK( float angle )
 {
 	angle*= MF_RAD2DEG;
-	return 0.0615384615f * angle + 0.1846153846f;
+	const float critical_angle= 16.5f;
+	if( angle > critical_angle )
+	{
+		//TODO: make some math here
+		angle= critical_angle;
+	}
+	float k= 0.0615384615f * angle + 0.1846153846f;
+	if( k < 0.0f) k= 0.0f;
+	return k;
 }
 
 mf_Aircraft::mf_Aircraft( Type type )
@@ -57,7 +65,7 @@ mf_Aircraft::~mf_Aircraft()
 
 void mf_Aircraft::Tick( float dt )
 {
-	/*float axis_rotate_vec[3][3];
+	float axis_rotate_vec[3][3];
 	Vec3Mul( axis_[0], pitch_factor_ * g_pitch_rotate_speed, axis_rotate_vec[0] );
 	Vec3Mul( axis_[1], roll_factor_  * g_roll_rotate_speed , axis_rotate_vec[1] );
 	Vec3Mul( axis_[2], yaw_factor_   * g_yaw_rotate_speed  , axis_rotate_vec[2] );
@@ -86,7 +94,7 @@ void mf_Aircraft::Tick( float dt )
 		Vec3Normalize( axis_[1] );
 		Vec3Normalize( axis_[2] );
 	}
-*/
+
 	// calculations of position of aircraft before calculations of forces
 	{
 		float d_pos[3];
@@ -106,13 +114,19 @@ void mf_Aircraft::Tick( float dt )
 	{
 		VEC3_CPY( acceleration_, g_gravitation );
 
-		float lift_force_k = AngleOfAttackToLiftForceK( 5.0f * MF_DEG2RAD );
+		float lift_force_basis_vec[3];
+		Vec3Cross( axis_[0], velocity_, lift_force_basis_vec );
+		Vec3Normalize( lift_force_basis_vec );
+
+		float lift_force_k = AngleOfAttackToLiftForceK( mf_Math::acos( Vec3Dot(lift_force_basis_vec, axis_[2]) ) );
 		const float ro= 1.225f;
 
-		float vel2= velocity_[1] * velocity_[1];
+		float vel2= Vec3Dot( velocity_, velocity_ );
 
 		float force= 0.5f * lift_force_k * ro * vel2 * wings_area_;
-		acceleration_[2]+= force / mass_;
+		float lift_acceleration_vec[3];
+		Vec3Mul( lift_force_basis_vec, force / mass_, lift_acceleration_vec );
+		Vec3Add( acceleration_, lift_acceleration_vec );
 	}
 }
 
