@@ -292,6 +292,11 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 	case WM_KILLFOCUS:
 		instance->FocusChange( HWND(wParam) == instance->hwnd_ );
 		break;
+	case WM_LBUTTONUP:
+		instance->gui_->MouseClick( lParam&65535, lParam>>16 );
+	case WM_MOUSEMOVE:
+		instance->gui_->MouseHover( lParam&65535, lParam>>16 );
+		break;
 
 	case WM_KEYUP:
 		switch(wParam)

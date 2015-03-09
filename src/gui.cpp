@@ -46,10 +46,10 @@ static void GenGuiQuadTextureCoords( mf_GuiVertex* v, mf_GuiTexture tex )
 }
 
 mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
-	: text_(text)
+	: main_loop_(mf_MainLoop::Instance())
+	, text_(text)
 	, player_(player)
 {
-
 	naviball_shader_.SetAttribLocation( "p", 0 );
 	naviball_shader_.SetAttribLocation( "tc", 2 );
 	naviball_shader_.Create( mf_Shaders::naviball_shader_v, mf_Shaders::naviball_shader_f );
@@ -128,10 +128,22 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap( GL_TEXTURE_2D );
 	}
+
+	PrepareMenus();
 }
 
 mf_Gui::~mf_Gui()
 {
+}
+
+void mf_Gui::MouseClick( unsigned int x, unsigned int y )
+{
+	(void)x; (void)y;
+}
+
+void mf_Gui::MouseHover( unsigned int x, unsigned int y )
+{
+	(void)x; (void)y;
 }
 
 void mf_Gui::Draw()
@@ -152,11 +164,28 @@ void mf_Gui::Draw()
 	DrawControlPanel();
 	DrawNaviball();
 	DrawNaviballGlass();
+	//DrawMainMenu();
+}
+
+void mf_Gui::PrepareMenus()
+{
+	const unsigned int cell_size= 16;
+	const unsigned int border_size= 1;
+
+	unsigned int screen_size_cl[2];
+	screen_size_cl[0]= main_loop_->ViewportWidth() / cell_size;
+	screen_size_cl[1]= main_loop_->ViewportHeight() / cell_size;
+
+	main_menu_.buttons[0].x= (screen_size_cl[0]/2) * cell_size + border_size;
+	main_menu_.buttons[0].y= (screen_size_cl[1]/2) * cell_size + border_size;
+	main_menu_.buttons[0].width=  cell_size * 4 - border_size;
+	main_menu_.buttons[0].height= cell_size - border_size;
+
+	main_menu_.button_count= 1;
 }
 
 void mf_Gui::DrawControlPanel()
 {
-	mf_MainLoop* main_loop= mf_MainLoop::Instance();
 	const mf_Aircraft* aircraft= player_->GetAircraft();
 	const float tex_z_delta= 0.01f;
 
@@ -174,7 +203,7 @@ void mf_Gui::DrawControlPanel()
 	mf_GuiVertex vertices[256];
 	mf_GuiVertex* v= vertices;
 
-	float k= float(main_loop->ViewportHeight()) / float(main_loop->ViewportWidth());
+	float k= float(main_loop_->ViewportHeight()) / float(main_loop_->ViewportWidth());
 
 	// control panel
 	{
@@ -292,7 +321,6 @@ void mf_Gui::DrawControlPanel()
 void mf_Gui::DrawNaviball()
 {
 	static const float naviball_pos[3]= { 0.0f, -0.75f, 0.0f };
-	mf_MainLoop* main_loop= mf_MainLoop::Instance();
 	const mf_Aircraft* aircraft= player_->GetAircraft();
 
 	float rot_mat_for_space_vectors[16];
@@ -314,7 +342,7 @@ void mf_Gui::DrawNaviball()
 		Mat4Translate( translate_mat, naviball_pos );
 
 		const float c_naviball_scale= 0.22f;
-		scale_vec[0]= c_naviball_scale  * float(main_loop->ViewportHeight()) / float(main_loop->ViewportWidth());
+		scale_vec[0]= c_naviball_scale  * float(main_loop_->ViewportHeight()) / float(main_loop_->ViewportWidth());
 		scale_vec[1]= c_naviball_scale;
 		scale_vec[2]= c_naviball_scale;
 		Mat4Scale( scale_mat, scale_vec );
@@ -405,7 +433,7 @@ void mf_Gui::DrawNaviball()
 		glBindTexture( GL_TEXTURE_2D_ARRAY, naviball_icons_texture_array_ );
 		naviball_icons_shader_.UniformInt( "tex", 0 );
 
-		naviball_icons_shader_.UniformFloat( "ps", float(main_loop->ViewportHeight()) / 18.0f );
+		naviball_icons_shader_.UniformFloat( "ps", float(main_loop_->ViewportHeight()) / 18.0f );
 
 		glEnable( GL_BLEND );
 		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -427,12 +455,10 @@ void mf_Gui::DrawNaviball()
 
 void mf_Gui::DrawNaviballGlass()
 {
-	mf_MainLoop* main_loop= mf_MainLoop::Instance();
-
 	mf_GuiVertex vertices[6];
 	mf_GuiVertex* v= vertices;
 
-	float k= float(main_loop->ViewportHeight()) / float(main_loop->ViewportWidth());
+	float k= float(main_loop_->ViewportHeight()) / float(main_loop_->ViewportWidth());
 	const float naviball_radius= 0.24f;
 	const float naviball_center[]= { 0.0f, -0.75f };
 	v[0].pos[0]= (naviball_center[0] - naviball_radius) * k;
@@ -451,6 +477,51 @@ void mf_Gui::DrawNaviballGlass()
 	gui_shader_.Bind();
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, textures[TextureNaviballGlass] );
+	gui_shader_.UniformInt( "tex", 0 );
+
+	common_vbo_.Bind();
+	common_vbo_.VertexSubData( vertices, (v - vertices) * sizeof(mf_GuiVertex), 0 );
+
+	glDisable( GL_DEPTH_TEST );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+	glDrawArrays( GL_TRIANGLES, 0, v - vertices );
+
+	glDisable( GL_BLEND );
+	glEnable( GL_DEPTH_TEST );
+}
+
+void mf_Gui::DrawMainMenu()
+{
+	float inv_viewport_width2 = +2.0f / float( main_loop_->ViewportWidth () );
+	float inv_viewport_height2= -2.0f / float( main_loop_->ViewportHeight() );
+
+	mf_GuiVertex vertices[256];
+	mf_GuiVertex* v= vertices;
+
+	GuiMenu* menu= &main_menu_;
+	GuiButton* buttons= menu->buttons;
+	for( unsigned int i= 0; i < menu->button_count; i++ )
+	{
+		v[0].pos[0]= float(buttons[i].x) * inv_viewport_width2  - 1.0f;
+		v[0].pos[1]= float(buttons[i].y) * inv_viewport_height2 + 1.0f;
+		v[1].pos[0]= float(buttons[i].x + buttons[i].width) * inv_viewport_width2  - 1.0f;
+		v[1].pos[1]= v[0].pos[1];
+		v[2].pos[0]= v[1].pos[0];
+		v[2].pos[1]= float(buttons[i].y + buttons[i].height) * inv_viewport_height2 + 1.0f;
+		v[3].pos[0]= v[0].pos[0];
+		v[3].pos[1]= v[2].pos[1];
+		GenGuiQuadTextureCoords( v, TextureThrottleIndicator );
+
+		v[4]= v[0];
+		v[5]= v[2];
+		v+= 6;
+	}
+
+	gui_shader_.Bind();
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, textures[TextureThrottleIndicator] );
 	gui_shader_.UniformInt( "tex", 0 );
 
 	common_vbo_.Bind();
