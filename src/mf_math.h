@@ -158,18 +158,12 @@ inline float atan( float a )
 
 inline float acos( float x )
 {
-	float a= atan( sqrt( 1.0f - x * x ) / x );
-	if( x <= 0.0f )
-		a+= MF_PI;
-	return a;
+	return ::acos(x);
 }
 
 inline float asin( float x )
 {
-	float a= atan( sqrt( 1.0f / ( 1.0f / (x*x) - 1.0f) ) );
-	if( x <= 0.0f )
-		a+= MF_PI;
-	return a;
+	return ::asin(x);
 }
 
 inline float pow( float x, float y )

@@ -150,6 +150,11 @@ void mf_Gui::Draw()
 		horizontal_speed, vel[2], lon * MF_RAD2DEG, lat * MF_RAD2DEG, aircraft->Pos()[2] );
 	text_->AddText( 1, 3, 1, mf_Text::default_color, str );
 
+#ifdef MF_DEBUG
+	sprintf( str, "angle of attack: %f\nlift force k: %f", aircraft->debug_angle_of_attack_deg_, aircraft->debug_cyk_ );
+	text_->AddText( 1, 8, 1, mf_Text::default_color, str );
+#endif
+
 	DrawControlPanel();
 	DrawNaviball();
 }

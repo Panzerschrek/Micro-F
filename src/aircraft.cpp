@@ -19,7 +19,8 @@ static float AngleOfAttackToLiftForceK( float angle )
 		angle= critical_angle;
 	}
 	float k= 0.0615384615f * angle + 0.1846153846f;
-	if( k < 0.0f) k= 0.0f;
+	if( k < 0.0f)
+		k= 0.0f;
 	return k;
 }
 
@@ -42,8 +43,10 @@ mf_Aircraft::mf_Aircraft( Type type )
 	axis_[2][1]= 0.0f;
 	axis_[2][2]= 1.0f;
 
-	// mass/wings_area/velocity - parameters of I-5 aircraft (Soviet Union, 1930)
-	wings_area_= 10.25f;
+	// mass/wings_area/velocity/trust/ - parameters of I-5 aircraft (Soviet Union, 1930)
+	max_engines_trust_= 5000.0f; // 5 kN
+	wings_area_= 21.25f;
+	wings_span_length_= 10.24f;
 	mass_= 1355.0f;
 	velocity_[0]= 0.0f;
 	velocity_[1]= 70.0f;
@@ -114,19 +117,49 @@ void mf_Aircraft::Tick( float dt )
 	{
 		VEC3_CPY( acceleration_, g_gravitation );
 
+		float engines_acceleration_vec_[3];
+		Vec3Mul( axis_[1], max_engines_trust_ * throttle_ / mass_, engines_acceleration_vec_ );
+		Vec3Add( acceleration_, engines_acceleration_vec_ );
+
 		float lift_force_basis_vec[3];
 		Vec3Cross( axis_[0], velocity_, lift_force_basis_vec );
 		Vec3Normalize( lift_force_basis_vec );
 
-		float lift_force_k = AngleOfAttackToLiftForceK( mf_Math::acos( Vec3Dot(lift_force_basis_vec, axis_[2]) ) );
+		float angle_of_attack= mf_Math::acos( Vec3Dot(lift_force_basis_vec, axis_[2]) );
+		{
+			float tmp_vec[3];
+			Vec3Sub( lift_force_basis_vec, axis_[2], tmp_vec );
+			if( Vec3Dot(tmp_vec, axis_[1]) < 0.0f )
+				angle_of_attack= -angle_of_attack;
+		}
+		float lift_force_k_cy = AngleOfAttackToLiftForceK( angle_of_attack );
 		const float ro= 1.225f;
 
 		float vel2= Vec3Dot( velocity_, velocity_ );
 
-		float force= 0.5f * lift_force_k * ro * vel2 * wings_area_;
+		float force= 0.5f * lift_force_k_cy * ro * vel2 * wings_area_;
 		float lift_acceleration_vec[3];
 		Vec3Mul( lift_force_basis_vec, force / mass_, lift_acceleration_vec );
 		Vec3Add( acceleration_, lift_acceleration_vec );
+
+		float normalized_velocity_vec[3];
+		VEC3_CPY( normalized_velocity_vec, velocity_ );
+		Vec3Normalize( normalized_velocity_vec );
+		float c= 0.0f;
+		{
+			const float cx0= 0.05f; // constant drag k
+			float lambda= wings_span_length_ * wings_span_length_ / wings_area_;
+			c= cx0 + lift_force_k_cy / ( 1.4f * lambda );
+		}
+		float wings_drag_force= 0.5f * c * vel2 * ro * wings_area_;
+		float wings_drag_acceleration_vec[3];
+		Vec3Mul( normalized_velocity_vec, -wings_drag_force/ mass_, wings_drag_acceleration_vec );
+		Vec3Add( acceleration_, wings_drag_acceleration_vec );
+
+#ifdef MF_DEBUG
+		debug_angle_of_attack_deg_= angle_of_attack * MF_RAD2DEG;
+		debug_cyk_= lift_force_k_cy;
+#endif
 	}
 }
 
