@@ -7,7 +7,8 @@ static const float g_roll_rotate_speed=  1.0f;
 static const float g_pitch_rotate_speed= 2.0f;
 static const float g_yaw_rotate_speed=   0.5f;
 
-static const float g_gravitation[]= { 0.0f, 0.0f, -9.8f };
+static const float g_gravitation[]= { 0.0f, 0.0f, -9.8f }; // m / s^2
+static const float g_air_weight_destiny= 1.225f; // kg / m^3
 
 static float AngleOfAttackToLiftForceK( float angle )
 {
@@ -47,7 +48,16 @@ mf_Aircraft::mf_Aircraft( Type type )
 	max_engines_trust_= 5000.0f;
 	wings_area_= 21.25f;
 	wings_span_length_= 10.24f;
+	fuselage_length_= 6.78f;
+	fiselage_diameter_= 0.7f;
+
 	mass_= 1355.0f;
+
+	inertia_moment_[0]= 0.25f * ( fiselage_diameter_ * fiselage_diameter_ * 0.25f ) +
+		(1.0f/12.0f) * fuselage_length_ * fuselage_length_;
+	inertia_moment_[1]= 0.5f * ( fiselage_diameter_ * fiselage_diameter_ * 0.25f );
+	inertia_moment_[2]= inertia_moment_[0];
+
 	velocity_[0]= 0.0f;
 	velocity_[1]= 70.0f;
 	velocity_[2]= 0.0f;
@@ -60,6 +70,7 @@ mf_Aircraft::mf_Aircraft( Type type )
 	angular_acceleration_[0]= 0.0f;
 	angular_acceleration_[2]= 0.0f;
 	angular_acceleration_[3]= 0.0f;
+
 }
 
 mf_Aircraft::~mf_Aircraft()
@@ -125,7 +136,10 @@ void mf_Aircraft::Tick( float dt )
 		Vec3Cross( axis_[0], velocity_, lift_force_basis_vec );
 		Vec3Normalize( lift_force_basis_vec );
 
-		float angle_of_attack= mf_Math::acos( Vec3Dot(lift_force_basis_vec, axis_[2]) );
+		float angle_of_attack_dot= Vec3Dot( lift_force_basis_vec, axis_[2] );
+		if( angle_of_attack_dot > 0.9999f ) angle_of_attack_dot= 0.9999f;
+		else if( angle_of_attack_dot< -0.9999f ) angle_of_attack_dot= -0.9999f;
+		float angle_of_attack= mf_Math::acos( angle_of_attack_dot );
 		{
 			float tmp_vec[3];
 			Vec3Sub( lift_force_basis_vec, axis_[2], tmp_vec );
@@ -133,13 +147,12 @@ void mf_Aircraft::Tick( float dt )
 				angle_of_attack= -angle_of_attack;
 		}
 		float lift_force_k_cy = AngleOfAttackToLiftForceK( angle_of_attack );
-		const float ro= 1.225f;
 
 		float vel2= Vec3Dot( velocity_, velocity_ );
 
-		float force= 0.5f * lift_force_k_cy * ro * vel2 * wings_area_;
+		float lift_force= 0.5f * lift_force_k_cy * g_air_weight_destiny * vel2 * wings_area_;
 		float lift_acceleration_vec[3];
-		Vec3Mul( lift_force_basis_vec, force / mass_, lift_acceleration_vec );
+		Vec3Mul( lift_force_basis_vec, lift_force / mass_, lift_acceleration_vec );
 		Vec3Add( acceleration_, lift_acceleration_vec );
 
 		float normalized_velocity_vec[3];
@@ -151,7 +164,7 @@ void mf_Aircraft::Tick( float dt )
 			float lambda= wings_span_length_ * wings_span_length_ / wings_area_;
 			c= cx0 + lift_force_k_cy / ( 1.4f * lambda );
 		}
-		float wings_drag_force= 0.5f * c * vel2 * ro * wings_area_;
+		float wings_drag_force= 0.5f * c * vel2 * g_air_weight_destiny * wings_area_;
 		float wings_drag_acceleration_vec[3];
 		Vec3Mul( normalized_velocity_vec, -wings_drag_force/ mass_, wings_drag_acceleration_vec );
 		Vec3Add( acceleration_, wings_drag_acceleration_vec );

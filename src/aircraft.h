@@ -62,7 +62,10 @@ private:
 	float max_engines_trust_; // N
 	float wings_area_; // m^2
 	float wings_span_length_; // m
+	float fuselage_length_;
+	float fiselage_diameter_;
 	float mass_; //kg
+	float inertia_moment_[3]; // g / m^2
 	float velocity_[3]; // m/s
 	float acceleration_[3]; // m/s^2
 	float angular_speed_[3];// 1/s
