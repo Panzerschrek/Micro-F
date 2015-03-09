@@ -146,8 +146,8 @@ void mf_Gui::Draw()
 	VecToSphericalCoordinates( aircraft->AxisVec(1), &lon, &lat );
 	char str[128];
 	sprintf( str,
-		"horizontal speed: %3.2f\nvertical speed: %3.2f\nazimuth: %3.1f\nelevation: %3.1f",
-		horizontal_speed, vel[2], lon * MF_RAD2DEG, lat * MF_RAD2DEG );
+		"horizontal speed: %3.2f\nvertical speed: %3.2f\nazimuth: %3.1f\nelevation: %3.1f\naltitude: %3.1f",
+		horizontal_speed, vel[2], lon * MF_RAD2DEG, lat * MF_RAD2DEG, aircraft->Pos()[2] );
 	text_->AddText( 1, 3, 1, mf_Text::default_color, str );
 
 	DrawControlPanel();

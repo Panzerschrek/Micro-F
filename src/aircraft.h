@@ -43,7 +43,6 @@ private:
 	Type type_;
 	float pos_[3];
 	float angle_[3];
-	float velocity_[3];
 
 	// 0 - pitch
 	// 1 - roll
@@ -60,6 +59,12 @@ private:
 
 	unsigned int hp_; // [0;1]
 
+	float wings_area_;
+	float mass_; //kg
+	float velocity_[3]; // m/s
+	float acceleration_[3]; // m/s^2
+	float angular_speed_[3];// 1/s
+	float angular_acceleration_[3]; // 1/s^2
 };
 
 inline const mf_Aircraft::Type mf_Aircraft::GetType() const

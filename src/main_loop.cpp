@@ -62,6 +62,7 @@ void mf_MainLoop::Loop()
 		}
 
 		unsigned int tick= clock();
+		if( prev_game_tick_ == 0 ) prev_game_tick_= tick;
 		prev_tick_dt_= float( tick - prev_game_tick_ ) / float(CLOCKS_PER_SEC );
 		if( prev_tick_dt_ > 0.001f )
 		{
@@ -254,7 +255,7 @@ mf_MainLoop::mf_MainLoop()
 	MF_DEBUG_INFO_STR_I( "max uniform components: ", max_unifroms );
 #endif
 
-	prev_game_tick_= clock();
+	prev_game_tick_= 0;
 	game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
 
 	fps_calc_.prev_calc_time= clock();
