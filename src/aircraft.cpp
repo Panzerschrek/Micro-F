@@ -91,10 +91,6 @@ void mf_Aircraft::Tick( float dt )
 
 		for( unsigned int i= 0; i< 3; i++ )
 			angular_speed_[i]+= angular_acceleration_[i] * dt;
-
-		angular_acceleration_[0]= 0.0f;
-		angular_acceleration_[1]= 0.0f;
-		angular_acceleration_[2]= 0.0f;
 	}
 
 	float axis_rotate_vec[3][3];
@@ -197,6 +193,10 @@ void mf_Aircraft::Tick( float dt )
 
 		//angular acceleration
 		{
+			angular_acceleration_[0]= 0.0f;
+			angular_acceleration_[1]= 0.0f;
+			angular_acceleration_[2]= 0.0f;
+
 			float normalized_velocity_vec[3];
 			VEC3_CPY( normalized_velocity_vec, velocity_ );
 			float l= Vec3Len( normalized_velocity_vec );
