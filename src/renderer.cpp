@@ -20,7 +20,14 @@
 #define MF_TERRAIN_MESH_SIZE_X_CHUNKS 96
 #define MF_TERRAIN_MESH_SIZE_Y_CHUNKS 144
 
+struct mf_StarVertex
+{
+	char xyz[3];
+	unsigned char intencity;
+};
+
 static const float g_sun_distance_scaler= 1.5f;
+static const float g_stars_distance_scaler= 1.7f;
 static const float g_sky_radius_scaler= 2.0f;
 static const float g_zfar_scaler= 2.5f;
 
@@ -90,6 +97,13 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	static const char* const sky_shader_unifroms[]= { "mat", "sun", "sky_k", "tu" };
 	sky_shader_.FindUniforms( sky_shader_unifroms, sizeof(sky_shader_unifroms) / sizeof(char*) );
 
+	// stars shader
+	stars_shader_.SetAttribLocation( "p", 0 );
+	stars_shader_.SetAttribLocation( "i", 1 );
+	stars_shader_.Create( mf_Shaders::stars_shader_v, mf_Shaders::stars_shader_f );
+	static const char* const stars_shader_uniforms[]= { "mat", "s" };
+	stars_shader_.FindUniforms( stars_shader_uniforms, sizeof(stars_shader_uniforms) / sizeof(char*) );
+
 	GenTerrainMesh();
 	GenWaterMesh();
 	PrepareAircraftModels();
@@ -105,7 +119,41 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 		shift= (char*)vert.pos - (char*)&vert;
 		sky_vbo_.VertexAttrib( 0, 3, GL_FLOAT, false, shift );
 	}
+	{ // stars
+		mf_Rand randomizer;
+		const unsigned int result_stars_count= 1024;
+		unsigned int count= 0;
 
+		mf_StarVertex* vertices= new mf_StarVertex[ result_stars_count ];
+		while( count < result_stars_count )
+		{
+			float pos[3];
+			for( unsigned int i= 0; i< 3; i++ )
+				pos[i]= randomizer.RandF( -1.0f, 1.0f );
+			float len2= Vec3Dot( pos, pos );
+			if( len2 <= 1.0f )
+			{
+				Vec3Normalize( pos );
+				if( pos[2] > -0.1f )
+				{
+					for( unsigned int i= 0; i< 3; i++ )
+						vertices[count].xyz[i]= (char)( pos[i] * 126.9f );
+					vertices[count].intencity= (unsigned char) randomizer.RandI(32,255);
+					count++;
+				}
+			}
+		}
+
+		stars_vbo_.VertexData( vertices, result_stars_count * sizeof(mf_StarVertex), sizeof(mf_StarVertex) );
+		delete[] vertices;
+
+		mf_StarVertex v;
+		unsigned int shift;
+		shift= ((char*)v.xyz) - ((char*)&v);
+		stars_vbo_.VertexAttrib( 0, 3, GL_BYTE, true, shift );
+		shift= ((char*)&v.intencity) - ((char*)&v);
+		stars_vbo_.VertexAttrib( 1, 1, GL_UNSIGNED_BYTE, true, shift );
+	} // stars
 	{ // static level meshes
 		mf_DrawingModel model;
 		GenPalm( &model );
@@ -252,6 +300,7 @@ void mf_Renderer::DrawFrame()
 	}
 	DrawLevelStaticObjects( true );
 	DrawSky( true );
+	DrawStars( true );
 	DrawSun( true );
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
@@ -269,6 +318,7 @@ void mf_Renderer::DrawFrame()
 	}
 	DrawLevelStaticObjects( false );
 	DrawSky( false );
+	DrawStars( false );
 	DrawSun( false );
 	DrawWater();
 
@@ -858,6 +908,47 @@ void mf_Renderer::DrawSun( bool draw_to_water_framebuffer )
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
 	glDrawArrays( GL_POINTS, 0, 1 );
+
+	glDisable( GL_BLEND );
+	glDisable( GL_PROGRAM_POINT_SIZE );
+}
+
+void mf_Renderer::DrawStars( bool draw_to_water_framebuffer )
+{
+	stars_shader_.Bind();
+
+	float mat[16];
+	float translate_mat[16];
+	float scale_mat[16];
+	Mat4Scale( scale_mat, g_stars_distance_scaler * GetSceneRadius() );
+
+	float translate_vec[3];
+	translate_vec[0]= player_->Pos()[0];
+	translate_vec[1]= player_->Pos()[1];
+	if( draw_to_water_framebuffer )
+		translate_vec[2]= ( 2.0f * level_->TerrainWaterLevel() - player_->Pos()[2] );
+	else translate_vec[2]= player_->Pos()[2];
+	Mat4Translate( translate_mat, translate_vec );
+
+	Mat4Mul( scale_mat, translate_mat, mat );
+	Mat4Mul( mat, view_matrix_ );
+
+	stars_shader_.UniformMat4( "mat", mat );
+
+	float sprite_size;
+	const float init_sprite_size= 6.0f / 1024.0f;
+	if( draw_to_water_framebuffer )
+		sprite_size= float(water_reflection_fbo_.size[1]) * init_sprite_size;
+	else
+		sprite_size= float(mf_MainLoop::Instance()->ViewportHeight()) * init_sprite_size;
+	stars_shader_.UniformFloat( "s", sprite_size );
+
+	glEnable( GL_PROGRAM_POINT_SIZE );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+	stars_vbo_.Bind();
+	glDrawArrays( GL_POINTS, 0, stars_vbo_.VertexCount() );
 
 	glDisable( GL_BLEND );
 	glDisable( GL_PROGRAM_POINT_SIZE );

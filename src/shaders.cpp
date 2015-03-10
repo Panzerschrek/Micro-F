@@ -331,7 +331,6 @@ const char* const sun_shader_f=
 	"vec4 t=texture(tex,gl_PointCoord);"
 	"c_=vec4(t.xyz*i,t.a);"
 "}";
-;
 
 const char* const sky_shader_v=
 "#version 330\n"
@@ -400,6 +399,32 @@ const char* const sky_shader_f=
 	"const vec3 gCoeffs=vec3(-0.969256, 1.875991, 0.041556);"
 	"const vec3 bCoeffs=vec3(0.055684, -0.204043, 1.057311);"
 	"c_=vec4(dot(rCoeffs, XYZ), dot(gCoeffs, XYZ), dot(bCoeffs, XYZ), 1.0);"
+"}";
+
+
+const char* const stars_shader_v=
+"#version 330\n"
+"uniform mat4 mat;"
+"uniform float s;" // point size
+"in vec3 p;" // position
+"in float i;" // intensity
+"out float fi;" // frag intensity
+"void main()"
+"{"
+	"gl_PointSize=s;"
+	"fi=i;"
+	"gl_Position=mat*vec4(p,1.0);"
+"}";
+
+const char* const stars_shader_f=
+"#version 330\n"
+"out vec4 c_;"
+"in float fi;"
+"void main()"
+"{"
+	"vec2 rv=gl_PointCoord-vec2(0.5,0.5);"
+	"float a=min(1.0,0.25-dot(rv,rv));"
+	"c_=vec4(fi,fi,fi,a);"
 "}";
 
 } // namespace mf_Shaders
