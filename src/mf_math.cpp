@@ -1,8 +1,6 @@
 #include "micro-f.h"
 #include "mf_math.h"
 
-#define MF_USE_D3DXMATH
-
 #ifdef MF_USE_D3DXMATH
 #include <d3dx9math.h>
 #endif
