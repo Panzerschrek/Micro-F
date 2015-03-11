@@ -15,5 +15,5 @@
 	* otobraženije vragov
 * [v processe] gui
 * [sdelano] sozdanije nebesnoj sfery tesseläçije ikosaedra
-* zvözdy
+* [casticno sdelano] zvözdy
 * luna ( modelj + tekstura, generirujemaja po algoritmu generaçii tekstur dlä planet )

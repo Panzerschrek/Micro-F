@@ -137,6 +137,15 @@ void VecToSphericalCoordinates( const float* vec, float* out_longitude, float* o
 	if ( vec[0] > 0.0f ) *out_longitude= MF_2PI - *out_longitude;
 }
 
+void Vec3Normalize( const float* v, float* v_out )
+{
+	float l= 1.0f / Vec3Len(v);
+
+	v_out[0]= v[0] * l;
+	v_out[1]= v[1] * l;
+	v_out[2]= v[2] * l;
+}
+
 void Vec3Normalize( float* v )
 {
 	float l= 1.0f / Vec3Len(v);

@@ -24,6 +24,7 @@ float Vec3Dot( const float* v0, const float* v1 );
 void Vec3Cross( const float* v0, const float* v1, float* v_dst );
 float Vec3Len( const float* v );
 float Distance( const float* v0, const float* v1 );
+void Vec3Normalize( const float* v, float* v_out );
 void Vec3Normalize( float* v );
 
 void SphericalCoordinatesToVec( float longitude, float latitude, float* out_vec );
