@@ -63,7 +63,7 @@ private:
 	float wings_area_; // m^2
 	float wings_span_length_; // m
 	float fuselage_length_;
-	float fiselage_diameter_;
+	float fuselage_diameter_;
 	float mass_; //kg
 	float inertia_moment_[3]; // g / m^2
 	float velocity_[3]; // m/s

@@ -54,13 +54,13 @@ mf_Aircraft::mf_Aircraft( Type type )
 	wings_area_= 21.25f;
 	wings_span_length_= 10.24f;
 	fuselage_length_= 6.78f;
-	fiselage_diameter_= 0.7f;
+	fuselage_diameter_= 0.7f;
 
 	mass_= 1355.0f;
 
-	inertia_moment_[0]= 0.25f * ( fiselage_diameter_ * fiselage_diameter_ * 0.25f ) +
+	inertia_moment_[0]= 0.25f * ( fuselage_diameter_ * fuselage_diameter_ * 0.25f ) +
 		(1.0f/12.0f) * fuselage_length_ * fuselage_length_;
-	inertia_moment_[1]= 0.5f * ( fiselage_diameter_ * fiselage_diameter_ * 0.25f );
+	inertia_moment_[1]= 0.5f * ( fuselage_diameter_ * fuselage_diameter_ * 0.25f );
 	inertia_moment_[2]= inertia_moment_[0];
 
 	velocity_[0]= 0.0f;
@@ -170,16 +170,16 @@ void mf_Aircraft::Tick( float dt )
 			normalized_velocity_in_local_space_yz_projection[2]= velocity_vec_in_local_aircraft_space[2];
 			Vec3Normalize( normalized_velocity_in_local_space_yz_projection );
 
-			float angle_of_attack_sin= normalized_velocity_in_local_space_yz_projection[2];
-			if( angle_of_attack_sin > 0.9999f ) angle_of_attack_sin= 0.9999f;
-			else if( angle_of_attack_sin < -0.9999f) angle_of_attack_sin= -0.9999f;
+			float angle_of_attack_sin= mf_Math::clamp( -0.9999f, 0.99999f, normalized_velocity_in_local_space_yz_projection[2] );
 			angle_of_attack= -mf_Math::asin( angle_of_attack_sin );
 		}
 		float lift_force_k_cy = AngleOfAttackToLiftForceK( angle_of_attack );
 
-		float vel2= Vec3Dot( velocity_, velocity_ );
+		// calculate volocity only for projection of velocity to yz plane
+		float vel_yz_2= velocity_vec_in_local_aircraft_space[1] * velocity_vec_in_local_aircraft_space[1] +
+			velocity_vec_in_local_aircraft_space[2] * velocity_vec_in_local_aircraft_space[2];
 
-		float lift_force= 0.5f * lift_force_k_cy * g_air_weight_destiny * vel2 * wings_area_;
+		float lift_force= 0.5f * lift_force_k_cy * g_air_weight_destiny * vel_yz_2 * wings_area_;
 		float lift_acceleration_vec[3];
 		Vec3Mul( lift_force_basis_vec, lift_force / mass_, lift_acceleration_vec );
 		Vec3Add( acceleration_, lift_acceleration_vec );
@@ -194,10 +194,35 @@ void mf_Aircraft::Tick( float dt )
 			float lambda= wings_span_length_ * wings_span_length_ / wings_area_;
 			c= cx0 + lift_force_k_cy / ( 1.4f * lambda );
 		}
-		float wings_drag_force= 0.5f * c * vel2 * g_air_weight_destiny * wings_area_;
+		float wings_drag_force= 0.5f * c * vel_yz_2 * g_air_weight_destiny * wings_area_;
 		float wings_drag_acceleration_vec[3];
 		Vec3Mul( normalized_velocity_vec, -wings_drag_force/ mass_, wings_drag_acceleration_vec );
 		Vec3Add( acceleration_, wings_drag_acceleration_vec );
+
+		// side force for fuselage and tail
+		{
+			float normalized_velocity_in_local_space_xy_projection[3];
+			normalized_velocity_in_local_space_xy_projection[0]= velocity_vec_in_local_aircraft_space[0];
+			normalized_velocity_in_local_space_xy_projection[1]= velocity_vec_in_local_aircraft_space[1];
+			normalized_velocity_in_local_space_xy_projection[2]= 0.0f;
+			Vec3Normalize( normalized_velocity_in_local_space_xy_projection );
+
+			float xy_angle= mf_Math::asin(
+				mf_Math::clamp( -0.9999f, 0.99999f, -normalized_velocity_in_local_space_xy_projection[0] ) );
+
+			float c_zf= 0.28f * xy_angle * 
+				( 0.8f * fuselage_length_ * fuselage_diameter_ )
+				/ wings_area_;
+
+			const float tale_area= 0.5f;
+			float cv_tale= 1.64f * xy_angle * tale_area;
+
+			float side_force= ( c_zf + cv_tale ) * 0.5f * vel_yz_2 * g_air_weight_destiny;
+
+			float side_acceleration_vec[3];
+			Vec3Mul( axis_[0], side_force / mass_, side_acceleration_vec );
+			Vec3Add( acceleration_, side_acceleration_vec );
+		}
 
 		//angular acceleration
 		{

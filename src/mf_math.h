@@ -182,6 +182,8 @@ inline float round( float x )
 	return ::ceilf( x + 0.5f );
 }
 
+float clamp( float min, float max, float x );
+
 } // namespace mf_Math
 
 class mf_Rand

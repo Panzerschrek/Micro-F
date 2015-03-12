@@ -488,6 +488,18 @@ void DoubleMat4Invert( const double* m, double* out_m )
 	DoubleMat4Transpose(out_m);
 }
 
+namespace mf_Math
+{
+
+float clamp( float min, float max, float x )
+{
+	if( x < min ) return min;
+	if( x > max ) return max;
+	return x;
+}
+
+} // namespacemf_Math
+
 // mf_Rand class
 
 const unsigned int mf_Rand::rand_max_= 0x7FFF;
