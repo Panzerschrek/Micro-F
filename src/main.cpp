@@ -1,6 +1,36 @@
 #include "micro-f.h"
 #include "main_loop.h"
 
+#include <mmsystem.h>
+
+void PlayMidi()
+{
+	const char* file_name= "sounds/marsh_aviatorov.mid";
+	FILE* f= fopen( file_name, "rb" );
+
+	fseek( f, 0, SEEK_END );
+	unsigned int file_size= ftell(f);
+	fseek( f, 0, SEEK_SET );
+
+	char* file_data= new char[ file_size ];
+	fread( &file_data, file_size, 1, f );
+	fclose(f);
+
+	MCI_OPEN_PARMS midi_params;
+	midi_params.lpstrDeviceType= (LPCSTR)MCI_DEVTYPE_SEQUENCER;
+	midi_params.dwCallback= NULL;
+	midi_params.lpstrElementName= file_name;
+	mciSendCommand(0, MCI_OPEN, MCI_WAIT|MCI_OPEN_ELEMENT|MCI_OPEN_TYPE|MCI_OPEN_TYPE_ID, (DWORD)(LPVOID)&midi_params );
+
+	mciSendCommand( midi_params.wDeviceID, MCI_PLAY, MCI_NOTIFY, (DWORD)&midi_params );
+	Sleep(2000);
+	mciSendCommand( midi_params.wDeviceID, MCI_STOP, MCI_NOTIFY, (DWORD)&midi_params );
+	mciSendCommand( midi_params.wDeviceID, MCI_CLOSE, 0, (DWORD)(LPVOID)&midi_params );
+	Sleep(1000);
+	mciSendCommand(0, MCI_OPEN, MCI_WAIT|MCI_OPEN_ELEMENT|MCI_OPEN_TYPE|MCI_OPEN_TYPE_ID, (DWORD)(LPVOID)&midi_params );
+	mciSendCommand( midi_params.wDeviceID, MCI_PLAY, MCI_NOTIFY, (DWORD)&midi_params );
+}
+
 const char* const intro_sting=
 "\"Micro-F\" - simple 96k game. (c) 2015 Artom \"Panzerschrek\" Kunz\n";
 
@@ -25,7 +55,7 @@ float clampf( float min, float max, float value )
 }
 
 int main( int argc, char* argv[] )
-{
+{PlayMidi();
 	printf( "%s", intro_sting );
 
 	mf_RenderingConfig cfg;
