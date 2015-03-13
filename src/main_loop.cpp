@@ -263,6 +263,7 @@ mf_MainLoop::mf_MainLoop()
 
 	sound_engine_= new mf_SoundEngine(hwnd_);
 	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
+	test_sound_->SetVolume( 1000.0f );
 }
 
 mf_MainLoop::~mf_MainLoop()

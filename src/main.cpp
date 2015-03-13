@@ -24,8 +24,9 @@ void PlayMidi()
 
 	mciSendCommand( midi_params.wDeviceID, MCI_PLAY, MCI_NOTIFY, (DWORD)&midi_params );
 	Sleep(2000);
-	mciSendCommand( midi_params.wDeviceID, MCI_STOP, MCI_NOTIFY, (DWORD)&midi_params );
-	mciSendCommand( midi_params.wDeviceID, MCI_CLOSE, 0, (DWORD)(LPVOID)&midi_params );
+	//mciSendCommand( midi_params.wDeviceID, MCI_STOP, MCI_NOTIFY, (DWORD)&midi_params );
+	//mciSendCommand( midi_params.wDeviceID, MCI_CLOSE, 0, (DWORD)(LPVOID)&midi_params );
+	mciSendCommand( midi_params.wDeviceID, MCI_PAUSE, 0, (DWORD)(LPVOID)&midi_params );
 	Sleep(1000);
 	mciSendCommand(0, MCI_OPEN, MCI_WAIT|MCI_OPEN_ELEMENT|MCI_OPEN_TYPE|MCI_OPEN_TYPE_ID, (DWORD)(LPVOID)&midi_params );
 	mciSendCommand( midi_params.wDeviceID, MCI_PLAY, MCI_NOTIFY, (DWORD)&midi_params );
@@ -55,7 +56,7 @@ float clampf( float min, float max, float value )
 }
 
 int main( int argc, char* argv[] )
-{PlayMidi();
+{	//PlayMidi();
 	printf( "%s", intro_sting );
 
 	mf_RenderingConfig cfg;
