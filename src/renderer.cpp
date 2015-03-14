@@ -82,9 +82,10 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 
 	// aircraft stencil shadow
 	aircraft_stencil_shadow_shader_.SetAttribLocation( "p", 0 );
-	aircraft_stencil_shadow_shader_.Create( mf_Shaders::models_stencil_shadow_shader_v, mf_Shaders::models_stencil_shadow_shader_f, mf_Shaders::models_stencil_shadow_shader_g );
+	aircraft_stencil_shadow_shader_.Create( mf_Shaders::models_stencil_shadow_shader_v, NULL, mf_Shaders::models_stencil_shadow_shader_g );
 	aircraft_stencil_shadow_shader_.FindUniform( "mat" );
 	aircraft_stencil_shadow_shader_.FindUniform( "sun" );
+	aircraft_stencil_shadow_shader_.FindUniform( "sig" );
 
 	level_static_objects_shader_.SetAttribLocation( "p", 0 );
 	level_static_objects_shader_.SetAttribLocation( "n", 1 );
@@ -284,13 +285,14 @@ void mf_Renderer::Resize()
 	glDeleteFramebuffers( 1, &water_reflection_fbo_.fbo_id );
 	glDeleteTextures( 1, &water_reflection_fbo_.tex_id );
 	glDeleteTextures( 1, &water_reflection_fbo_.depth_tex_id );
-	glDeleteTextures( 1, &water_reflection_fbo_.stencil_tex_id );
 
 	CreateWaterReflectionFramebuffer();
 }
 
 void mf_Renderer::DrawFrame()
 {
+	glClearStencil( MF_ZERO_STENCIL_VALUE );
+
 	glBindFramebuffer( GL_FRAMEBUFFER, shadowmap_fbo_.fbo_id );
 	glViewport( 0, 0, shadowmap_fbo_.size[0], shadowmap_fbo_.size[1] );
 	glClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
@@ -315,7 +317,6 @@ void mf_Renderer::DrawFrame()
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	glViewport( 0, 0, main_loop->ViewportWidth(), main_loop->ViewportHeight() );
-	glClearStencil( MF_ZERO_STENCIL_VALUE );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
 	CreateViewMatrix( view_matrix_, false );
@@ -362,30 +363,18 @@ void mf_Renderer::CreateWaterReflectionFramebuffer()
 	// depth buffer
 	glGenTextures( 1, &water_reflection_fbo_.depth_tex_id );
 	glBindTexture( GL_TEXTURE_2D, water_reflection_fbo_.depth_tex_id );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24,
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8,
 		water_reflection_fbo_.size[0], water_reflection_fbo_.size[1],
-		0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
+		0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
-	// stencil buffer
-	/*glGenTextures( 1, &water_reflection_fbo_.stencil_tex_id );
-	glBindTexture( GL_TEXTURE_2D, water_reflection_fbo_.stencil_tex_id );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8,
-		water_reflection_fbo_.size[0], water_reflection_fbo_.size[1],
-		0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, NULL );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );*/
-
 	glGenFramebuffers( 1, &water_reflection_fbo_.fbo_id );
 	glBindFramebuffer( GL_FRAMEBUFFER, water_reflection_fbo_.fbo_id );
 	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, water_reflection_fbo_.tex_id, 0 );
-	glFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, water_reflection_fbo_.depth_tex_id, 0 );
-	//glFramebufferTexture( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, water_reflection_fbo_.stencil_tex_id, 0 );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, water_reflection_fbo_.depth_tex_id, 0 );
 	GLuint color_attachment= GL_COLOR_ATTACHMENT0;
 	glDrawBuffers( 1, &color_attachment );
 
@@ -1096,6 +1085,8 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 
 		aircraft_stencil_shadow_shader_.Bind();
 
+		// sign - for geometry shader back face culling
+		aircraft_stencil_shadow_shader_.UniformFloat( "sig", draw_to_water_framebuffer ? -1.0f : 1.0f );
 		for( unsigned int i= 0; i< count; i++ )
 		{
 			const mf_Aircraft* aircraft= aircrafts[i];
@@ -1158,7 +1149,6 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 				GL_UNSIGNED_SHORT,
 				(void*) ( aircrafts_data_.models[ aircraft->GetType() ].first_index * sizeof(unsigned short) ) );
 		}
-
 		glDisable( GL_STENCIL_TEST );
 	} // directional light pass
 }

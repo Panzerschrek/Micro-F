@@ -74,7 +74,6 @@ private:
 		GLuint fbo_id;
 		GLuint tex_id;
 		GLuint depth_tex_id;
-		GLuint stencil_tex_id;
 	} water_reflection_fbo_;
 	mf_GLSLProgram water_shader_;
 

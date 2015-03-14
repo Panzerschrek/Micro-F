@@ -11,7 +11,7 @@
 
 mf_Player::mf_Player()
 	: control_mode_(ModeAircraftControl)
-	, aircraft_(mf_Aircraft::F1949)
+	, aircraft_(mf_Aircraft::F2XXX)
 	, aspect_(1.0f), fov_(MF_INITIAL_FOV), target_fov_(MF_INITIAL_FOV)
 	, forward_pressed_(false), backward_pressed_(false), left_pressed_(false), right_pressed_(false)
 	, up_pressed_(false), down_pressed_(false)

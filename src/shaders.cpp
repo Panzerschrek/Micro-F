@@ -285,6 +285,7 @@ const char* const models_stencil_shadow_shader_g=
 "layout(triangle_strip,max_vertices=24)out;"
 "uniform mat4 mat;"
 "uniform vec3 sun;"
+"uniform float sig;" // sign - for back face clipping
 "const uint ind[24]=uint[24]"
 "("
 	"0,1,2," "5,4,3," // src triangle and back triangle
@@ -300,26 +301,18 @@ const char* const models_stencil_shadow_shader_g=
 	"for(i=0;i<3;i++)"
 	"{"
 		"ov[i]=mat*(gl_in[i].gl_Position-sun4*0.05);"
-		"ov[i+3]=mat*(gl_in[i].gl_Position-sun4*6.0);"
+		"ov[i+3]=mat*(gl_in[i].gl_Position-sun4*10.0);"
 	"}"
 	"vec3 v0=(gl_in[1].gl_Position-gl_in[0].gl_Position).xyz;"
 	"vec3 v1=(gl_in[2].gl_Position-gl_in[0].gl_Position).xyz;"
-	"if(dot(cross(v0,v1),sun) > 0.0)"
+	"if(sig*dot(cross(v0,v1),sun)>0.0)"
 		"for(i=0;i<24;i+=3)"
 		"{"
-			"gl_Position=ov[ind[i+0]];EmitVertex();"
+			"gl_Position=ov[ind[i]];EmitVertex();"
 			"gl_Position=ov[ind[i+1]];EmitVertex();"
 			"gl_Position=ov[ind[i+2]];EmitVertex();"
 			"EndPrimitive();"
 		"}"
-"}";
-
-const char* const models_stencil_shadow_shader_f=
-"#version 330\n"
-"out vec4 c_;"
-"void main()"
-"{"
-	"c_=vec4(0.0,0.0,0.0,0.5);"
 "}";
 
 const char* const static_models_shader_v=
