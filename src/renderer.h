@@ -34,6 +34,7 @@ private:
 
 	void CreateViewMatrix( float* out_matrix, bool water_reflection );
 	void CreateTerrainMatrix( float* out_matrix );
+	void CreateAircraftMatrix( const mf_Aircraft* aircraft, float* out_matrix, float* optional_normal_matrix= NULL );
 	// eturns shift in terrain cells
 	void GetTerrainMeshShift( float* out_shift );
 	float GetSceneRadius(); // returns half of iagonal of scene bounding box
@@ -116,6 +117,7 @@ private:
 	} aircrafts_data_;
 	mf_GLSLProgram aircraft_shader_;
 	mf_GLSLProgram aircraft_shadowmap_shader_;
+	mf_GLSLProgram aircraft_stencil_shadow_shader_;
 
 	GLuint sun_texture_;
 	mf_GLSLProgram sun_shader_;

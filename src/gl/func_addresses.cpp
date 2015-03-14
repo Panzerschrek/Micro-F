@@ -70,6 +70,7 @@ PFNGLFRAMEBUFFERTEXTURELAYERPROC glFramebufferTextureLayer= NULL;
 PFNGLBINDFRAGDATALOCATIONPROC	glBindFragDataLocation= NULL;
 PFNGLMINSAMPLESHADINGPROC		glMinSampleShading= NULL;
 PFNGLDRAWBUFFERSPROC			glDrawBuffers= NULL;
+PFNGLSTENCILOPSEPARATEPROC		glStencilOpSeparate= NULL;
 
 
 
@@ -151,6 +152,8 @@ void GetGLFunctions( void* (*GetProcAddressFunc)(const char*) )
 	//glBindFragDataLocation= ( PFNGLBINDFRAGDATALOCATIONPROC )	GET_PROC_ADDRESS( glBindFragDataLocation );
 	//glMinSampleShading= ( PFNGLMINSAMPLESHADINGPROC	) GET_PROC_ADDRESS( glMinSampleShading );
 	glDrawBuffers= ( PFNGLDRAWBUFFERSPROC ) GET_PROC_ADDRESS( glDrawBuffers );
+
+	glStencilOpSeparate= (PFNGLSTENCILOPSEPARATEPROC) GET_PROC_ADDRESS( glStencilOpSeparate );
 
 	glDrawElementsInstanced= ( PFNGLDRAWELEMENTSINSTANCEDPROC )	GET_PROC_ADDRESS( glDrawElementsInstanced );
 

@@ -53,7 +53,6 @@ float Mat3Det( const float* m );
 void Mat4ToMat3( float* m );
 void Mat4ToMat3( const float* m_in, float* m_out );
 
-
 void DoubleMat4Invert( const double* m, double* out_m );
 
 // special namespace for replasement for std::math functions

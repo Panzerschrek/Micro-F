@@ -219,7 +219,8 @@ mf_MainLoop::mf_MainLoop()
 		level_.TerrainAmplitude() * 0.5f );*/
 
 	// Intial GL state
-	glEnable(GL_DEPTH_TEST);
+	glEnable( GL_DEPTH_TEST );
+	glDepthFunc( GL_LEQUAL );
 	//glEnable(GL_CULL_FACE);
 
 #ifdef MF_DEBUG

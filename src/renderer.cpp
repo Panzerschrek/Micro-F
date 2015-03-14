@@ -20,6 +20,8 @@
 #define MF_TERRAIN_MESH_SIZE_X_CHUNKS 96
 #define MF_TERRAIN_MESH_SIZE_Y_CHUNKS 144
 
+#define MF_ZERO_STENCIL_VALUE 128
+
 struct mf_StarVertex
 {
 	char xyz[3];
@@ -77,6 +79,12 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	aircraft_shadowmap_shader_.SetAttribLocation( "p", 0 );
 	aircraft_shadowmap_shader_.Create( mf_Shaders::models_shadowmap_shader_v, NULL );
 	aircraft_shadowmap_shader_.FindUniform( "mat" );
+
+	// aircraft stencil shadow
+	aircraft_stencil_shadow_shader_.SetAttribLocation( "p", 0 );
+	aircraft_stencil_shadow_shader_.Create( mf_Shaders::models_stencil_shadow_shader_v, mf_Shaders::models_stencil_shadow_shader_f, mf_Shaders::models_stencil_shadow_shader_g );
+	aircraft_stencil_shadow_shader_.FindUniform( "mat" );
+	aircraft_stencil_shadow_shader_.FindUniform( "sun" );
 
 	level_static_objects_shader_.SetAttribLocation( "p", 0 );
 	level_static_objects_shader_.SetAttribLocation( "n", 1 );
@@ -307,6 +315,7 @@ void mf_Renderer::DrawFrame()
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	glViewport( 0, 0, main_loop->ViewportWidth(), main_loop->ViewportHeight() );
+	glClearStencil( MF_ZERO_STENCIL_VALUE );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
 	CreateViewMatrix( view_matrix_, false );
@@ -771,6 +780,34 @@ void mf_Renderer::CreateTerrainMatrix( float* out_matrix )
 
 }
 
+void mf_Renderer::CreateAircraftMatrix( const mf_Aircraft* aircraft, float* out_matrix, float* optional_normal_matrix )
+{
+	float translate_mat[16];
+	float axis_mat[16];
+	float common_rotate_mat[16];
+	float tmp_mat[16];
+
+	Mat4Identity( axis_mat );
+	axis_mat[ 0]= aircraft->AxisVec(0)[0];
+	axis_mat[ 4]= aircraft->AxisVec(0)[1];
+	axis_mat[ 8]= aircraft->AxisVec(0)[2];
+	axis_mat[ 1]= aircraft->AxisVec(1)[0];
+	axis_mat[ 5]= aircraft->AxisVec(1)[1];
+	axis_mat[ 9]= aircraft->AxisVec(1)[2];
+	axis_mat[ 2]= aircraft->AxisVec(2)[0];
+	axis_mat[ 6]= aircraft->AxisVec(2)[1];
+	axis_mat[10]= aircraft->AxisVec(2)[2];
+	Mat4Invert( axis_mat, common_rotate_mat );
+
+	Mat4Translate( translate_mat, aircraft->Pos() );
+
+	Mat4Mul( common_rotate_mat, translate_mat, tmp_mat );
+	Mat4Mul( tmp_mat, view_matrix_, out_matrix );
+
+	if( optional_normal_matrix != NULL )
+		Mat4ToMat3( common_rotate_mat, optional_normal_matrix );
+}
+
 void mf_Renderer::GetTerrainMeshShift( float* out_shift )
 {
 	const float cell_step= float(MF_TERRAIN_CHUNK_SIZE_CL);
@@ -1017,61 +1054,113 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 
 void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count, bool draw_to_water_framebuffer )
 {
-	aircraft_shader_.Bind();
-
+	aircrafts_data_.vbo.Bind();
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D_ARRAY, aircrafts_data_.textures_array );
-	aircraft_shader_.UniformInt( "tex", 0 );
 
-	aircraft_shader_.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
-	aircraft_shader_.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
-	aircraft_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
+	{ // depth pass and ambient light
+		aircraft_shader_.Bind();
 
-	glEnable( GL_CULL_FACE );
-	if (draw_to_water_framebuffer ) glCullFace( GL_FRONT );
-	else glCullFace( GL_BACK );
-	aircrafts_data_.vbo.Bind();
+		aircraft_shader_.UniformInt( "tex", 0 );
+		aircraft_shader_.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
+		static const float zero_light[3]= { 0.0f, 0.0f, 0.0f };
+		aircraft_shader_.UniformVec3( "sl", zero_light );
+		aircraft_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
 
-	for( unsigned int i= 0; i< count; i++ )
-	{
-		const mf_Aircraft* aircraft= aircrafts[i];
+		for( unsigned int i= 0; i< count; i++ )
+		{
+			const mf_Aircraft* aircraft= aircrafts[i];
+			float normal_mat[9];
+			float mat[16];
 
-		float translate_mat[16];
-		float normal_mat[16];
-		float axis_mat[16];
-		float common_rotate_mat[16];
-		float mat[16];
+			CreateAircraftMatrix( aircraft, mat, normal_mat );
+			aircraft_shader_.UniformMat4( "mat", mat );
+			aircraft_shader_.UniformMat3( "nmat", normal_mat );
 
-		Mat4Identity( axis_mat );
-		axis_mat[ 0]= aircraft->AxisVec(0)[0];
-		axis_mat[ 4]= aircraft->AxisVec(0)[1];
-		axis_mat[ 8]= aircraft->AxisVec(0)[2];
-		axis_mat[ 1]= aircraft->AxisVec(1)[0];
-		axis_mat[ 5]= aircraft->AxisVec(1)[1];
-		axis_mat[ 9]= aircraft->AxisVec(1)[2];
-		axis_mat[ 2]= aircraft->AxisVec(2)[0];
-		axis_mat[ 6]= aircraft->AxisVec(2)[1];
-		axis_mat[10]= aircraft->AxisVec(2)[2];
-		Mat4Invert( axis_mat, common_rotate_mat );
+			aircraft_shader_.UniformFloat( "texn", float(aircraft->GetType()) + 0.1f );
+			
+			glDrawElements( GL_TRIANGLES,
+				aircrafts_data_.models[ aircraft->GetType() ].index_count,
+				GL_UNSIGNED_SHORT,
+				(void*) ( aircrafts_data_.models[ aircraft->GetType() ].first_index * sizeof(unsigned short) ) );
+		}
+	} // depth pass and ambient light
+	{ // draw to stencil
+		glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
+		glDepthMask( GL_FALSE );
 
-		Mat4Translate( translate_mat, aircraft->Pos() );
+		glEnable( GL_STENCIL_TEST );
+		glStencilFunc( GL_ALWAYS, MF_ZERO_STENCIL_VALUE, 255 );
+		glStencilOpSeparate( GL_FRONT, GL_KEEP, GL_KEEP, GL_INCR_WRAP );
+		glStencilOpSeparate( GL_BACK, GL_KEEP, GL_KEEP, GL_DECR_WRAP );
 
-		Mat4ToMat3( common_rotate_mat, normal_mat );
+		aircraft_stencil_shadow_shader_.Bind();
 
-		Mat4Mul( common_rotate_mat, translate_mat, mat );
-		Mat4Mul( mat, view_matrix_ );
+		for( unsigned int i= 0; i< count; i++ )
+		{
+			const mf_Aircraft* aircraft= aircrafts[i];
 
-		aircraft_shader_.UniformMat4( "mat", mat );
-		aircraft_shader_.UniformMat3( "nmat", normal_mat );
+			float mat[16];
+			float normal_mat[9];
+			float normal_mat_4[16];
+			float inverted_normal_mat[16];
+			float transformed_sun[3];
+			CreateAircraftMatrix( aircraft, mat, normal_mat );
 
-		aircraft_shader_.UniformFloat( "texn", float(aircraft->GetType()) + 0.1f );
-		
-		glDrawElements( GL_TRIANGLES,
+			Mat4Identity( normal_mat_4 );
+			for( unsigned int j= 0; j< 3; j++ )
+			{
+				normal_mat_4[j*4  ]= normal_mat[j*3  ];
+				normal_mat_4[j*4+1]= normal_mat[j*3+1];
+				normal_mat_4[j*4+2]= normal_mat[j*3+2];
+			}
+			Mat4Invert( normal_mat_4, inverted_normal_mat );
+			Vec3Mat4Mul( shadowmap_fbo_.sun_vector, inverted_normal_mat, transformed_sun );
+
+			aircraft_stencil_shadow_shader_.UniformVec3( "sun", transformed_sun );
+			aircraft_stencil_shadow_shader_.UniformMat4( "mat", mat );
+
+			glDrawElements( GL_TRIANGLES,
 			aircrafts_data_.models[ aircraft->GetType() ].index_count,
-			GL_UNSIGNED_SHORT,
-			(void*) ( aircrafts_data_.models[ aircraft->GetType() ].first_index * sizeof(unsigned short) ) );
-	}
-	glDisable( GL_CULL_FACE );
+				GL_UNSIGNED_SHORT,
+				(void*) ( aircrafts_data_.models[ aircraft->GetType() ].first_index * sizeof(unsigned short) ) );
+		}
+
+		glDepthMask( GL_TRUE );
+		glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+	} // draw to stencil
+	{ // directional light pass
+
+		glStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
+		glStencilFunc( GL_EQUAL, MF_ZERO_STENCIL_VALUE, 255 );
+
+		aircraft_shader_.Bind();
+
+		aircraft_shader_.UniformInt( "tex", 0 );
+		aircraft_shader_.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
+		aircraft_shader_.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
+		aircraft_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
+
+		for( unsigned int i= 0; i< count; i++ )
+		{
+			const mf_Aircraft* aircraft= aircrafts[i];
+			float normal_mat[9];
+			float mat[16];
+
+			CreateAircraftMatrix( aircraft, mat, normal_mat );
+			aircraft_shader_.UniformMat4( "mat", mat );
+			aircraft_shader_.UniformMat3( "nmat", normal_mat );
+
+			aircraft_shader_.UniformFloat( "texn", float(aircraft->GetType()) + 0.1f );
+			
+			glDrawElements( GL_TRIANGLES,
+				aircrafts_data_.models[ aircraft->GetType() ].index_count,
+				GL_UNSIGNED_SHORT,
+				(void*) ( aircrafts_data_.models[ aircraft->GetType() ].first_index * sizeof(unsigned short) ) );
+		}
+
+		glDisable( GL_STENCIL_TEST );
+	} // directional light pass
 }
 
 void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
