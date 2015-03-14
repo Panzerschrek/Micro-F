@@ -133,7 +133,7 @@
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderThrough=""
-				AssemblerOutput="4"
+				AssemblerOutput="2"
 				WarningLevel="4"
 				DebugInformationFormat="0"
 			/>
@@ -240,6 +240,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\music_engine.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\player.cpp"
 				>
 			</File>
@@ -327,6 +331,10 @@
 			</File>
 			<File
 				RelativePath=".\src\models_generation.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\music_engine.h"
 				>
 			</File>
 			<File

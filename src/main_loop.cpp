@@ -3,6 +3,7 @@
 #include "micro-f.h"
 #include "main_loop.h"
 #include "sound_engine.h"
+#include "music_engine.h"
 #include "gui.h"
 
 #include "mf_math.h"
@@ -149,7 +150,7 @@ mf_MainLoop::mf_MainLoop()
 	, vsync_(rendering_config_.vsync)
 	, quit_(false)
 	, prev_cursor_pos_(), mouse_captured_(false)
-	, renderer_(NULL)
+	, renderer_(NULL), sound_engine_(NULL), music_engine_(NULL), gui_(NULL)
 {
 	int border_size, top_border_size, bottom_border_size;
 
@@ -264,6 +265,9 @@ mf_MainLoop::mf_MainLoop()
 
 	sound_engine_= new mf_SoundEngine(hwnd_);
 	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
+
+	music_engine_= new mf_MusicEngine();
+	music_engine_->Play( mf_MusicEngine::MelodyAviatorsMarch );
 }
 
 mf_MainLoop::~mf_MainLoop()

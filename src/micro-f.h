@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include <windows.h>
+#include <mmsystem.h>
 
 #include <Gl/gl.h>
 #include "gl/glcorearb.h"
