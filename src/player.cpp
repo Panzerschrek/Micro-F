@@ -5,6 +5,7 @@
 
 mf_Player::mf_Player()
 	: control_mode_(ModeAircraftControl)
+	, aircraft_(mf_Aircraft::F2XXX)
 	, aspect_(1.0f), fov_(MF_PI2)
 	, forward_pressed_(false), backward_pressed_(false), left_pressed_(false), right_pressed_(false)
 	, up_pressed_(false), down_pressed_(false)
@@ -94,5 +95,22 @@ void mf_Player::Tick( float dt )
 		Vec3Mul( cam_vec, -10.0f );
 		Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
 	}
+}
+
+void mf_Player::ZoomIn()
+{
+	const float min_fov= MF_PI4;
+	const float step= MF_PI6 * 0.25f;
+
+	fov_-= step;
+	if( fov_ < min_fov ) fov_= min_fov;
+}
+void mf_Player::ZoomOut()
+{
+	const float max_fov= MF_PI2;
+	const float step= MF_PI6 * 0.25f;
+
+	fov_+= step;
+	if( fov_ > max_fov ) fov_= max_fov;
 }
 

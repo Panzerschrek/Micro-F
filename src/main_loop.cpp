@@ -263,7 +263,7 @@ mf_MainLoop::mf_MainLoop()
 	fps_calc_.current_calc_frame_count= 0;
 
 	sound_engine_= new mf_SoundEngine(hwnd_);
-	//test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
+	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
 }
 
 mf_MainLoop::~mf_MainLoop()
@@ -297,6 +297,17 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 		instance->gui_->MouseClick( lParam&65535, lParam>>16 );
 	case WM_MOUSEMOVE:
 		instance->gui_->MouseHover( lParam&65535, lParam>>16 );
+		break;
+	case WM_MOUSEWHEEL:
+		{
+			int step= GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+			if( step > 0 )
+				for( int i= 0; i< step; i++ )
+					instance->player_.ZoomIn();
+			else
+				for( int i= 0; i< abs(step); i++ )
+					instance->player_.ZoomOut();
+		}
 		break;
 
 	case WM_KEYUP:

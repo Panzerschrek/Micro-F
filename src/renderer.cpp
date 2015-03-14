@@ -729,10 +729,9 @@ void mf_Renderer::CreateViewMatrix( float* out_matrix, bool water_reflection )
 		Vec3Mul( player_->Pos(), -1.0f, translate_vec );
 	Mat4Translate( translate_mat, translate_vec );
 
-	const float fov= 80.0f * MF_DEG2RAD;
 	Mat4Perspective( pers_mat,
 		float(main_loop->ViewportWidth())/ float(main_loop->ViewportHeight()),
-		fov, 0.5f, GetSceneRadius() * g_zfar_scaler );
+		player_->Fov(), 0.5f, GetSceneRadius() * g_zfar_scaler );
 
 	Mat4RotateZ( rot_z_mat, -player_->Angle()[2] );
 	Mat4RotateX( rot_x_mat, water_reflection ? player_->Angle()[0] : -player_->Angle()[0] );

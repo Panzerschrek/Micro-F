@@ -20,6 +20,7 @@ public:
 
 	const float* Pos() const;
 	const float* Angle() const;
+	const float Fov() const;
 
 	void RotateX( float pixel_delta );
 	void RotateZ( float pixel_delta );
@@ -55,6 +56,9 @@ public:
 
 	void RotateClockwiseReleased();
 	void RotateAnticlockwiseReleased();
+
+	void ZoomIn();
+	void ZoomOut();
 
 private:
 	ControlMode control_mode_;
@@ -94,6 +98,11 @@ inline const mf_Aircraft* mf_Player::GetAircraft() const
 inline const float* mf_Player::Angle() const
 {
 	return angle_;
+}
+
+inline const float mf_Player::Fov() const
+{
+	return fov_;
 }
 
 inline void mf_Player::RotateX( float pixel_delta )

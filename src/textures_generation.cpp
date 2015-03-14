@@ -167,6 +167,8 @@ void GenF1949Texture( mf_Texture* tex )
 void GenF2XXXTexture( mf_Texture* tex )
 {
 	// source texture has size 512x512
+	MF_ASSERT( tex->SizeX() == tex->SizeY() );
+	MF_ASSERT( tex->SizeX() >= 512 );
 	const unsigned int tex_scaler= 1<< ( tex->SizeXLog2() - 9 );
 
 	static const float main_color[]= { 0.7f, 0.7f, 0.7f, 0.0f };
@@ -186,6 +188,10 @@ void GenF2XXXTexture( mf_Texture* tex )
 
 	//static const float antenna_ending_color[]= { 0.8f, 0.2f, 0.2f,0.0f };
 	//tex->FillEllipse( 159 * tex_scaler, 290 * tex_scaler, 5 * tex_scaler, antenna_ending_color );
+
+	static const float window_color[]= { 0.5f, 0.5f, 1.0f, 1.0f };
+	tex->FillRect( tex_scaler * 140, tex_scaler * 370,
+		tex_scaler * 99, tex_scaler * 130, window_color );
 }
 
 void GenSunTexture( mf_Texture* tex )
