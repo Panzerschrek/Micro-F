@@ -24,6 +24,7 @@ float Vec3Dot( const float* v0, const float* v1 );
 void Vec3Cross( const float* v0, const float* v1, float* v_dst );
 float Vec3Len( const float* v );
 float Distance( const float* v0, const float* v1 );
+void Vec3Normalize( const float* v, float* v_out );
 void Vec3Normalize( float* v );
 
 void SphericalCoordinatesToVec( float longitude, float latitude, float* out_vec );
@@ -158,18 +159,12 @@ inline float atan( float a )
 
 inline float acos( float x )
 {
-	float a= atan( sqrt( 1.0f - x * x ) / x );
-	if( x <= 0.0f )
-		a+= MF_PI;
-	return a;
+	return ::acos(x);
 }
 
 inline float asin( float x )
 {
-	float a= atan( sqrt( 1.0f / ( 1.0f / (x*x) - 1.0f) ) );
-	if( x <= 0.0f )
-		a+= MF_PI;
-	return a;
+	return ::asin(x);
 }
 
 inline float pow( float x, float y )
@@ -186,6 +181,8 @@ inline float round( float x )
 {
 	return ::ceilf( x + 0.5f );
 }
+
+float clamp( float min, float max, float x );
 
 } // namespace mf_Math
 
