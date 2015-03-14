@@ -19,24 +19,27 @@ void* mfGetGLFuncAddress( const char* addr )
 	return wglGetProcAddress( addr );
 }
 
-mf_RenderingConfig mf_MainLoop::rendering_config_;
-
-void mf_MainLoop::SetRenderingConfig( const mf_RenderingConfig* config )
-{
-	mf_MainLoop::rendering_config_= *config;
-}
-
 mf_MainLoop* main_loop_instance= NULL;
 char* main_loop_instance_data= NULL;
 
+void mf_MainLoop::CreateInstance(
+	unsigned int viewport_width, unsigned int viewport_height,
+	bool fullscreen, bool vsync,
+	bool invert_mouse_y,
+	float mouse_speed_x, float mouse_speed_y )
+{
+	main_loop_instance_data= new char[ sizeof(mf_MainLoop) ];
+	main_loop_instance= (mf_MainLoop*)main_loop_instance_data;
+
+	new (main_loop_instance_data) mf_MainLoop(
+		viewport_width, viewport_height,
+		fullscreen, vsync,
+		invert_mouse_y,
+		mouse_speed_x, mouse_speed_y );
+}
+
 mf_MainLoop* mf_MainLoop::Instance()
 {
-	if( main_loop_instance == NULL )
-	{
-		main_loop_instance_data= new char[ sizeof(mf_MainLoop) ];
-		main_loop_instance= (mf_MainLoop*)main_loop_instance_data;
-		new (main_loop_instance_data) mf_MainLoop();
-	}
 	return main_loop_instance;
 }
 
@@ -113,13 +116,17 @@ void mf_MainLoop::Loop()
 	} // while !quit
 }
 
-mf_MainLoop::mf_MainLoop()
-	: viewport_width_(1024), viewport_height_(768)
+mf_MainLoop::mf_MainLoop(
+	unsigned int viewport_width, unsigned int viewport_height,
+	bool fullscreen, bool vsync,
+	bool invert_mouse_y,
+	float mouse_speed_x, float mouse_speed_y )
+	: viewport_width_(viewport_width), viewport_height_(viewport_height)
 	, min_viewport_width_(800), min_viewport_height_(600)
-	, mouse_speed_x_( 1.0f * rendering_config_.mouse_speed_x )
-	, mouse_speed_y_( rendering_config_.mouse_speed_y * (rendering_config_.invert_mouse_y ? -1.0f :1.0f ) )
-	, fullscreen_(rendering_config_.fullscreen)
-	, vsync_(rendering_config_.vsync)
+	, mouse_speed_x_( mouse_speed_x )
+	, mouse_speed_y_( mouse_speed_y * (invert_mouse_y ? -1.0f :1.0f ) )
+	, fullscreen_(fullscreen)
+	, vsync_(vsync)
 	, quit_(false)
 	, prev_cursor_pos_(), mouse_captured_(false)
 	, renderer_(NULL), sound_engine_(NULL), music_engine_(NULL), gui_(NULL)

@@ -14,20 +14,14 @@ class mf_SoundSource;
 class mf_MusicEngine;
 class mf_Gui;
 
-struct mf_RenderingConfig
-{
-	bool fullscreen;
-	bool vsync;
-	bool invert_mouse_y;
-
-	float mouse_speed_x;
-	float mouse_speed_y;
-};
-
 class mf_MainLoop
 {
 public:
-	static void SetRenderingConfig( const mf_RenderingConfig* config );
+	static void CreateInstance(
+		unsigned int viewport_width, unsigned int viewport_height,
+		bool fullscreen, bool vsync,
+		bool invert_mouse_y,
+		float mouse_speed_x, float mouse_speed_y );
 	static mf_MainLoop* Instance();
 	static void DeleteInstance();
 
@@ -38,7 +32,11 @@ public:
 	void Quit();
 
 private:
-	mf_MainLoop();
+	mf_MainLoop(
+		unsigned int viewport_width, unsigned int viewport_height,
+		bool fullscreen, bool vsync,
+		bool invert_mouse_y,
+		float mouse_speed_x, float mouse_speed_y );
 	~mf_MainLoop();
 
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -50,7 +48,6 @@ private:
 	void CalculateFPS();
 
 private:
-	static mf_RenderingConfig rendering_config_;
 
 	unsigned int viewport_width_, viewport_height_;
 	unsigned int min_viewport_width_, min_viewport_height_;
