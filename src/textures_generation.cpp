@@ -13,32 +13,36 @@ static const float g_invisible_color[]= { 0.0f, 0.0f, 0.0f, 0.0f };
 
 void GenNaviballTexture( mf_Texture* tex )
 {
+	MF_ASSERT(tex->SizeX() == tex->SizeY());
+	unsigned int size= tex->SizeX();
+	unsigned int size_2= tex->SizeX()/2;
+
 	static const float sky_color[]= { 0.125f, 0.62f, 0.96f, 0.0f };
 	static const float ground_color[]= { 0.7f, 0.45f, 0.07f, 0.0f };
 	static const float line_color[]= { 0.9f, 0.9f, 0.9f, 1.0f };
 
-	tex->FillRect( 0, 0, tex->SizeX(), tex->SizeY() / 2, ground_color );
-	tex->FillRect( 0, tex->SizeY() / 2, tex->SizeX(), tex->SizeY() / 2, sky_color );
+	tex->FillRect( 0, 0, size, size_2, ground_color );
+	tex->FillRect( 0, size_2, size, size_2, sky_color );
 
-	unsigned int deg= 270;
-	unsigned int d_deg= 45;
+	int deg= 270+180;
+	int d_deg= -45;
 	for( unsigned int i= 0; i< 8; i++, deg+= d_deg )
 	{
-		unsigned int dy= i * tex->SizeY() / 8;
-		unsigned int dx= i * tex->SizeX() / 8;
-		tex->DrawLine( 0, dy, tex->SizeX(), dy, line_color );
+		unsigned int dy= i * size / 8;
+		unsigned int dx= i * size / 8;
+		tex->DrawLine( 0, dy, size, dy, line_color );
 		if( i == 4 )
 		{
-			tex->DrawLine( 0, dy-1, tex->SizeX(), dy-1, line_color );
-			tex->DrawLine( 0, dy+1, tex->SizeX(), dy+1, line_color );
+			tex->DrawLine( 0, dy-1, size, dy-1, line_color );
+			tex->DrawLine( 0, dy+1, size, dy+1, line_color );
 		}
-		tex->DrawLine( dx, 0, dx, tex->SizeY(), line_color );
+		tex->DrawLine( dx, 0, dx, size, line_color );
 		if( (i&1) == 0 )
-			tex->DrawLine( dx-1, 0, dx-1, tex->SizeY(), line_color );
+			tex->DrawLine( dx-1, 0, dx-1, size, line_color );
 
 		char str[16];
 		sprintf( str, "%d", deg%360 );
-		tex->DrawText( dx + 4, tex->SizeY() / 2 + 4, 1, line_color, str );
+		tex->DrawText( dx + 4, size_2 + 4, 1, line_color, str );
 	}
 }
 
@@ -80,57 +84,58 @@ void GenThrottleIndicatorTexture( mf_Texture* tex )
 
 void GenVerticalSpeedIndicatorTexture( mf_Texture* tex )
 {
-	tex->Fill( g_invisible_color );
-	tex->FillEllipse( tex->SizeX()/2, tex->SizeY()/2, tex->SizeX()/2 - 1, g_indicators_border_color );
-	tex->FillEllipse( tex->SizeX()/2, tex->SizeY()/2, tex->SizeX()/2 - 4, g_indicators_background_color );
+	MF_ASSERT(tex->SizeX() == tex->SizeY());
+	unsigned int size_2= tex->SizeX()/2;
 
-	float sx= float(tex->SizeX()-10);
-	float sy= float(tex->SizeY()-10);
-	float center_x= float(tex->SizeX()/2);
-	float center_y= float(tex->SizeY()/2);
+	tex->Fill( g_invisible_color );
+	tex->FillEllipse( size_2, size_2, size_2 - 1, g_indicators_border_color );
+	tex->FillEllipse( size_2, size_2, size_2 - 4, g_indicators_background_color );
+
+	float sxy= float(tex->SizeX() - 10);
+	float center_xy= float(size_2);
 	for( int angle= -135; angle<= 135; angle+=45 )
 	{
 		float a= float(angle) * MF_DEG2RAD;
-		float dx= mf_Math::cos(a) * sx;
-		float dy= mf_Math::sin(a) * sy;
-		tex->DrawLine( int(center_x - dx * 0.4f), int(center_y + 0.4f * dy),
+		float dx= mf_Math::cos(a) * sxy;
+		float dy= mf_Math::sin(a) * sxy;
+		tex->DrawLine( int(center_xy - dx * 0.4f), int(center_xy + 0.4f * dy),
 			( tex->SizeX() - int(dx) )/2,
-			( tex->SizeY() + int(dy) )/2,
+			( tex->SizeX() + int(dy) )/2,
 			g_indicators_lines_color );
 	}
 }
 
 void GenNaviballGlassTexture( mf_Texture* tex )
 {
-	static const float c0[]= { 0.9f, 0.9f, 0.9f, 0.1f };
-	static const float c1[]= { 0.9f, 0.9f, 0.9f, 0.4f };
-	tex->Gradient( 0, 0, tex->SizeX(), tex->SizeY(), c0, c1 );
-	
-	unsigned int size_x2= tex->SizeX()/2;
-	unsigned int size_y2= tex->SizeY()/2;
+	MF_ASSERT(tex->SizeX() == tex->SizeY());
+	unsigned int size_2= tex->SizeX()/2;
+
+	static const float c0[]= { 0.5f, 0.5f, 0.5f, 0.4f };
+	static const float c1[]= { 0.9f, 0.9f, 0.9f, 0.2f };
+	tex->RadialGradient( size_2, size_2, size_2, c0, c1 );	
 
 	const unsigned int border_size= 12;
 	mf_Texture tex2( tex->SizeXLog2(), tex->SizeYLog2() );
 	tex2.Fill( g_invisible_color );
 	static const float white_color[]= { 1.0f, 1.0f, 1.0f, 1.0f };
-	tex2.FillEllipse( size_x2, size_y2, size_x2 - border_size, white_color );
+	tex2.FillEllipse( size_2, size_2, size_2 - border_size, white_color );
 	tex->Mul( &tex2 );
 
 	tex2.Fill( g_invisible_color );
-	tex2.FillEllipse( size_x2, size_y2, size_x2 - 1, g_indicators_border_color );
-	tex2.FillEllipse( size_x2, size_y2, size_x2 - border_size, g_invisible_color );
+	tex2.FillEllipse( size_2, size_2, size_2 - 1, g_indicators_border_color );
+	tex2.FillEllipse( size_2, size_2, size_2 - border_size, g_invisible_color );
 
 	tex->Add( &tex2 );
 
 	static const float direction_color[4]= { 0.4f, 0.3f, 0.05f, 1.0f };
-	tex->FillRect( size_x2 - 32, size_y2, 24, 4, direction_color );
-	tex->FillRect( size_x2 + 8, size_y2, 24, 4, direction_color );
+	tex->FillRect( size_2 - 32, size_2, 24, 4, direction_color );
+	tex->FillRect( size_2 + 8, size_2, 24, 4, direction_color );
 	for( unsigned int i= 0; i< 4; i++ )
 	{
-		tex->DrawLine( size_x2 - 9, i + size_y2, size_x2, i + size_y2 - 12, direction_color );
-		tex->DrawLine( size_x2 + 9, i + size_y2, size_x2, i + size_y2 - 12, direction_color );
+		tex->DrawLine( size_2 - 9, i + size_2, size_2, i + size_2 - 12, direction_color );
+		tex->DrawLine( size_2 + 9, i + size_2, size_2, i + size_2 - 12, direction_color );
 	}
-	tex->FillRect( size_x2 - 2, size_y2 - 2, 4, 4, direction_color );
+	tex->FillRect( size_2 - 2, size_2 - 2, 4, 4, direction_color );
 }
 
 void GenF1949Texture( mf_Texture* tex )

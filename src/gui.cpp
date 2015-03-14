@@ -339,6 +339,7 @@ void mf_Gui::DrawNaviball()
 		float tmp_mat[16];
 		float mat[16];
 		float translate_mat[16];
+		float model_mirror_mat[16];
 		float rotate_mat[16];
 		float basis_change_mat[16];
 		float scale_mat[16];
@@ -349,30 +350,23 @@ void mf_Gui::DrawNaviball()
 		const float c_naviball_scale= 0.22f;
 		scale_vec[0]= c_naviball_scale  * float(main_loop_->ViewportHeight()) / float(main_loop_->ViewportWidth());
 		scale_vec[1]= c_naviball_scale;
-		scale_vec[2]= c_naviball_scale;
+		scale_vec[2]= -c_naviball_scale;
 		Mat4Scale( scale_mat, scale_vec );
 
 		{
 			float axis_mat[16];
 			Mat4Identity( axis_mat );
-			axis_mat[ 0]= -aircraft->AxisVec(0)[0];
-			axis_mat[ 4]= -aircraft->AxisVec(0)[1];
-			axis_mat[ 8]= -aircraft->AxisVec(0)[2];
-			axis_mat[ 1]= -aircraft->AxisVec(1)[0];
-			axis_mat[ 5]= -aircraft->AxisVec(1)[1];
-			axis_mat[ 9]= -aircraft->AxisVec(1)[2];
+			axis_mat[ 0]= aircraft->AxisVec(0)[0];
+			axis_mat[ 4]= aircraft->AxisVec(0)[1];
+			axis_mat[ 8]= aircraft->AxisVec(0)[2];
+			axis_mat[ 1]= aircraft->AxisVec(1)[0];
+			axis_mat[ 5]= aircraft->AxisVec(1)[1];
+			axis_mat[ 9]= aircraft->AxisVec(1)[2];
 			axis_mat[ 2]= aircraft->AxisVec(2)[0];
 			axis_mat[ 6]= aircraft->AxisVec(2)[1];
 			axis_mat[10]= aircraft->AxisVec(2)[2];
 			Mat4Transpose( axis_mat );
 			Mat4Invert( axis_mat, rotate_mat );
-			/*float lon, lat;
-			VecToSphericalCoordinates( aircraft->AxisVec(1), &lon, &lat );
-			float rot_z[16];
-			float rot_x[16];
-			Mat4RotateX( rot_x, lat );
-			Mat4RotateZ( rot_z, lon );
-			Mat4Mul( rot_z, rot_x, rotate_mat );*/
 		}
 		{
 			Mat4RotateX( basis_change_mat, -MF_PI2 );
@@ -381,11 +375,16 @@ void mf_Gui::DrawNaviball()
 			tmp_mat_bc[10]= -1.0f;
 			Mat4Mul( basis_change_mat, tmp_mat_bc );
 		}
-
-		Mat4Mul( rotate_mat, basis_change_mat, mat );
-		Mat4Mul( mat, scale_mat, tmp_mat );
-		Mat4Mul( tmp_mat, translate_mat, mat );
-		memcpy( rot_mat_for_space_vectors, mat, sizeof(mat) );
+		{
+			Mat4Identity( model_mirror_mat );
+			model_mirror_mat[0]= -1.0f;
+		}
+		
+		Mat4Mul( rotate_mat, basis_change_mat, tmp_mat );
+		Mat4Mul( tmp_mat, scale_mat, mat );
+		Mat4Mul( mat, translate_mat, tmp_mat );
+		Mat4Mul( model_mirror_mat, tmp_mat, mat );
+		memcpy( rot_mat_for_space_vectors, tmp_mat, sizeof(mat) );
 
 		naviball_shader_.UniformMat4( "mat", mat );
 
