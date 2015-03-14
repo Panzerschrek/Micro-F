@@ -30,6 +30,25 @@ static float AngleToAngularAcceleration( float angle )
 	return -angle * mf_Math::fabs(angle) * 1.9f;
 }
 
+float ThrottleToEngineSoundPitch( float throttle )
+{
+	const float min_pitch= 0.8f;
+	const float max_pitch= 1.2f;
+
+	const float a= -2.0f * ( max_pitch - min_pitch );
+	const float b=  3.0f * ( max_pitch - min_pitch );
+	const float c= 0.0f;
+	const float d= min_pitch;
+
+	return d + throttle * ( c + throttle * ( b + throttle * a ) );
+}
+
+float ThrottleToEngineSoundVolumeScaler( float throttle )
+{
+	if( throttle > 0.5f ) return 1.0f;
+	return throttle * 2.0f;
+}
+
 mf_Aircraft::mf_Aircraft( Type type )
 	: type_(type)
 	, pitch_factor_(0.0f)

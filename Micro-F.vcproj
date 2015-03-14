@@ -354,6 +354,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\sounds_generation.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sounds_generation.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\text.h"
 				>
 			</File>

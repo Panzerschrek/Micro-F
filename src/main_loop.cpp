@@ -81,59 +81,31 @@ void mf_MainLoop::Loop()
 			game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
 		}// if normal dt
 
-		/*{ // sound setup
-			//test_sound->SetPosition( player_.Pos() );
-			static const float player_vel[]= { 0.0f, 0.0f, 0.0f };
-			sound_engine_->SetListenerOrinetation( player_.Pos(), player_.Angle(), player_vel );
+		{ // sound setup
+			const mf_Aircraft* aircraft= player_.GetAircraft();
 
-			static float pos[]= { 0.0f, 0.0f, 0.0f };
-			static const float vel[]= { 1.0f, 0.3f, 0.1f };
-			pos[0]+= vel[0] * prev_tick_dt_;
-			pos[1]+= vel[1] * prev_tick_dt_;
-			pos[2]+= vel[2] * prev_tick_dt_;
+			sound_engine_->SetListenerOrinetation( player_.Pos(), player_.Angle(), aircraft->Velocity() );
 			if (test_sound_ != NULL )
 			{
-				test_sound_->SetVolume( 100.0f );
-				test_sound_->SetOrientation( pos, vel );
+				extern float ThrottleToEngineSoundPitch( float throttle );
+				extern float ThrottleToEngineSoundVolumeScaler( float throttle );
+
+				test_sound_->SetOrientation( aircraft->Pos(), aircraft->Velocity() );
+				test_sound_->SetVolume( 40.0f * ThrottleToEngineSoundVolumeScaler( aircraft->Throttle() ) );
+				test_sound_->SetPitch( ThrottleToEngineSoundPitch( aircraft->Throttle() ) );
 			}
-			if (game_time_ > 300.0f && test_sound_ != NULL )
-			{
-				sound_engine_->DestroySoundSource( test_sound_ );
-				test_sound_= NULL;
-			}
-		}*/
+		}
 
 		text_->SetViewport( viewport_width_, viewport_height_ );
 		renderer_->DrawFrame();
 
-		if( game_time_ < 1.0f )
-		{
-			static const unsigned char text_color[]= { 240, 240, 240, 128 };
-			text_->AddText( 0, 3, 4, text_color, "Micro-F" );
-			text_->AddText( 0, 5, 2, text_color, "by Panzerschrek[CN]" );
-			text_->AddText( 0, 6, 1, text_color, "GameDev.ru 96k contest" );
-		}
-		else
 		{
 			char fps_str[32];
 			sprintf( fps_str, "fps: %d", fps_calc_.frame_count_to_show );
 			text_->AddText( 0, 0, 1, mf_Text::default_color, fps_str );
 		}
 
-		/*{
-			const float* vel= player_.GetAircraft()->Velocity();
-			float horizontal_speed= mf_Math::sqrt( vel[0] * vel[0] + vel[1] * vel[1] );
-
-			float lon, lat;
-			VecToSphericalCoordinates( player_.GetAircraft()->AxisVec(1), &lon, &lat );
-			char str[128];
-			sprintf( str,
-				"horizontal speed: %3.2f\nvertical speed: %3.2f\nazimuth: %3.1f\nelevation: %3.1f",
-				horizontal_speed, vel[2], lon * MF_RAD2DEG, lat * MF_RAD2DEG );
-			text_->AddText( 1, 3, 1, mf_Text::default_color, str );
-		}*/
 		gui_->Draw();
-
 		text_->Draw();
 
 		SwapBuffers( hdc_ );
@@ -267,7 +239,7 @@ mf_MainLoop::mf_MainLoop()
 	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
 
 	music_engine_= new mf_MusicEngine();
-	music_engine_->Play( mf_MusicEngine::MelodyAviatorsMarch );
+	//music_engine_->Play( mf_MusicEngine::MelodyAviatorsMarch );
 }
 
 mf_MainLoop::~mf_MainLoop()

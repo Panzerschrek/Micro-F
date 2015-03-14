@@ -2,6 +2,7 @@
 #include "sound_engine.h"
 
 #include "mf_math.h"
+#include "sounds_generation.h"
 
 #define MF_SND_PRIORITY 0
 #define MF_SOUND_MAX_DISTANCE 4000.0f
@@ -132,28 +133,8 @@ void mf_SoundEngine::DestroySoundSource( mf_SoundSource* source )
 
 void mf_SoundEngine::GenSounds()
 {
-	const float sound_length= 0.5f;
-
-	unsigned int sample_count= (unsigned int)( float(samples_per_second_) * sound_length );
-
-	short* data= new short[ sample_count ];
-
-	const float note_freq= 100.0f;//523.25f;
-	for( unsigned int i= 0; i< sample_count; i++ )
-	{
-		 // sawtooth
-		//float int_part;
-		//float s= modf( note_freq * float(i) / float(samples_per_second_), &int_part );
-		//s= s * 2.0f - 1.0f;
-
-		// square wave
-		//int wave_count= int( 2.0f * note_freq * float(i) / float(samples_per_second_) );
-		//float s= float(wave_count&1) * 2.0f - 1.0f;
-		
-		// sinwave
-		float s= mf_Math::sin( MF_2PI * note_freq * float(i) / float(samples_per_second_) );
-		data[i]= (short)( s * 32766.9f );
-	}
+	unsigned int sample_count;
+	short* data= GenPulsejetSound( samples_per_second_, &sample_count );
 
 	WAVEFORMATEX sound_format;
 	ZeroMemory( &sound_format, sizeof(WAVEFORMATEX) );
@@ -186,7 +167,7 @@ void mf_SoundEngine::GenSounds()
 	memcpy( buff_data1, data, sample_count * sizeof(short) );
 
 	sound_buffers_[0].buffer->Unlock( buff_data1, buff_size1, NULL, 0 );
-	sound_buffers_[0].length= sound_length;
+	sound_buffers_[0].length= float(sample_count) / float(samples_per_second_);
 
 	delete[] data;
 }
