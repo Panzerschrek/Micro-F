@@ -271,6 +271,53 @@ const char* const models_shadowmap_shader_v=
 	"gl_Position=mat*vec4(p,1.0);"
 "}";
 
+const char* const models_stencil_shadow_shader_v=
+"#version 330\n"
+"in vec3 p;" // position
+"void main()"
+"{"
+	"gl_Position=vec4(p,1.0);"
+"}";
+
+const char* const models_stencil_shadow_shader_g=
+"#version 330\n"
+"layout(triangles,invocations=1)in;"
+"layout(triangle_strip,max_vertices=24)out;"
+"uniform mat4 mat;"
+"uniform vec3 sun;"
+"const uint ind[24]=uint[24]"
+"("
+	"0,1,2," "5,4,3," // src triangle and back triangle
+	"0,3,1," "1,3,4,"
+	"1,4,2," "2,4,5,"
+	"0,2,5," "0,5,3"
+");"
+"void main()"
+"{"
+	"vec4 sun4=vec4(sun,0.0)*8.0;"
+	"vec4 ov[6];" // out vertices positions
+	"int i;"
+	"for(i=0;i<3;i++)"
+	"{"
+		"ov[i]=mat*gl_in[i].gl_Position;"
+		"ov[i+3]=mat*(gl_in[i].gl_Position-sun4);"
+	"}"
+	"for(i=0;i<24;i+=3)"
+	"{"
+		"gl_Position=ov[ind[i]];EmitVertex();"
+		"gl_Position=ov[ind[i+1]];EmitVertex();"
+		"gl_Position=ov[ind[i+2]];EmitVertex();"
+	"}"
+"}";
+
+const char* const models_stencil_shadow_shader_f=
+"#version 330\n"
+"out vec4 c_;"
+"void main()"
+"{"
+	"c_=vec4(0.0,0.0,0.0,0.5);"
+"}";
+
 const char* const static_models_shader_v=
 "#version 330\n"
 "uniform mat4 mat[16];" // view matrix

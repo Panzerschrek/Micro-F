@@ -14,7 +14,7 @@ public:
 
 	void Bind();
 
-	void Create( const char* vertex_shader, const char* fragment_shader );
+	void Create( const char* vertex_shader, const char* fragment_shader= NULL, const char* geometry_shader= NULL );
 
 	void SetAttribLocation( const char* attrib_name, unsigned int attrib );
 	void FindUniform( const char* name );
@@ -34,7 +34,7 @@ private:
 	GLint GetUniformId( const char* name );
 
 private:
-	GLuint v_shader_, f_shader_, program_id_;
+	GLuint v_shader_, f_shader_, g_shader_, program_id_;
 
 	GLuint attribs_[ MF_MAX_SHADER_ATTRIBS ];
 	char attrib_names_[ MF_MAX_SHADER_ATTRIBS ][ MF_MAX_SHADER_ATTRIB_NAME ];

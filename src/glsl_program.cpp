@@ -10,10 +10,12 @@ mf_GLSLProgram::~mf_GLSLProgram()
 {
 }
 
-void mf_GLSLProgram::Create( const char* vertex_shader, const char* fragment_shader )
+void mf_GLSLProgram::Create( const char* vertex_shader, const char* fragment_shader, const char* geometry_shader )
 {
 	const char* str[2]= { vertex_shader, 0 };
 	int len[2]= { strlen( vertex_shader ), 0 };
+
+	program_id_= glCreateProgram();
 
 	v_shader_= glCreateShader( GL_VERTEX_SHADER );
 	glShaderSource( v_shader_, 1, str, len );
@@ -30,6 +32,7 @@ void mf_GLSLProgram::Create( const char* vertex_shader, const char* fragment_sha
 		printf( "vertex shader error:\n\n%s\nerrors:\n%s\n", vertex_shader, build_log );
 	}
 #endif
+	glAttachShader( program_id_, v_shader_ );
 
 	if( fragment_shader != NULL )
 	{
@@ -47,13 +50,27 @@ void mf_GLSLProgram::Create( const char* vertex_shader, const char* fragment_sha
 			printf( "fragment shader error:\n\n%s\nerrors:\n%s\n", fragment_shader, build_log );
 		}
 #endif
+		glAttachShader( program_id_, f_shader_ );
 	}
 
-	program_id_= glCreateProgram();
+	if( geometry_shader != NULL )
+	{
+		str[0]= geometry_shader;
+		len[0]= strlen( geometry_shader );
 
-	glAttachShader( program_id_, v_shader_ );
-	if( fragment_shader != NULL )
-		glAttachShader( program_id_, f_shader_ );
+		g_shader_= glCreateShader( GL_GEOMETRY_SHADER );
+		glShaderSource( g_shader_, 1, str, len );
+		glCompileShader( g_shader_ );
+#ifdef MF_DEBUG
+		glGetShaderiv( g_shader_, GL_COMPILE_STATUS, &compile_status );
+		if( !compile_status )
+		{
+			glGetShaderInfoLog( g_shader_, sizeof(build_log)-1, len, build_log );
+			printf( "geometry shader error:\n\n%s\nerrors:\n%s\n", geometry_shader, build_log );
+		}
+#endif
+		glAttachShader( program_id_, g_shader_ );
+	}
 
 	for( unsigned int i= 0; i< attrib_count_; i++ )
 		glBindAttribLocation( program_id_, attribs_[i], attrib_names_[i] );

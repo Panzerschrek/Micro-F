@@ -31,6 +31,10 @@ extern const char* const naviball_shader_f;
 
 extern const char* const models_shadowmap_shader_v;
 
+extern const char* const models_stencil_shadow_shader_v;
+extern const char* const models_stencil_shadow_shader_g;
+extern const char* const models_stencil_shadow_shader_f;
+
 extern const char* const sun_shader_v;
 extern const char* const sun_shader_f;
 
