@@ -199,6 +199,7 @@ void mf_Aircraft::Tick( float dt )
 		Vec3Mul( normalized_velocity_vec, -wings_drag_force/ mass_, wings_drag_acceleration_vec );
 		Vec3Add( acceleration_, wings_drag_acceleration_vec );
 
+		float xy_angle;
 		// side force for fuselage and tail
 		{
 			float normalized_velocity_in_local_space_xy_projection[3];
@@ -207,7 +208,7 @@ void mf_Aircraft::Tick( float dt )
 			normalized_velocity_in_local_space_xy_projection[2]= 0.0f;
 			Vec3Normalize( normalized_velocity_in_local_space_xy_projection );
 
-			float xy_angle= mf_Math::asin(
+			xy_angle= mf_Math::asin(
 				mf_Math::clamp( -0.9999f, 0.99999f, -normalized_velocity_in_local_space_xy_projection[0] ) );
 
 			float c_zf= 0.28f * xy_angle * 
@@ -231,10 +232,17 @@ void mf_Aircraft::Tick( float dt )
 			angular_acceleration_[2]= 0.0f;
 
 			angular_acceleration_[0]+= AngleToAngularAcceleration( angle_of_attack );
+			angular_acceleration_[2]+= AngleToAngularAcceleration( -xy_angle );
 
-			// drag force for fast rotation
+			// drag forces for fast rotation
 			float angular_speed_drag_k= -angular_speed_[0] * mf_Math::fabs(angular_speed_[0]) *8.5f;
 			angular_acceleration_[0]+= angular_speed_drag_k;
+
+			angular_speed_drag_k= -angular_speed_[2] * mf_Math::fabs(angular_speed_[2]) *12.5f;
+			angular_acceleration_[2]+= angular_speed_drag_k;
+
+			angular_speed_drag_k= -angular_speed_[1] * mf_Math::fabs(angular_speed_[1]) *10.5f;
+			angular_acceleration_[1]+= angular_speed_drag_k;
 		}
 
 #ifdef MF_DEBUG
