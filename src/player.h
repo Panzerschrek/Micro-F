@@ -73,6 +73,7 @@ private:
 
 	float aspect_;
 	float fov_;
+	float target_fov_;
 
 	bool forward_pressed_, backward_pressed_, left_pressed_, right_pressed_;
 	bool up_pressed_, down_pressed_;

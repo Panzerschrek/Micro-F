@@ -428,6 +428,8 @@ void mf_MainLoop::Resize()
 		glViewport( 0, 0, viewport_width_, viewport_height_ );
 		if(renderer_)
 			renderer_->Resize();
+		if(gui_)
+			gui_->Resize();
 	}
 }
 

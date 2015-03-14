@@ -3,10 +3,16 @@
 
 #include "mf_math.h"
 
+#define MF_FOV_CHANGE_SPEED MF_PI6
+#define MF_MIN_FOV MF_PI4
+#define MF_MAX_FOV MF_PI2
+#define MF_FOV_STEP MF_PI6 * 0.25f
+#define MF_INITIAL_FOV MF_PI2 - MF_FOV_STEP
+
 mf_Player::mf_Player()
 	: control_mode_(ModeAircraftControl)
 	, aircraft_(mf_Aircraft::F2XXX)
-	, aspect_(1.0f), fov_(MF_PI2)
+	, aspect_(1.0f), fov_(MF_INITIAL_FOV), target_fov_(MF_INITIAL_FOV)
 	, forward_pressed_(false), backward_pressed_(false), left_pressed_(false), right_pressed_(false)
 	, up_pressed_(false), down_pressed_(false)
 	, rotate_up_pressed_(false), rotate_down_pressed_(false), rotate_left_pressed_(false), rotate_right_pressed_(false)
@@ -24,6 +30,12 @@ mf_Player::~mf_Player()
 
 void mf_Player::Tick( float dt )
 {
+	float d_fov= target_fov_ - fov_;
+	if( mf_Math::fabs(d_fov) > 0.0001f )
+		fov_+= dt * MF_FOV_CHANGE_SPEED * mf_Math::sign(d_fov);
+	else
+		fov_= target_fov_;
+
 	float rotate_vec[]= { 0.0f, 0.0f, 0.0f };
 	if(rotate_up_pressed_   ) rotate_vec[0]+=  1.0f;
 	if(rotate_down_pressed_ ) rotate_vec[0]+= -1.0f;
@@ -99,18 +111,13 @@ void mf_Player::Tick( float dt )
 
 void mf_Player::ZoomIn()
 {
-	const float min_fov= MF_PI4;
-	const float step= MF_PI6 * 0.25f;
-
-	fov_-= step;
-	if( fov_ < min_fov ) fov_= min_fov;
+	target_fov_-= MF_FOV_STEP;
+	if( target_fov_ < MF_MIN_FOV ) target_fov_= MF_MIN_FOV;
 }
+
 void mf_Player::ZoomOut()
 {
-	const float max_fov= MF_PI2;
-	const float step= MF_PI6 * 0.25f;
-
-	fov_+= step;
-	if( fov_ > max_fov ) fov_= max_fov;
+	target_fov_+= MF_FOV_STEP;
+	if( target_fov_ > MF_MAX_FOV ) target_fov_= MF_MAX_FOV;
 }
 

@@ -41,11 +41,11 @@ void mf_Text::AddText( unsigned int colomn, unsigned int row, unsigned int size,
 	float dx, dy;
 
 	x0= x=  2.0f * float( colomn * MF_LETTER_WIDTH ) / viewport_width_ - 1.0f;
-	y= -2.0f * float( (row + 1) * MF_LETTER_HEIGHT ) / viewport_height_ + 1.0f;
+	y= -2.0f * float( row * MF_LETTER_HEIGHT ) / viewport_height_ + 1.0f;
 
 	dx= 2.0f * float( MF_LETTER_WIDTH * size ) / viewport_width_;
 	dy= 2.0f * float( MF_LETTER_HEIGHT * size ) / viewport_height_;
-
+	y-= dy;
 
 	mf_TextVertex* v= vertices_ + vertex_buffer_pos_;
 	while( *str != 0 )
@@ -100,7 +100,11 @@ void mf_Text::Draw()
 
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	glDisable( GL_DEPTH_TEST );
+
 	glDrawElements( GL_TRIANGLES, vertex_buffer_pos_ * 6 / 4, GL_UNSIGNED_SHORT, NULL );
+
+	glEnable( GL_DEPTH_TEST );
 	glDisable( GL_BLEND );
 	vertex_buffer_pos_= 0;
 }

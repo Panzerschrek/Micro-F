@@ -22,8 +22,16 @@ static const unsigned char icons_data[mf_Gui::LastIcon][ MF_GUI_ICON_SIZE * MF_G
 #include "../textures/back_speed.h"
 };
 
+#define MF_CURSOR_SIZE 32
+static const unsigned char cursor_data[ MF_CURSOR_SIZE * MF_CURSOR_SIZE / 8 ]=
+#include "../textures/cursor.h"
+;
+
 #define MF_MAX_COMMON_VERTICES_BYTES 4096
 #define MF_MAX_COMMON_INDECES_BYTES 2048
+
+#define COLOR_CPY(dst,src) *((int*)(dst))= *((int*)(src))
+#define COLOR_CPY_INT(dst,src) *((int*)(dst))= src
 
 struct mf_GuiVertex
 {
@@ -49,6 +57,7 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 	: main_loop_(mf_MainLoop::Instance())
 	, text_(text)
 	, player_(player)
+	, current_menu_(NULL)
 {
 	naviball_shader_.SetAttribLocation( "p", 0 );
 	naviball_shader_.SetAttribLocation( "tc", 2 );
@@ -128,6 +137,18 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap( GL_TEXTURE_2D );
 	}
+	{ // cursor texture
+		unsigned char decompressed_data[ MF_CURSOR_SIZE * MF_CURSOR_SIZE ];
+		mfMonochromeImageTo8Bit( (unsigned char*)cursor_data, decompressed_data, sizeof(decompressed_data) );
+
+		glGenTextures( 1, &cursor_texture_ );
+		glBindTexture( GL_TEXTURE_2D, cursor_texture_ );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_R8,
+			MF_CURSOR_SIZE, MF_CURSOR_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, decompressed_data );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glGenerateMipmap( GL_TEXTURE_2D );
+	}
 
 	PrepareMenus();
 }
@@ -138,7 +159,18 @@ mf_Gui::~mf_Gui()
 
 void mf_Gui::MouseClick( unsigned int x, unsigned int y )
 {
-	(void)x; (void)y;
+	if( current_menu_ == NULL ) return;
+
+	for( unsigned int i= 0; i< current_menu_->button_count; i++ )
+	{
+		GuiButton* button= &current_menu_->buttons[i];
+		if( x >= button->x && y >= button->y )
+			if( x < button->x + button->width && y <button->y + button->height )
+			{
+				if( button->callback != NULL )
+					(this->*(button->callback))();
+			}
+	}
 }
 
 void mf_Gui::MouseHover( unsigned int x, unsigned int y )
@@ -169,24 +201,93 @@ void mf_Gui::Draw()
 	DrawControlPanel();
 	DrawNaviball();
 	DrawNaviballGlass();
-	//DrawMainMenu();
+	DrawMainMenu();
+}
+
+void mf_Gui::Resize()
+{
+	PrepareMenus();
 }
 
 void mf_Gui::PrepareMenus()
 {
-	const unsigned int cell_size= 16;
+	const char* const c_title_text= "Micro-F";
+	const char* const c_subtitle_text= "96k game";
+	const char* const c_play_button_text= " play ";
+	const char* const c_quit_button_text= " quit ";
+
+
+	main_menu_.button_count=0;
+	main_menu_.text_count= 0;
+
+	const unsigned int cell_size[2]= { MF_LETTER_WIDTH, MF_LETTER_HEIGHT };
 	const unsigned int border_size= 1;
 
+	static const unsigned char text_color[]= { 220, 255, 220, 0 };
+
 	unsigned int screen_size_cl[2];
-	screen_size_cl[0]= main_loop_->ViewportWidth() / cell_size;
-	screen_size_cl[1]= main_loop_->ViewportHeight() / cell_size;
+	screen_size_cl[0]= main_loop_->ViewportWidth() / cell_size[0];
+	screen_size_cl[1]= main_loop_->ViewportHeight() / cell_size[1];
 
-	main_menu_.buttons[0].x= (screen_size_cl[0]/2) * cell_size + border_size;
-	main_menu_.buttons[0].y= (screen_size_cl[1]/2) * cell_size + border_size;
-	main_menu_.buttons[0].width=  cell_size * 4 - border_size;
-	main_menu_.buttons[0].height= cell_size - border_size;
+	GuiText* text;
+	GuiButton* button;
 
-	main_menu_.button_count= 1;
+	// title
+	text= &main_menu_.texts[0];
+	strcpy( text->text, c_title_text );
+	text->size= 4;
+	text->colomn= screen_size_cl[0]/2 - strlen(c_title_text) * text->size / 2;
+	text->row= 1;
+	COLOR_CPY( text->color, text_color );
+	main_menu_.text_count++;
+
+	// subtitle
+	text= &main_menu_.texts[1];
+	strcpy( text->text, c_subtitle_text );
+	text->size= 1;
+	text->colomn= screen_size_cl[0]/2 + 4;
+	text->row= 4;
+	COLOR_CPY( text->color, text_color );
+	main_menu_.text_count++;
+
+	unsigned int button_altitude= screen_size_cl[1]/2 - 6;
+
+	// Play button
+	text= &main_menu_.buttons[0].text;
+	strcpy( text->text, c_play_button_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_play_button_text) / 2;
+	text->row= button_altitude;
+	COLOR_CPY( text->color, text_color );
+
+	button= &main_menu_.buttons[0];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * strlen(c_play_button_text) - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnPlayButton;
+	main_menu_.button_count++;
+
+	button_altitude+= text->size + 1;
+
+	// Quit button
+	text= &main_menu_.buttons[1].text;
+	strcpy( text->text, c_quit_button_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_quit_button_text) / 2;
+	text->row= button_altitude;
+	COLOR_CPY( text->color, text_color );
+
+	button= &main_menu_.buttons[1];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * strlen(c_quit_button_text) - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnQuitButton;
+	main_menu_.button_count++;
+
+
+	current_menu_= &main_menu_;
 }
 
 void mf_Gui::DrawControlPanel()
@@ -504,8 +605,8 @@ void mf_Gui::DrawMainMenu()
 	mf_GuiVertex vertices[256];
 	mf_GuiVertex* v= vertices;
 
-	GuiMenu* menu= &main_menu_;
-	GuiButton* buttons= menu->buttons;
+	const GuiMenu* menu= &main_menu_;
+	const GuiButton* buttons= menu->buttons;
 	for( unsigned int i= 0; i < menu->button_count; i++ )
 	{
 		v[0].pos[0]= float(buttons[i].x) * inv_viewport_width2  - 1.0f;
@@ -539,4 +640,27 @@ void mf_Gui::DrawMainMenu()
 
 	glDisable( GL_BLEND );
 	glEnable( GL_DEPTH_TEST );
+
+	for( unsigned int i= 0; i < menu->button_count; i++ )
+	{
+		const GuiText* text= &buttons[i].text;
+		text_->AddText( text->colomn, text->row, text->size, text->color, text->text );
+	}
+
+	const GuiText* texts= menu->texts;
+	for( unsigned int i= 0; i< menu->text_count; i++ )
+		text_->AddText( texts[i].colomn, texts[i].row, texts[i].size, texts[i].color, texts[i].text );
+}
+
+void mf_Gui::DrawCursor()
+{
+}
+
+void mf_Gui::OnPlayButton()
+{
+}
+
+void mf_Gui::OnQuitButton()
+{
+	main_loop_->Quit();
 }

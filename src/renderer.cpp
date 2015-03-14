@@ -889,11 +889,11 @@ void mf_Renderer::DrawSun( bool draw_to_water_framebuffer )
 
 	sun_shader_.UniformMat4( "mat", mat );
 
-	float sprite_size;
+	float sprite_size= (128.0f/1024.0f) / mf_Math::tan(player_->Fov() * 0.5f);
 	if( draw_to_water_framebuffer )
-		sprite_size= float(water_reflection_fbo_.size[1]) * 128.0f/1024.0f;
+		sprite_size*= float(water_reflection_fbo_.size[1]);
 	else
-		sprite_size= float(mf_MainLoop::Instance()->ViewportHeight()) * 128.0f/1024.0f;
+		sprite_size*= float(mf_MainLoop::Instance()->ViewportHeight());
 	sun_shader_.UniformFloat( "s", sprite_size );
 
 	glActiveTexture( GL_TEXTURE0 );

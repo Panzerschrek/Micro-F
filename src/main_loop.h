@@ -23,7 +23,6 @@ struct mf_RenderingConfig
 	float mouse_speed_y;
 };
 
-
 class mf_MainLoop
 {
 public:
@@ -34,6 +33,8 @@ public:
 	void Loop();
 	unsigned int ViewportWidth();
 	unsigned int ViewportHeight();
+
+	void Quit();
 
 private:
 	mf_MainLoop();
@@ -95,4 +96,9 @@ inline unsigned int mf_MainLoop::ViewportWidth()
 inline unsigned int mf_MainLoop::ViewportHeight()
 {
 	return viewport_height_;
+}
+
+inline void mf_MainLoop::Quit()
+{
+	quit_= true;
 }

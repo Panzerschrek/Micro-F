@@ -9,9 +9,9 @@ class mf_Text;
 class mf_Player;
 class mf_MainLoop;
 
-
-#define MF_GUI_BUTTON_MAX_TEXT_LENGTH 32
+#define MF_GUI_TEXT_MAX_LENTH 32
 #define MF_GUI_MENU_MAX_BUTTONS 16
+#define MF_GUI_MAX_TEXTS 16
 
 class mf_Gui
 {
@@ -22,6 +22,7 @@ public:
 	void MouseClick( unsigned int x, unsigned int y );
 	void MouseHover( unsigned int x, unsigned int y );
 	void Draw();
+	void Resize();
 
 	enum NaviBallIcons
 	{
@@ -32,17 +33,30 @@ public:
 
 private:
 
+	typedef void ( mf_Gui::*GuiButtonCallback )();
+
+	struct GuiText
+	{
+		char text[ MF_GUI_TEXT_MAX_LENTH ];
+		unsigned char color[4];
+		unsigned int row, colomn;
+		unsigned int size;
+	};
+
 	struct GuiButton
 	{
 		unsigned int x, y;
 		unsigned int width, height;
-		char text[ MF_GUI_BUTTON_MAX_TEXT_LENGTH ];
+		GuiText text;
+		GuiButtonCallback callback;
 	};
 
 	struct GuiMenu
 	{
 		GuiButton buttons[ MF_GUI_MENU_MAX_BUTTONS ];
 		unsigned int button_count;
+		GuiText texts[ MF_GUI_MAX_TEXTS ];
+		unsigned int text_count;
 	};
 
 	void PrepareMenus();
@@ -50,6 +64,10 @@ private:
 	void DrawNaviball();
 	void DrawNaviballGlass();
 	void DrawMainMenu();
+	void DrawCursor();
+
+	void OnPlayButton();
+	void OnQuitButton();
 
 private:
 	mf_MainLoop* main_loop_;
@@ -67,6 +85,8 @@ private:
 	mf_VertexBuffer common_vbo_;
 
 	GLuint textures[LastGuiTexture];
+	GLuint cursor_texture_;
 
 	GuiMenu main_menu_;
+	GuiMenu* current_menu_;
 };
