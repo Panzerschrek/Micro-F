@@ -45,7 +45,7 @@ private:
 	void DrawSun( bool draw_to_water_framebuffer );
 	void DrawStars( bool draw_to_water_framebuffer );
 	void DrawSky(  bool draw_to_water_framebuffer );
-	void DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count, bool draw_to_water_framebuffer );
+	void DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count );
 	void DrawLevelStaticObjects( bool draw_to_water_framebuffer );
 	void DrawWater();
 	void DrawShadows();

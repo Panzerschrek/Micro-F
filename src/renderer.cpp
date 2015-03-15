@@ -85,7 +85,6 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	aircraft_stencil_shadow_shader_.Create( mf_Shaders::models_stencil_shadow_shader_v, NULL, mf_Shaders::models_stencil_shadow_shader_g );
 	aircraft_stencil_shadow_shader_.FindUniform( "mat" );
 	aircraft_stencil_shadow_shader_.FindUniform( "sun" );
-	aircraft_stencil_shadow_shader_.FindUniform( "sig" );
 
 	level_static_objects_shader_.SetAttribLocation( "p", 0 );
 	level_static_objects_shader_.SetAttribLocation( "n", 1 );
@@ -306,7 +305,7 @@ void mf_Renderer::DrawFrame()
 	{
 		const mf_Aircraft* aircrafts[1];
 		aircrafts[0]= player_->GetAircraft();
-		DrawAircrafts( aircrafts, 1, true );
+		DrawAircrafts( aircrafts, 1 );
 	}
 	DrawLevelStaticObjects( true );
 	DrawSky( true );
@@ -324,7 +323,7 @@ void mf_Renderer::DrawFrame()
 	{
 		const mf_Aircraft* aircrafts[1];
 		aircrafts[0]= player_->GetAircraft();
-		DrawAircrafts( aircrafts, 1, false );
+		DrawAircrafts( aircrafts, 1 );
 	}
 	DrawLevelStaticObjects( false );
 	DrawSky( false );
@@ -1041,7 +1040,7 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 		0 );
 }
 
-void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count, bool draw_to_water_framebuffer )
+void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count )
 {
 	aircrafts_data_.vbo.Bind();
 	glActiveTexture( GL_TEXTURE0 );
@@ -1085,28 +1084,16 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 
 		aircraft_stencil_shadow_shader_.Bind();
 
-		// sign - for geometry shader back face culling
-		aircraft_stencil_shadow_shader_.UniformFloat( "sig", draw_to_water_framebuffer ? -1.0f : 1.0f );
 		for( unsigned int i= 0; i< count; i++ )
 		{
 			const mf_Aircraft* aircraft= aircrafts[i];
 
-			float mat[16];
-			float normal_mat[9];
-			float normal_mat_4[16];
-			float inverted_normal_mat[16];
+			float mat[16];;
 			float transformed_sun[3];
-			CreateAircraftMatrix( aircraft, mat, normal_mat );
+			CreateAircraftMatrix( aircraft, mat, NULL );
 
-			Mat4Identity( normal_mat_4 );
-			for( unsigned int j= 0; j< 3; j++ )
-			{
-				normal_mat_4[j*4  ]= normal_mat[j*3  ];
-				normal_mat_4[j*4+1]= normal_mat[j*3+1];
-				normal_mat_4[j*4+2]= normal_mat[j*3+2];
-			}
-			Mat4Invert( normal_mat_4, inverted_normal_mat );
-			Vec3Mat4Mul( shadowmap_fbo_.sun_vector, inverted_normal_mat, transformed_sun );
+			for( unsigned int j= 0; j< 3; j++ ) // transform sun vector to model space
+				transformed_sun[j]= Vec3Dot( aircraft->AxisVec(j), shadowmap_fbo_.sun_vector );
 
 			aircraft_stencil_shadow_shader_.UniformVec3( "sun", transformed_sun );
 			aircraft_stencil_shadow_shader_.UniformMat4( "mat", mat );
