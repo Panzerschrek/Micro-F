@@ -61,6 +61,9 @@ public:
 	void ZoomOut();
 
 private:
+	void CalculateCamRadius();
+
+private:
 	ControlMode control_mode_;
 	mf_Aircraft aircraft_;
 
@@ -71,6 +74,7 @@ private:
 	// 2 - roll / kren
 	float angle_[3];
 
+	float cam_radius_;
 	float aspect_;
 	float fov_;
 	float target_fov_;

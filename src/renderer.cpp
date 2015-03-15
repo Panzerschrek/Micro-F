@@ -179,23 +179,25 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 		level_static_objects_vbo_.VertexAttrib( 2, 2, GL_FLOAT, false, shift );
 	}
 
-	// terrain heightmap
-	glGenTextures( 1, &terrain_heightmap_texture_ );
-	glBindTexture( GL_TEXTURE_2D, terrain_heightmap_texture_ );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_R16,
-		level_->TerrainSizeX(), level_->TerrainSizeY(), 0,
-		GL_RED, GL_UNSIGNED_SHORT, level_->GetTerrianHeightmapData() );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	{
+		// terrain heightmap
+		glGenTextures( 1, &terrain_heightmap_texture_ );
+		glBindTexture( GL_TEXTURE_2D, terrain_heightmap_texture_ );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_R16,
+			level_->TerrainSizeX(), level_->TerrainSizeY(), 0,
+			GL_RED, GL_UNSIGNED_SHORT, level_->GetTerrianHeightmapData() );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
-	// terrain normalmap
-	glGenTextures( 1, &terrain_normal_map_texture_ );
-	glBindTexture( GL_TEXTURE_2D, terrain_normal_map_texture_ );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8_SNORM,
-		level->TerrainSizeX(), level->TerrainSizeY(), 0,
-		GL_RGBA, GL_BYTE, level->GetTerrainNormalTextureMap() );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		// terrain normalmap
+		glGenTextures( 1, &terrain_normal_map_texture_ );
+		glBindTexture( GL_TEXTURE_2D, terrain_normal_map_texture_ );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8_SNORM,
+			level->TerrainSizeX(), level->TerrainSizeY(), 0,
+			GL_RGBA, GL_BYTE, level->GetTerrainNormalTextureMap() );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	}
 
 	{ // test texture
 		/*mf_Texture tex( 4, 4 );
@@ -219,8 +221,6 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 		glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8,
 		tex.SizeX(), tex.SizeY(), mf_Aircraft::LastType,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
-		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		for (unsigned int i= 0; i< mf_Aircraft::LastType; i++ )
 		{
 			aircraft_texture_gen_func[i]( &tex );
@@ -230,6 +230,8 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 				tex.SizeX(), tex.SizeY(), 1,
 				GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
 		}
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 	}
 
@@ -256,8 +258,6 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 		glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8,
 			terrain_texture_size, terrain_texture_size, LastTerrainTexture,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		mf_Texture tex( terrain_texture_size_log2, terrain_texture_size_log2 );
 		for( unsigned int i= 0; i< LastTerrainTexture; i++ )
 		{
@@ -268,6 +268,8 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 				terrain_texture_size, terrain_texture_size, 1,
 				GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
 		} // for textures
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 	}
 

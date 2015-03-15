@@ -3,6 +3,9 @@
 
 #include "mf_math.h"
 
+#include "mf_model.h"
+#include "../models/models.h"
+
 #define MF_FOV_CHANGE_SPEED MF_PI6
 #define MF_MIN_FOV MF_PI4
 #define MF_MAX_FOV MF_PI2
@@ -12,6 +15,7 @@
 mf_Player::mf_Player()
 	: control_mode_(ModeAircraftControl)
 	, aircraft_(mf_Aircraft::V1)
+	, cam_radius_(10.0f)
 	, aspect_(1.0f), fov_(MF_INITIAL_FOV), target_fov_(MF_INITIAL_FOV)
 	, forward_pressed_(false), backward_pressed_(false), left_pressed_(false), right_pressed_(false)
 	, up_pressed_(false), down_pressed_(false)
@@ -22,6 +26,8 @@ mf_Player::mf_Player()
 	angle_[0]= angle_[1]= angle_[2]= 0.0f;
 
 	aircraft_.SetPos( pos_ );
+
+	CalculateCamRadius();
 }
 
 mf_Player::~mf_Player()
@@ -104,7 +110,7 @@ void mf_Player::Tick( float dt )
 		float cam_vec[3];
 		SphericalCoordinatesToVec( angle_[2], angle_[0], cam_vec );
 		Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
-		Vec3Mul( cam_vec, -10.0f );
+		Vec3Mul( cam_vec, -cam_radius_ );
 		Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
 	}
 }
@@ -121,3 +127,20 @@ void mf_Player::ZoomOut()
 	if( target_fov_ > MF_MAX_FOV ) target_fov_= MF_MAX_FOV;
 }
 
+void mf_Player::CalculateCamRadius()
+{
+	const mf_ModelHeader* header= (const mf_ModelHeader*) mf_Models::aircraft_models[ aircraft_.GetType() ];
+
+	float radius_vecor[3];
+	for( unsigned int i= 0; i< 3; i++ )
+	{
+		float min, max;
+		min= -128.0f * header->scale[i] + header->pos[i];
+		max=  127.0f * header->scale[i] + header->pos[i];
+		radius_vecor[i]= mf_Math::fabs( min );
+		float rv2= mf_Math::fabs( max );
+		if( rv2 > radius_vecor[i] ) radius_vecor[i]= rv2;
+	}
+
+	cam_radius_= 1.2f * Vec3Len( radius_vecor );
+}
