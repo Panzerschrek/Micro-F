@@ -33,6 +33,16 @@ static const unsigned char cursor_data[ MF_CURSOR_SIZE * MF_CURSOR_SIZE / 8 ]=
 #define COLOR_CPY(dst,src) *((int*)(dst))= *((int*)(src))
 #define COLOR_CPY_INT(dst,src) *((int*)(dst))= src
 
+static const char* day_times[]=
+{
+	"sunrise",
+	"morning",
+	"midday",
+	"evening",
+	"sunset",
+	"night"
+};
+
 struct mf_GuiVertex
 {
 	float pos[2];
@@ -114,14 +124,16 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 	}
 
-	static const unsigned int textures_size_log2[]=
+	static const unsigned int textures_size_log2[ LastGuiTexture * 2 ]=
 	{
 		9, 9, // naviball
 		8, 7, // control panel
 		5, 8, // throttle bar
 		3, 3, // throttle indicator
 		7, 7, // vertical speed indicator
-		8, 8 // naviball glass
+		8, 8, // naviball glass
+		3, 3, // gui button
+		9, 9  // backgound
 	};
 	for( unsigned int i= 0; i< LastGuiTexture; i++ )
 	{
@@ -175,7 +187,17 @@ void mf_Gui::MouseClick( unsigned int x, unsigned int y )
 
 void mf_Gui::MouseHover( unsigned int x, unsigned int y )
 {
-	(void)x; (void)y;
+	if( current_menu_ == NULL ) return;
+
+	for( unsigned int i= 0; i< current_menu_->button_count; i++ )
+	{
+		GuiButton* button= &current_menu_->buttons[i];
+		if( x >= button->x && y >= button->y &&
+			x < button->x + button->width && y <button->y + button->height )
+			button->is_hover= true;
+		else
+			button->is_hover= false;
+	}
 }
 
 void mf_Gui::Draw()
@@ -201,7 +223,8 @@ void mf_Gui::Draw()
 	DrawControlPanel();
 	DrawNaviball();
 	DrawNaviballGlass();
-	DrawMainMenu();
+	if( current_menu_ != NULL )
+		DrawMenu( current_menu_ );
 }
 
 void mf_Gui::Resize()
@@ -216,9 +239,8 @@ void mf_Gui::PrepareMenus()
 	const char* const c_play_button_text= " play ";
 	const char* const c_quit_button_text= " quit ";
 
-
-	main_menu_.button_count=0;
-	main_menu_.text_count= 0;
+	const char* const c_button_back= "back";
+	const char* const c_daytime_text= "daytime: ";
 
 	const unsigned int cell_size[2]= { MF_LETTER_WIDTH, MF_LETTER_HEIGHT };
 	const unsigned int border_size= 1;
@@ -229,17 +251,27 @@ void mf_Gui::PrepareMenus()
 	screen_size_cl[0]= main_loop_->ViewportWidth() / cell_size[0];
 	screen_size_cl[1]= main_loop_->ViewportHeight() / cell_size[1];
 
+	GuiMenu* menu;
 	GuiText* text;
 	GuiButton* button;
 
+	/*
+	MAIN MENU
+	*/
+
+	menu= &main_menu_;
+	menu->button_count=0;
+	menu->text_count= 0;
+	menu->has_backgound= false;
+
 	// title
-	text= &main_menu_.texts[0];
+	text= &menu->texts[0];
 	strcpy( text->text, c_title_text );
 	text->size= 4;
 	text->colomn= screen_size_cl[0]/2 - strlen(c_title_text) * text->size / 2;
 	text->row= 1;
 	COLOR_CPY( text->color, text_color );
-	main_menu_.text_count++;
+	menu->text_count++;
 
 	// subtitle
 	text= &main_menu_.texts[1];
@@ -248,46 +280,99 @@ void mf_Gui::PrepareMenus()
 	text->colomn= screen_size_cl[0]/2 + 4;
 	text->row= 4;
 	COLOR_CPY( text->color, text_color );
-	main_menu_.text_count++;
+	menu->text_count++;
 
 	unsigned int button_altitude= screen_size_cl[1]/2 - 6;
 
 	// Play button
-	text= &main_menu_.buttons[0].text;
+	text= &menu->buttons[0].text;
 	strcpy( text->text, c_play_button_text );
 	text->size= 2;
 	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_play_button_text) / 2;
 	text->row= button_altitude;
 	COLOR_CPY( text->color, text_color );
 
-	button= &main_menu_.buttons[0];
+	button= &menu->buttons[0];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
 	button->width=  text->size * cell_size[0] * strlen(c_play_button_text) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnPlayButton;
-	main_menu_.button_count++;
+	menu->button_count++;
 
 	button_altitude+= text->size + 1;
 
 	// Quit button
-	text= &main_menu_.buttons[1].text;
+	text= &menu->buttons[1].text;
 	strcpy( text->text, c_quit_button_text );
 	text->size= 2;
 	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_quit_button_text) / 2;
-	text->row= button_altitude;
+	text->row= screen_size_cl[1] - 3;
 	COLOR_CPY( text->color, text_color );
 
-	button= &main_menu_.buttons[1];
+	button= &menu->buttons[1];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
 	button->width=  text->size * cell_size[0] * strlen(c_quit_button_text) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnQuitButton;
-	main_menu_.button_count++;
+	menu->button_count++;
 
+	/*
+	SETTING MENU
+	*/
 
-	current_menu_= &main_menu_;
+	menu= &settings_menu_;
+	menu->button_count=0;
+	menu->text_count= 0;
+	menu->has_backgound= false;
+
+	// daytime
+	text= &menu->texts[0];
+	strcpy( text->text, c_daytime_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 -text->size * strlen(c_daytime_text);
+	text->row= 4;
+	COLOR_CPY( text->color, text_color );
+	menu->text_count++;
+
+	// daytime button text
+	text= &menu->buttons[0].text;
+	strcpy( text->text, day_times[0] );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2;
+	text->row= 4;
+	COLOR_CPY( text->color, text_color );
+
+	// daytime button
+	button= &menu->buttons[0];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * 8 - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnChangeDayTimeButton;
+	button->user_data= 0;
+	menu->button_count++;
+
+	// back button text
+	text= &menu->buttons[1].text;
+	strcpy( text->text, c_button_back );
+	text->size= 2;
+	text->colomn= 2;
+	text->row= screen_size_cl[1] - 3;
+	COLOR_CPY( text->color, text_color );
+
+	// back button
+	button= &menu->buttons[1];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * strlen(c_button_back) - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnSettingsBackButton;
+	button->user_data= 0;
+	menu->button_count++;
+
+	//current_menu_= &settings_menu_;
 }
 
 void mf_Gui::DrawControlPanel()
@@ -298,7 +383,7 @@ void mf_Gui::DrawControlPanel()
 	gui_shader_.Bind();
 
 	int textures_id[LastGuiTexture];
-	for( unsigned int i= TextureControlPanel; i< LastGuiTexture; i++ )
+	for( unsigned int i= TextureControlPanel; i<= TextureVerticalSpeedIndicator; i++ )
 	{
 		glActiveTexture( GL_TEXTURE0 + i - TextureControlPanel );
 		glBindTexture( GL_TEXTURE_2D, textures[i] );
@@ -597,7 +682,7 @@ void mf_Gui::DrawNaviballGlass()
 	glEnable( GL_DEPTH_TEST );
 }
 
-void mf_Gui::DrawMainMenu()
+void mf_Gui::DrawMenu( const GuiMenu* menu )
 {
 	float inv_viewport_width2 = +2.0f / float( main_loop_->ViewportWidth () );
 	float inv_viewport_height2= -2.0f / float( main_loop_->ViewportHeight() );
@@ -605,19 +690,39 @@ void mf_Gui::DrawMainMenu()
 	mf_GuiVertex vertices[256];
 	mf_GuiVertex* v= vertices;
 
-	const GuiMenu* menu= &main_menu_;
 	const GuiButton* buttons= menu->buttons;
 	for( unsigned int i= 0; i < menu->button_count; i++ )
 	{
-		v[0].pos[0]= float(buttons[i].x) * inv_viewport_width2  - 1.0f;
-		v[0].pos[1]= float(buttons[i].y) * inv_viewport_height2 + 1.0f;
-		v[1].pos[0]= float(buttons[i].x + buttons[i].width) * inv_viewport_width2  - 1.0f;
+		unsigned int shift= buttons[i].is_hover ? 2 : 0;
+
+		v[0].pos[0]= float(buttons[i].x - shift) * inv_viewport_width2  - 1.0f;
+		v[0].pos[1]= float(buttons[i].y - shift) * inv_viewport_height2 + 1.0f;
+		v[1].pos[0]= float(buttons[i].x + buttons[i].width + shift) * inv_viewport_width2  - 1.0f;
 		v[1].pos[1]= v[0].pos[1];
 		v[2].pos[0]= v[1].pos[0];
-		v[2].pos[1]= float(buttons[i].y + buttons[i].height) * inv_viewport_height2 + 1.0f;
+		v[2].pos[1]= float(buttons[i].y + buttons[i].height + shift) * inv_viewport_height2 + 1.0f;
 		v[3].pos[0]= v[0].pos[0];
 		v[3].pos[1]= v[2].pos[1];
-		GenGuiQuadTextureCoords( v, TextureThrottleIndicator );
+		GenGuiQuadTextureCoords( v, mf_GuiTexture(0) );
+
+		v[4]= v[0];
+		v[5]= v[2];
+		v+= 6;
+	}
+
+	if ( menu->has_backgound )
+	{
+		float kx= -2.0f * inv_viewport_height2 / inv_viewport_width2;
+		float ky= 2.0f;
+		v[0].pos[0]= -1.0f; v[0].tex_coord[0]= 0.0f;
+		v[0].pos[1]= -1.0f; v[0].tex_coord[1]= 0.0f;
+		v[1].pos[0]= +1.0f; v[1].tex_coord[0]= kx;
+		v[1].pos[1]= -1.0f; v[1].tex_coord[1]= 0.0f;
+		v[2].pos[0]= +1.0f; v[2].tex_coord[0]= kx;
+		v[2].pos[1]= +1.0f; v[2].tex_coord[1]= ky;
+		v[3].pos[0]= -1.0f; v[3].tex_coord[0]= 0.0f;
+		v[3].pos[1]= +1.0f; v[3].tex_coord[1]= ky;
+		v[0].tex_coord[2]= v[1].tex_coord[2]= v[2].tex_coord[2]= v[3].tex_coord[2]= 1;
 
 		v[4]= v[0];
 		v[5]= v[2];
@@ -625,9 +730,13 @@ void mf_Gui::DrawMainMenu()
 	}
 
 	gui_shader_.Bind();
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, textures[TextureThrottleIndicator] );
-	gui_shader_.UniformInt( "tex", 0 );
+
+	glActiveTexture( GL_TEXTURE0 + 0 );
+	glBindTexture( GL_TEXTURE_2D, textures[TextureGuiButton] );
+	glActiveTexture( GL_TEXTURE0 + 1 );
+	glBindTexture( GL_TEXTURE_2D, textures[TextureMenuBackgound] );
+	int textures_binding[]={ 0, 1 };
+	gui_shader_.UniformIntArray( "tex", 2, textures_binding );
 
 	common_vbo_.Bind();
 	common_vbo_.VertexSubData( vertices, (v - vertices) * sizeof(mf_GuiVertex), 0 );
@@ -663,4 +772,17 @@ void mf_Gui::OnPlayButton()
 void mf_Gui::OnQuitButton()
 {
 	main_loop_->Quit();
+}
+
+void mf_Gui::OnChangeDayTimeButton()
+{
+	GuiButton* button= &settings_menu_.buttons[0];
+	button->user_data++;
+	if( button->user_data >= sizeof(day_times) / sizeof(char*) )
+		button->user_data= 0;
+	strcpy( button->text.text, day_times[ button->user_data ] );
+}
+
+void mf_Gui::OnSettingsBackButton()
+{
 }

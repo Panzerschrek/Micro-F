@@ -48,7 +48,9 @@ private:
 		unsigned int x, y;
 		unsigned int width, height;
 		GuiText text;
+		bool is_hover;
 		GuiButtonCallback callback;
+		unsigned int user_data; // user data for different using
 	};
 
 	struct GuiMenu
@@ -57,17 +59,21 @@ private:
 		unsigned int button_count;
 		GuiText texts[ MF_GUI_MAX_TEXTS ];
 		unsigned int text_count;
+		bool has_backgound;
 	};
 
 	void PrepareMenus();
 	void DrawControlPanel();
 	void DrawNaviball();
 	void DrawNaviballGlass();
-	void DrawMainMenu();
+	void DrawMenu( const GuiMenu* menu );
 	void DrawCursor();
 
 	void OnPlayButton();
 	void OnQuitButton();
+
+	void OnChangeDayTimeButton();
+	void OnSettingsBackButton();
 
 private:
 	mf_MainLoop* main_loop_;
@@ -88,5 +94,6 @@ private:
 	GLuint cursor_texture_;
 
 	GuiMenu main_menu_;
+	GuiMenu settings_menu_;
 	GuiMenu* current_menu_;
 };

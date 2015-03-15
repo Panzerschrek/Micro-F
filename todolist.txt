@@ -2,18 +2,25 @@
 
 * razmescenije staticnyh modelej na urovne i ih risovanije
 * stolknovenije s landšaftom
-* samozatenenije samolötov cerez stencil buffer
+* [sdelano] samozatenenije samolötov cerez stencil buffer
 * HDR
 * zvuki dlä samolötov
 * escö samolöty ( dolžno bytj ot tröh do päti )
+	* [sdelano] F1949
+	* [sdelano] F2XXX
+	* [sdelano] V-1
 * AI
+	* avtopilot
 * naviball
 	* [sdelano] tekstura
 	* [sdelano] sam šar
 	* [sdelano] ikonki napravlenij
-	* nužno sdelatj povoroty kak v KSP
+	* [sdelano] povoroty kak v KSP
 	* otobraženije vragov
 * [v processe] gui
+	* [sdelano] nadpisi
+	* [casticno sdelano] knopki s dejstvijami
+	* [casticno sdelano] igrofoj interfejs
 * [sdelano] sozdanije nebesnoj sfery tesseläçije ikosaedra
 * [casticno sdelano] zvözdy
 * luna ( modelj + tekstura, generirujemaja po algoritmu generaçii tekstur dlä planet )

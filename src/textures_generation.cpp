@@ -105,6 +105,19 @@ void GenVerticalSpeedIndicatorTexture( mf_Texture* tex )
 	}
 }
 
+void GenGuiButtonTexture( mf_Texture* tex )
+{
+	static const float button_color[]= { 0.2f, 0.7f, 0.1f, 0.8f };
+	tex->Fill( button_color );
+}
+
+void GenMenuBackgroundTexture( mf_Texture* tex )
+{
+	tex->Noise();
+	static const float mul_color[]= { 0.1f, 0.6f, 0.1f, 1.0f };
+	tex->Mul( mul_color );
+}
+
 void GenNaviballGlassTexture( mf_Texture* tex )
 {
 	MF_ASSERT(tex->SizeX() == tex->SizeY());
@@ -372,5 +385,7 @@ void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 	GenThrottleBarTexture,
 	GenThrottleIndicatorTexture,
 	GenVerticalSpeedIndicatorTexture,
-	GenNaviballGlassTexture
+	GenNaviballGlassTexture,
+	GenGuiButtonTexture,
+	GenMenuBackgroundTexture
 };
