@@ -11,6 +11,93 @@ static const float g_indicators_lines_color[]= { 0.5f, 0.5f, 0.5f, 1.0f };
 static const float g_indicators_border_color[]= { 0.4f, 0.3f, 0.2f, 1.0f };
 static const float g_invisible_color[]= { 0.0f, 0.0f, 0.0f, 0.0f };
 
+
+// returns noise in range [0;0xfffffff]
+int Noise3(int x, int y, int z, int seed )
+{
+#if 1
+	const int X_NOISE_GEN = 1;
+	const int Y_NOISE_GEN = 31337;
+	const int Z_NOISE_GEN = 263;
+	const int SEED_NOISE_GEN = 1013;
+	//const int SHIFT_NOISE_GEN = 13;
+#else
+	const int X_NOISE_GEN = 1619;
+	const int Y_NOISE_GEN = 31337;
+	const int Z_NOISE_GEN = 6971;
+	const int SEED_NOISE_GEN = 1013;
+	//const int SHIFT_NOISE_GEN = 8;
+#endif
+
+	// All constants are primes and must remain prime in order for this noise
+	// function to work correctly.
+	int n = (
+	X_NOISE_GEN    * x
+	+ Y_NOISE_GEN    * y
+	+ Z_NOISE_GEN    * z
+	+ SEED_NOISE_GEN * seed)
+	& 0x7fffffff;
+	n = (n >> 13) ^ n;
+	return (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
+}
+
+// return result in range [0;0xFFFF]
+unsigned short Noise3Interpolated( int x, int y, int z, int k, int seed )
+{
+	int k_mask1= 1 << k;
+	int k_mask= k_mask1 - 1;
+	int X= x >> k;
+	int Y= y >> k;
+	int Z= z >> k;
+
+	int k16= k + 16;
+	int noise[8]=
+	{
+		Noise3( X  , Y  , Z  , seed )>>k16,
+		Noise3( X+1, Y  , Z  , seed )>>k16,
+		Noise3( X  , Y+1, Z  , seed )>>k16,
+		Noise3( X+1, Y+1, Z  , seed )>>k16,
+		Noise3( X  , Y  , Z+1, seed )>>k16,
+		Noise3( X+1, Y  , Z+1, seed )>>k16,
+		Noise3( X+1, Y+1, Z+1, seed )>>k16,
+		Noise3( X  , Y+1, Z+1, seed )>>k16
+	};
+
+	int dx= x & k_mask;
+	int dy= y & k_mask;
+	int dz= z & k_mask;
+	int inv_dx= k_mask1 - dx;
+	int inv_dy= k_mask1 - dy;
+	int inv_dz= k_mask1 - dz;
+
+	int z_interpolated[4]=
+	{
+		dz * noise[4] + inv_dz * noise[0], // x   y  
+		dz * noise[5] + inv_dz * noise[1], // x+1 y  
+		dz * noise[6] + inv_dz * noise[2], // x   y+1
+		dz * noise[7] + inv_dz * noise[3]  // x+1 y+1
+	};
+	int y_interpolated[2]=
+	{
+		dy * z_interpolated[2] + inv_dy * z_interpolated[0], //x
+		dy * z_interpolated[3] + inv_dy * z_interpolated[1] // x+1
+	};
+
+	return (unsigned short)(
+		(y_interpolated[1] * dx + inv_dx * y_interpolated[0]) >> (k*2) );
+};
+
+// return result in range [0;0xFFFF]
+unsigned short Noise3Final( int x, int y, int z, int seed, unsigned int octave_count )
+{
+	unsigned short r=0;
+
+	int od= 8 - octave_count;
+	for( int i= 1 + od, j= 7 - od; i< 8; i++, j-- )
+		r+= Noise3Interpolated( x,y,z,i, seed ) >> j;
+	return r;
+}
+
 void GenNaviballTexture( mf_Texture* tex )
 {
 	MF_ASSERT(tex->SizeX() == tex->SizeY());
@@ -274,26 +361,41 @@ void GenSunTexture( mf_Texture* tex )
 	tex->Pow( 0.7f );
 }
 
-void GenMoonTexture( mf_Texture* tex )
+void GenMoonTexture( mf_Texture* textures )
 {
-	static const float black_color[]= { 0.0f, 0.0f, 0.0f, 0.0f };
-	tex->Fill( black_color );
+	static const char side_basises[6*9]=
+	{
+		//TODO make correct basis for convertion uv to xyz
+		0,1,0 , 1,0,0, 0,0,0,
+		0,-1,0, 1,0,0, 0,0,0,
+		1,0,0 , 0,0,1, 0,-1,0,
+		-1,0,0, 0,0,1, 0,-1,0,
+		0,0,1 , 1,0,0, 0,-1,0,
+		0,0,-1, 1,0,0, 0,-1,0
+	};
 
-	unsigned int size_x= 1 << tex->SizeXLog2();
-	unsigned int size_y= 1 << tex->SizeYLog2();
-	static const float moon_color[]= { 1.0f, 1.0f, 1.0f, 1.0f };
-	tex->FillEllipse( size_x / 2, size_y / 2, size_x/2, moon_color );
+	for( unsigned int i= 0; i< 6; i++ )
+	{
+		float* tex_data= textures[i].GetData();
 
+		int size= textures[0].SizeX();
+		const char* current_basis= &side_basises[ i*9 ];
 
-	mf_Texture noise_texture( tex->SizeXLog2(), tex->SizeYLog2() );
-	noise_texture.Noise();
-	noise_texture.Rotate( 37.0f );
-	static const float noise_mul_color[]= { 0.33f, 0.33f, 0.33f, 0.33f };
-	noise_texture.Mul( noise_mul_color );
-	static const float noise_add_color[]= { 0.66f, 0.66f, 0.66f, 0.66f };
-	noise_texture.Add( noise_add_color );
+		//textures[i].Noise();
+		for( int v= 0; v< size; v++ )
+			for( int u= 0; u< size; u++, tex_data+= 4 )
+			{
+				int xyz[3];
+				xyz[0]= current_basis[0] * u + current_basis[1] * v + current_basis[2] * size;
+				xyz[1]= current_basis[3] * u + current_basis[4] * v + current_basis[5] * size;
+				xyz[2]= current_basis[6] * u + current_basis[7] * v + current_basis[8] * size;
 
-	tex->Mul( &noise_texture );
+				unsigned short noise= Noise3Final( xyz[0], xyz[1], xyz[2], 0, 6 );
+				tex_data[0]= tex_data[1]= tex_data[2]= tex_data[3]= 
+					float(noise) / 65536.0f;
+			}
+
+	}
 }
 
 void GenDirtTexture( mf_Texture* tex )

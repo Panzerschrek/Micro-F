@@ -200,6 +200,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\autopilot.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\drawing_model.cpp"
 				>
 			</File>
@@ -283,6 +287,10 @@
 			>
 			<File
 				RelativePath=".\src\aircraft.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\autopilot.h"
 				>
 			</File>
 			<File

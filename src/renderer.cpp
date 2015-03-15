@@ -275,6 +275,33 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 
 	CreateWaterReflectionFramebuffer();
 	CreateShadowmapFramebuffer();
+
+	/*{
+		mf_Texture tex[6]=
+		{
+			mf_Texture(8,8),
+			mf_Texture(8,8),
+			mf_Texture(8,8),
+			mf_Texture(8,8),
+			mf_Texture(8,8),
+			mf_Texture(8,8)
+		};
+		GenMoonTexture( tex );
+
+		GLuint tex_id;
+
+		glGenTextures( 1, &tex_id );
+		glBindTexture( GL_TEXTURE_CUBE_MAP, tex_id );
+		for( unsigned int i= 0; i< 6; i++ )
+		{
+			tex[i].LinearNormalization( 1.0f );
+
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA8,
+				tex[i].SizeX(), tex[i].SizeY(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex[i].GetNormalizedData() );
+		}
+		glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	}*/
 }
 
 mf_Renderer::~mf_Renderer()

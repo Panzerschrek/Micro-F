@@ -11,6 +11,7 @@
 	* [sdelano] V-1
 * AI
 	* avtopilot
+* castiçy dlä risovanija dyma, vyhlopa reaktivnuh dvigatelej ot samolötov
 * naviball
 	* [sdelano] tekstura
 	* [sdelano] sam šar
