@@ -23,6 +23,8 @@ public:
 	const float* Angle() const;
 	const float* AxisVec( unsigned int vec ) const;
 	const float* Velocity() const;
+	const float* AngularSpeed() const;
+	const float* AngularAcceleration() const;
 
 	float Throttle() const;
 
@@ -108,6 +110,16 @@ inline float mf_Aircraft::Throttle() const
 inline const float* mf_Aircraft::Velocity() const
 {
 	return velocity_;
+}
+
+inline const float* mf_Aircraft::AngularSpeed() const 
+{
+	return angular_speed_;
+}
+
+inline const float* mf_Aircraft::AngularAcceleration() const
+{
+	return angular_acceleration_;
 }
 
 inline unsigned int mf_Aircraft::HP() const
