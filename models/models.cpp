@@ -12,6 +12,10 @@ const unsigned char f2xxx[]=
 #include "f2xxx.h"
 ;
 
+const unsigned char v1[]=
+#include "v-1.h"
+;
+
 const unsigned char cube[]=
 #include "cube.h"
 ;
@@ -27,7 +31,8 @@ const unsigned char star[]=
 const unsigned char* aircraft_models[mf_Aircraft::LastType]=
 {
 	f1949,
-	f2xxx
+	f2xxx,
+	v1
 };
 
 } // namespace mf_Models

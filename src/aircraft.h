@@ -8,6 +8,7 @@ public:
 	{
 		F1949,
 		F2XXX,
+		V1,
 		LastType
 	};
 

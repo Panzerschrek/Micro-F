@@ -194,6 +194,62 @@ void GenF2XXXTexture( mf_Texture* tex )
 		tex_scaler * 99, tex_scaler * 130, window_color );
 }
 
+void GenV1Texture( mf_Texture* tex )
+{
+	// source texture has size 512x512
+	MF_ASSERT( tex->SizeX() == tex->SizeY() );
+	MF_ASSERT( tex->SizeX() >= 512 );
+	const unsigned int tex_scaler= 1<< ( tex->SizeXLog2() - 9 );
+
+	static const float main_color[]= { 0.6f, 0.6f, 0.6f, 0.0f };
+	tex->Fill( main_color );
+
+	{
+		mf_Texture noise_tex( tex->SizeXLog2(), tex->SizeYLog2() );
+		noise_tex.Noise();
+		static const float mul_color[]= { 0.25f, 0.25f, 0.25f, 0.0f };
+		static const float add_color[]= { 0.75f, 0.75f, 0.75f, 0.0f };
+		noise_tex.Mul( mul_color );
+		noise_tex.Add( add_color );
+		tex->Mul( &noise_tex );
+	}
+
+	static const float engine_front_color[]= { 0.3f, 0.1f, 0.7f, 0.0f };
+	static const float engine_back_color[]= { 0.7f, 0.1f, 0.3f, 0.0f };
+	tex->FillRect( 110 * tex_scaler, 252 * tex_scaler, 100 * tex_scaler, 100 * tex_scaler, engine_front_color );
+	tex->FillRect( 237 * tex_scaler, 243 * tex_scaler, 100 * tex_scaler, 100 * tex_scaler, engine_back_color );
+
+	static const float flag_red_color[]= { 0.8f, 0.05f, 0.05f, 0.0f };
+	static const float flag_white_color[]= { 0.9f, 0.9f, 0.9f, 0.0f };
+	static const float flag_black_color[]= { 0.1f, 0.1f, 0.1f, 0.0f };
+
+	static const unsigned int swastica_center[]= { 275, 188 };
+
+	tex->FillRect( 249 * tex_scaler, 168 * tex_scaler, 50 * tex_scaler, 40 * tex_scaler, flag_red_color );
+	tex->FillEllipse( swastica_center[0] * tex_scaler, swastica_center[1] * tex_scaler, 19 * tex_scaler, flag_white_color );
+
+	for( int i= -2; i<= 2; i++ )
+	{
+		tex->DrawLine( i+ swastica_center[0] * tex_scaler,  swastica_center[1] * tex_scaler,
+			i+ tex_scaler * (swastica_center[0] + 8),  tex_scaler * (swastica_center[1] + 8), flag_black_color );
+		tex->DrawLine( i+ swastica_center[0] * tex_scaler,  swastica_center[1] * tex_scaler,
+			i+ tex_scaler * (swastica_center[0] + 8),  tex_scaler * (swastica_center[1] - 8), flag_black_color );
+		tex->DrawLine( i+ swastica_center[0] * tex_scaler,  swastica_center[1] * tex_scaler,
+			i+ tex_scaler * (swastica_center[0] - 8),  tex_scaler * (swastica_center[1] + 8), flag_black_color );
+		tex->DrawLine( i+ swastica_center[0] * tex_scaler, swastica_center[1] * tex_scaler,
+			i+ tex_scaler * (swastica_center[0] - 8), tex_scaler * (swastica_center[1] - 8), flag_black_color );
+
+		tex->DrawLine( i+ tex_scaler * (swastica_center[0] + 8), tex_scaler * (swastica_center[1] + 8),
+			i+ tex_scaler * (swastica_center[0] + 16), tex_scaler * swastica_center[1], flag_black_color );
+		tex->DrawLine( i+ tex_scaler * (swastica_center[0] + 8), tex_scaler * (swastica_center[1] - 8),
+			i+ tex_scaler * swastica_center[0], tex_scaler * (swastica_center[1] - 16), flag_black_color );
+		tex->DrawLine( i+ tex_scaler * (swastica_center[0] - 8), tex_scaler * (swastica_center[1] + 8),
+			i+ tex_scaler * swastica_center[0], tex_scaler * (swastica_center[1] + 16), flag_black_color );
+		tex->DrawLine( i+ tex_scaler * (swastica_center[0] - 8), tex_scaler * (swastica_center[1] - 8),
+			i+ tex_scaler * (swastica_center[0] - 16), tex_scaler * swastica_center[1], flag_black_color );
+	}
+}
+
 void GenSunTexture( mf_Texture* tex )
 {
 	unsigned int size_x= 1 << tex->SizeXLog2();
@@ -305,7 +361,8 @@ void (* const terrain_texture_gen_func[])(mf_Texture* t)=
 void (* const aircraft_texture_gen_func[mf_Aircraft::LastType])(mf_Texture* t)=
 {
 	GenF1949Texture,
-	GenF2XXXTexture
+	GenF2XXXTexture,
+	GenV1Texture
 };
 
 void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=

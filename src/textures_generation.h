@@ -35,6 +35,7 @@ void GenVerticalSpeedIndicatorTexture( mf_Texture* tex );
 
 void GenF1949Texture( mf_Texture* tex );
 void GenF2XXXTexture( mf_Texture* tex );
+void GenV1Texture( mf_Texture* tex );
 
 void GenSunTexture( mf_Texture* tex );
 void GenMoonTexture( mf_Texture* tex );
