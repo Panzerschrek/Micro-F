@@ -365,60 +365,20 @@ void Mat4RotateAroundVector( float* m, const float* vec, float angle )
 	VEC3_CPY( normalized_vec, vec );
 	Vec3Normalize( normalized_vec );
 
-	float vec_abs[3]= { mf_Math::fabs(vec[0]), mf_Math::fabs(vec[1]), mf_Math::fabs(vec[2]) };
+	float cos_a= mf_Math::cos( angle );
+	float sin_a= mf_Math::sin( -angle );
+	float one_minus_cos_a= 1.0f - cos_a;
 
-	// get component of vector with max length
-	unsigned int max_component= 0;
-	float max_component_length= vec_abs[0];
-	if ( vec_abs[1] > max_component_length )
-	{
-		max_component_length= vec_abs[1];
-		max_component= 1;
-	}
-	if ( vec_abs[2] > max_component_length )
-	{
-		max_component_length= vec_abs[2];
-		max_component= 2;
-	}
-	
-	// select second basis vector 
-	static const float second_basis_vectors[]=
-	{
-		0.0f, 1.0f, 0.0f,
-		1.0f, 0.0f, 0.0f,
-		1.0f, 0.0f, 0.0f
-	};
-	float second_basis_vector_correctied[3];
-
-	// get third basis vector
-	float thirt_basis_vector[3];
-	Vec3Cross( normalized_vec, &second_basis_vectors[max_component * 3], thirt_basis_vector );
-	// corect second basis vector ( for true orthogonal space )
-	Vec3Cross( thirt_basis_vector, normalized_vec, second_basis_vector_correctied );
-
-	float convert_to_vector_space_matrix[16];
-	Mat4Identity( convert_to_vector_space_matrix );
-	convert_to_vector_space_matrix[ 0]= normalized_vec[0];
-	convert_to_vector_space_matrix[ 4]= normalized_vec[1];
-	convert_to_vector_space_matrix[ 8]= normalized_vec[2];
-	convert_to_vector_space_matrix[ 1]= second_basis_vector_correctied[0];
-	convert_to_vector_space_matrix[ 5]= second_basis_vector_correctied[1];
-	convert_to_vector_space_matrix[ 9]= second_basis_vector_correctied[2];
-	convert_to_vector_space_matrix[ 2]= thirt_basis_vector[0];
-	convert_to_vector_space_matrix[ 6]= thirt_basis_vector[1];
-	convert_to_vector_space_matrix[10]= thirt_basis_vector[2];
-
-	float rotate_x_matrix[16];
-	Mat4RotateX( rotate_x_matrix, angle );
-
-	float invert_transform_matrix[16];
-	Mat4Invert( convert_to_vector_space_matrix, invert_transform_matrix );
-
-	float mat[16];
-	Mat4Mul( convert_to_vector_space_matrix, rotate_x_matrix, mat );
-	Mat4Mul( mat, invert_transform_matrix, m );
-
-	// result matrix = convert_to_svector_space * rotate_x * convert_to_initial_space
+	Mat4Identity( m );
+	m[ 0]= cos_a + one_minus_cos_a * normalized_vec[0] * normalized_vec[0];
+	m[ 1]= one_minus_cos_a * normalized_vec[0] * normalized_vec[1] - sin_a * normalized_vec[2];
+	m[ 2]= one_minus_cos_a * normalized_vec[0] * normalized_vec[2] + sin_a * normalized_vec[1];
+	m[ 4]= one_minus_cos_a * normalized_vec[0] * normalized_vec[1] + sin_a * normalized_vec[2];
+	m[ 5]= cos_a + one_minus_cos_a * normalized_vec[1] * normalized_vec[1];
+	m[ 6]= one_minus_cos_a * normalized_vec[1] * normalized_vec[2] - sin_a * normalized_vec[0];
+	m[ 8]= one_minus_cos_a * normalized_vec[0] * normalized_vec[2] - sin_a * normalized_vec[1];
+	m[ 9]= one_minus_cos_a * normalized_vec[1] * normalized_vec[2] + sin_a * normalized_vec[0];
+	m[10]= cos_a + one_minus_cos_a * normalized_vec[2] * normalized_vec[2];
 }
 
 float Mat3Det( const float* m )

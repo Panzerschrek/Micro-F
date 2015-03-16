@@ -800,21 +800,13 @@ void mf_Renderer::CreateTerrainMatrix( float* out_matrix )
 void mf_Renderer::CreateAircraftMatrix( const mf_Aircraft* aircraft, float* out_matrix, float* optional_normal_matrix )
 {
 	float translate_mat[16];
-	float axis_mat[16];
 	float common_rotate_mat[16];
 	float tmp_mat[16];
 
-	Mat4Identity( axis_mat );
-	axis_mat[ 0]= aircraft->AxisVec(0)[0];
-	axis_mat[ 4]= aircraft->AxisVec(0)[1];
-	axis_mat[ 8]= aircraft->AxisVec(0)[2];
-	axis_mat[ 1]= aircraft->AxisVec(1)[0];
-	axis_mat[ 5]= aircraft->AxisVec(1)[1];
-	axis_mat[ 9]= aircraft->AxisVec(1)[2];
-	axis_mat[ 2]= aircraft->AxisVec(2)[0];
-	axis_mat[ 6]= aircraft->AxisVec(2)[1];
-	axis_mat[10]= aircraft->AxisVec(2)[2];
-	Mat4Invert( axis_mat, common_rotate_mat );
+	Mat4Identity( common_rotate_mat );
+	VEC3_CPY( common_rotate_mat+0, aircraft->AxisVec(0) );
+	VEC3_CPY( common_rotate_mat+4, aircraft->AxisVec(1) );
+	VEC3_CPY( common_rotate_mat+8, aircraft->AxisVec(2) );
 
 	Mat4Translate( translate_mat, aircraft->Pos() );
 

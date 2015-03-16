@@ -539,33 +539,27 @@ void mf_Gui::DrawNaviball()
 		scale_vec[2]= -c_naviball_scale;
 		Mat4Scale( scale_mat, scale_vec );
 
-		{
-			float axis_mat[16];
-			Mat4Identity( axis_mat );
-			axis_mat[ 0]= aircraft->AxisVec(0)[0];
-			axis_mat[ 4]= aircraft->AxisVec(0)[1];
-			axis_mat[ 8]= aircraft->AxisVec(0)[2];
-			axis_mat[ 1]= aircraft->AxisVec(1)[0];
-			axis_mat[ 5]= aircraft->AxisVec(1)[1];
-			axis_mat[ 9]= aircraft->AxisVec(1)[2];
-			axis_mat[ 2]= aircraft->AxisVec(2)[0];
-			axis_mat[ 6]= aircraft->AxisVec(2)[1];
-			axis_mat[10]= aircraft->AxisVec(2)[2];
-			Mat4Transpose( axis_mat );
-			Mat4Invert( axis_mat, rotate_mat );
-		}
-		{
-			Mat4RotateX( basis_change_mat, -MF_PI2 );
-			float tmp_mat_bc[16];
-			Mat4Identity( tmp_mat_bc );
-			tmp_mat_bc[10]= -1.0f;
-			Mat4Mul( basis_change_mat, tmp_mat_bc );
-		}
-		{
-			Mat4Identity( model_mirror_mat );
-			model_mirror_mat[0]= -1.0f;
-		}
-		
+		// rotation matrix is transposed basis
+		Mat4Identity( rotate_mat );
+		rotate_mat[ 0]= aircraft->AxisVec(0)[0];
+		rotate_mat[ 4]= aircraft->AxisVec(0)[1];
+		rotate_mat[ 8]= aircraft->AxisVec(0)[2];
+		rotate_mat[ 1]= aircraft->AxisVec(1)[0];
+		rotate_mat[ 5]= aircraft->AxisVec(1)[1];
+		rotate_mat[ 9]= aircraft->AxisVec(1)[2];
+		rotate_mat[ 2]= aircraft->AxisVec(2)[0];
+		rotate_mat[ 6]= aircraft->AxisVec(2)[1];
+		rotate_mat[10]= aircraft->AxisVec(2)[2];
+
+		Mat4RotateX( basis_change_mat, -MF_PI2 );
+		float tmp_mat_bc[16];
+		Mat4Identity( tmp_mat_bc );
+		tmp_mat_bc[10]= -1.0f;
+		Mat4Mul( basis_change_mat, tmp_mat_bc );
+
+		Mat4Identity( model_mirror_mat );
+		model_mirror_mat[0]= -1.0f;
+
 		Mat4Mul( rotate_mat, basis_change_mat, tmp_mat );
 		Mat4Mul( tmp_mat, scale_mat, mat );
 		Mat4Mul( mat, translate_mat, tmp_mat );
