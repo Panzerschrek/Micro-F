@@ -281,3 +281,38 @@ void GenPalm( mf_DrawingModel* model )
 		//TODO: deform normal
 	}
 }
+
+void GenOak( mf_DrawingModel* model )
+{
+	const float c_oak_height= 10.0f;
+	const float c_oak_trunk_diameter= 2.3f;
+
+	static const float oak_scale[]= { c_oak_trunk_diameter * 0.5f, c_oak_trunk_diameter * 0.5f, c_oak_height * 0.5f };
+	static const float oak_shift[]= { 0.0f, 0.0f, c_oak_height * 0.5f };
+
+	const int c_trunk_segments= 7;
+	const int c_trunk_partitions= 8;
+	GenCylinder( model, c_trunk_segments, c_trunk_partitions, false );
+	model->Scale( oak_scale );
+	model->Shift( oak_shift );
+
+	mf_Rand randomizer;
+
+	mf_DrawingModelVertex* vertices= (mf_DrawingModelVertex*) model->GetVertexData();
+	for( unsigned int i= 0; i<= c_trunk_partitions; i++ )
+	{
+		mf_DrawingModelVertex* v= vertices + i * (c_trunk_segments+1);
+
+		float diameter_multipler= 1.0f - float(i) / float(c_trunk_partitions);
+		diameter_multipler= ( diameter_multipler + 1.0f ) / 2.0f;
+
+		float shift_x= randomizer.RandF(-0.3f, 0.3f );
+		float shift_y= randomizer.RandF(-0.3f, 0.3f );
+
+		for( unsigned int j= 0; j< c_trunk_segments+1; j++ )
+		{
+			v[j].pos[0]= (v[j].pos[0] + shift_x) * diameter_multipler;
+			v[j].pos[1]= (v[j].pos[1] + shift_y) * diameter_multipler;
+		}
+	}
+}

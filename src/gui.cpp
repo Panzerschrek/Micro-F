@@ -33,6 +33,10 @@ static const unsigned char cursor_data[ MF_CURSOR_SIZE * MF_CURSOR_SIZE / 8 ]=
 #define COLOR_CPY(dst,src) *((int*)(dst))= *((int*)(src))
 #define COLOR_CPY_INT(dst,src) *((int*)(dst))= src
 
+/*
+UI STRINGS
+*/
+
 static const char* day_times[]=
 {
 	"sunrise",
@@ -41,6 +45,16 @@ static const char* day_times[]=
 	"evening",
 	"sunset",
 	"night"
+};
+
+static const char* low_normal_height[]=
+{
+	"low", "normal", "height"
+};
+
+static const char* on_off[]=
+{
+	"on", "off"
 };
 
 struct mf_GuiVertex

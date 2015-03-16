@@ -11,3 +11,4 @@ void GenCylinder( mf_DrawingModel* model, unsigned int segments, unsigned int pa
 void GenSkySphere( mf_DrawingModel* model );
 
 void GenPalm( mf_DrawingModel* model );
+void GenOak( mf_DrawingModel* model );
