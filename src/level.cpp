@@ -340,49 +340,162 @@ void mf_Level::PlaceTextures()
 	}
 }
 
-
-#define MF_MAX_POITS_IN_GRID 16
-
 struct mf_GridCell
 {
-	float points[ MF_MAX_POITS_IN_GRID * 2 ];
-	unsigned int point_count;
+	mf_GridCell()
+		: initialized(false)
+	{
+	}
+
+	float xy[2];
+	bool initialized;
 };
 
 void mf_Level::PlaceStaticObjects()
 {
-	/*mf_Rand randomizer;
-	for( unsigned int i= 0; i< static_objects_count_; i++ )
-	{
-		int x= randomizer.RandI( 0, terrain_size_[0] - 1 );
-		int y= randomizer.RandI( 0, terrain_size_[1] - 1 );
-
-		static_objects_[i].pos[0]= float(x) * terrain_cell_size_;
-		static_objects_[i].pos[1]= float(y) * terrain_cell_size_;
-		static_objects_[i].pos[2]= float(terrain_heightmap_data_[ x + y * terrain_size_[0] ]) * terrain_amplitude_ / float(0xFFFF);
-		static_objects_[i].scale= 1.0f;
-		static_objects_[i].z_angle= randomizer.RandF( 0.0f, MF_2PI );
-		static_objects_[i].type= (mf_StaticLevelObject::Type) randomizer.RandI( 0, mf_StaticLevelObject::LastType );
-	}*/
-
-	const unsigned int grid_cell_size= 8;
-	const unsigned int 
-	unsigned int cells_x= terrain_size_[0] / grid_cell_size;
-	unsigned int cells_y= terrain_size_[1] / grid_cell_size;
-	mf_GridCell* grid= new mf_GridCell[ cells_x * cells_y ];
-	
-
 	mf_Rand randomizer;
 
-	float current_point[2];
-	current_point[0]= randomizer.RandF( float(terrain_size_[0]) );
-	current_point[1]= randomizer.RandF( float(terrain_size_[1]) );
+	const float eps= 0.05f;
+	const float min_objects_distance_cl= 4.0f;
+	const unsigned int neighbor_k= 16;
+	const float radius_min= 1.0f + eps;
+	const float radius_max= 2.0f - eps;
 
-	const unsigned int final_point_count= 2048;
+	unsigned int grid_size[2]= { 64, 72 };
+
+	mf_GridCell* grid= new mf_GridCell[ grid_size[0] * grid_size[1] ];
+
+	const unsigned int target_point_count= grid_size[0] * grid_size[1];
 	unsigned int point_count= 0;
 
-	while( point_count < final_point_count )
+	mf_GridCell* processing_stack= new mf_GridCell[ grid_size[0] * grid_size[1] ];
+	unsigned int processing_stack_pos= 1;
+
+	mf_GridCell* final_points= new mf_GridCell[ target_point_count ];
+
+	mf_GridCell* current_point;
+	current_point= &processing_stack[0];
+	current_point->xy[0]= randomizer.RandF( float(grid_size[0]/2) );
+	current_point->xy[1]= randomizer.RandF( float(grid_size[1]/2) );
+	current_point->initialized= true;
+	grid[ int(current_point->xy[0]) + int(current_point->xy[1]) * grid_size[0] ]= *current_point;
+	final_points[ point_count ]= *current_point;
+	point_count++;
+
+	while( point_count < target_point_count )
 	{
-		float 
-	}
+		if( processing_stack_pos == 0 ) break;
+
+		// pop point from processing stack
+		current_point= &processing_stack[ processing_stack_pos - 1 ];
+		MF_ASSERT(current_point->initialized);
+		processing_stack_pos--;
+
+		// try place neighbor points
+		for( unsigned int i= 0; i< neighbor_k; i++ )
+		{
+			float angle= randomizer.RandF( 0.0f, MF_2PI );
+			float r= randomizer.RandF( radius_min, radius_max );
+			float xy[2]=
+			{
+				mf_Math::sin(angle) * r + current_point->xy[0],
+				mf_Math::cos(angle) * r + current_point->xy[1]
+			};
+			int xy_int[2]= { int(mf_Math::ceil(xy[0])), int(mf_Math::ceil(xy[1])) };
+			bool is_outside_rect= false;
+			for( unsigned int k= 0; k< 2; k++ )
+			{
+				if( xy_int[k] < 0 ) is_outside_rect= true;
+				else if( xy_int[k] >= int(grid_size[k]) ) is_outside_rect= true;
+			}
+			if (is_outside_rect) continue;
+
+			bool space_around_is_free= true;
+			for( unsigned int j= 0; j< 8 * 8; j++ )
+			{
+				static const char deltas_xy[]=
+				{
+					-4, -4,  -3,-4,  -2,-4,  -1,-4,  0,-4,  1,-4,  2,-4,  3, -4,
+					-4, -3,  -3,-3,  -2,-3,  -1,-3,  0,-3,  1,-3,  2,-3,  3, -3,
+					-4, -2,  -3,-2,  -2,-2,  -1,-2,  0,-2,  1,-2,  2,-2,  3, -2,
+					-4, -1,  -3,-1,  -2,-1,  -1,-1,  0,-1,  1,-1,  2,-1,  3, -1,
+					-4,  0,  -3, 0,  -2, 0,  -1, 0,  0, 0,  1, 0,  2, 0,  3,  0,
+					-4,  1,  -3, 1,  -2, 1,  -1, 1,  0, 1,  1, 1,  2, 1,  3,  1,
+					-4,  2,  -3, 2,  -2, 2,  -1, 2,  0, 2,  1, 2,  2, 2,  3,  2,
+					-4,  3,  -3, 3,  -2, 3,  -1, 3,  0, 3,  1, 3,  2, 3,  3,  3
+				};
+				int neighbor_cell_xy[2]=
+				{
+					xy_int[0] + int(deltas_xy[j*2  ]), 
+					xy_int[1] + int(deltas_xy[j*2+1])
+				};
+				for( unsigned int k= 0; k< 2; k++ )
+				{
+					if( neighbor_cell_xy[k] < 0 ) neighbor_cell_xy[k]= 0;
+					else if( neighbor_cell_xy[k] >= int(grid_size[k]) ) neighbor_cell_xy[k]= grid_size[k] - 1;
+				}
+				const mf_GridCell* cell= &grid[ neighbor_cell_xy[0] + neighbor_cell_xy[1] * grid_size[0] ];
+				if( cell->initialized )
+				{
+					float dx_dy[2]= { cell->xy[0] - xy[0], cell->xy[1] - xy[1] };
+					if( dx_dy[0] * dx_dy[0] + dx_dy[1] * dx_dy[1] <= 2.01f/*MF_INV_SQRT_2 * MF_INV_SQRT_2*/ )
+					{
+						space_around_is_free= false;
+						break;
+					}
+				}
+			}
+
+			mf_GridCell* cell= &grid[ xy_int[0] + xy_int[1] * grid_size[0] ];
+			if( space_around_is_free )
+			{
+				MF_ASSERT(!cell->initialized);
+				if( processing_stack_pos < target_point_count - 1 )
+				{
+					cell->xy[0]= xy[0]; cell->xy[1]= xy[1];
+					cell->initialized= true;
+
+					final_points[ point_count ]= *cell;
+					point_count++;
+
+					processing_stack[ processing_stack_pos ]= *cell;
+					processing_stack_pos++;
+				}
+			}
+		} // for place points
+	} // while low points
+
+	static_objects_rows_[0].objects_count= point_count;
+	static_objects_rows_[0].objects= new mf_StaticLevelObject[ static_objects_rows_[0].objects_count ];
+	/*for( unsigned int i= 0; i< static_objects_rows_[0].objects_count; i++ )
+	{
+		mf_StaticLevelObject* obj= &static_objects_rows_[0].objects[i];
+		obj->pos[0]= final_points[i].xy[0] * min_objects_distance_cl * MF_INV_SQRT_2;
+		obj->pos[1]= final_points[i].xy[1] * min_objects_distance_cl * MF_INV_SQRT_2;
+		obj->pos[2] = terrain_amplitude_;
+
+		obj->type= mf_StaticLevelObject::Palm;
+		obj->scale= 1.0f;
+		obj->z_angle= randomizer.RandF( 0.0f, MF_2PI );
+	}*/
+	mf_StaticLevelObject* obj= &static_objects_rows_[0].objects[0];
+	unsigned int obj_p= 0;
+	for( unsigned int y= 0; y< grid_size[1]; y++ )
+		for( unsigned int x= 0; x< grid_size[0]; x++ )
+		{
+			const mf_GridCell* cell= &grid[ x + y * grid_size[0] ];
+			if( cell->initialized)
+			{
+				obj->pos[0]= cell->xy[0] * min_objects_distance_cl * MF_INV_SQRT_2;
+				obj->pos[1]= cell->xy[1] * min_objects_distance_cl * MF_INV_SQRT_2;
+				obj->pos[2] = terrain_amplitude_;
+
+				obj->type= mf_StaticLevelObject::Palm;
+				obj->scale= 1.0f;
+				obj->z_angle= randomizer.RandF( 0.0f, MF_2PI );
+				obj++;
+				obj_p++;
+				//MF_ASSERT(obj_p< static_objects_rows_[0].objects_count );
+			}
+		}
 }

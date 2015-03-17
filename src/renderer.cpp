@@ -164,7 +164,8 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	} // stars
 	{ // static level meshes
 		mf_DrawingModel model;
-		GenOak( &model );
+		//GenOak( &model );
+		GenCylinder( &model, 6, 6, true );
 
 		level_static_objects_vbo_.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
 		level_static_objects_vbo_.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
@@ -1163,7 +1164,7 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 
 void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 {
-	/*const unsigned int objects_per_instance= 16;
+	const unsigned int objects_per_instance= 16;
 
 	level_static_objects_shader_.Bind();
 
@@ -1180,8 +1181,8 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	else glCullFace( GL_BACK );
 	level_static_objects_vbo_.Bind();
 
-	const mf_StaticLevelObject* objects= level_->GetStaticObjects();
-	unsigned int objects_count= level_->StaticObjectsCount();
+	const mf_StaticLevelObject* objects= level_->GetStaticObjectsRows()[0].objects;
+	unsigned int objects_count= level_->GetStaticObjectsRows()[0].objects_count;
 	for( unsigned int i= 0; i< objects_count; i+= objects_per_instance )
 	{
 		float mat[objects_per_instance][16];
@@ -1211,7 +1212,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 			GL_UNSIGNED_SHORT,
 			0, objects_per_instance );
 	} // for static objects
-	glDisable( GL_CULL_FACE );*/
+	glDisable( GL_CULL_FACE );
 }
 
 void mf_Renderer::DrawWater()

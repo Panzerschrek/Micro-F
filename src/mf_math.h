@@ -10,6 +10,8 @@
 #define MF_PI6  0.523598775598298873077107230546f
 #define MF_DEG2RAD 0.017453292519943295769236907684886f
 #define MF_RAD2DEG 57.295779513082320876798154814105f
+#define MF_SQRT_2 1.4142135623730950488016887242097f
+#define MF_INV_SQRT_2 0.70710678118654752440084436210485f
 
 #define VEC3_CPY(dst,src) (dst)[0]= (src)[0]; (dst)[1]= (src)[1]; (dst)[2]= src[2];
 
@@ -181,7 +183,17 @@ inline float exp( float x )
 
 inline float round( float x )
 {
-	return ::ceilf( x + 0.5f );
+	return ::ceilf( x - 0.5f );
+}
+
+inline float floor( float x )
+{
+	return ::floor(x);
+}
+
+inline float ceil( float x )
+{
+	return ::ceilf(x);
 }
 
 float clamp( float min, float max, float x );

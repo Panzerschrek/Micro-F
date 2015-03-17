@@ -37,8 +37,8 @@ public:
 	float TerrainCellSize() const;
 	float TerrainWaterLevel() const;
 
-	//const mf_StaticLevelObject* GetStaticObjects() const;
-	//unsigned int StaticObjectsCount() const;
+	const mf_StaticLevelObjectsRow* GetStaticObjectsRows() const;
+	unsigned int GetStaticObjectsRowCount() const;
 
 private:
 	void GenTarrain();
@@ -104,6 +104,15 @@ inline float mf_Level::TerrainWaterLevel() const
 	return terrain_water_level_;
 }
 
+inline const mf_StaticLevelObjectsRow* mf_Level::GetStaticObjectsRows() const
+{
+	return static_objects_rows_;
+}
+
+inline unsigned int mf_Level::GetStaticObjectsRowCount() const
+{
+	return static_objects_row_count_;
+}
 /*inline const mf_StaticLevelObject* mf_Level::GetStaticObjects() const
 {
 	return static_objects_;
