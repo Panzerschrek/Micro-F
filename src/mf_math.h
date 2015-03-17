@@ -85,6 +85,8 @@ inline float cos( float a )
 
 inline float tan( float a )
 {
+#pragma warning(push)
+#pragma warning(disable: 4725)
 	float r;
 	__asm
 	{
@@ -94,6 +96,7 @@ inline float tan( float a )
 		fstp r
 	}
 	return r;
+#pragma warning(pop)
 }
 
 inline float sqrt( float a )

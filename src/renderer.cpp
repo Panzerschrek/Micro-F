@@ -1163,7 +1163,7 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 
 void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 {
-	const unsigned int objects_per_instance= 16;
+	/*const unsigned int objects_per_instance= 16;
 
 	level_static_objects_shader_.Bind();
 
@@ -1211,7 +1211,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 			GL_UNSIGNED_SHORT,
 			0, objects_per_instance );
 	} // for static objects
-	glDisable( GL_CULL_FACE );
+	glDisable( GL_CULL_FACE );*/
 }
 
 void mf_Renderer::DrawWater()

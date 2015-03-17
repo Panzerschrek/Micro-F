@@ -63,8 +63,13 @@ mf_Level::mf_Level()
 	valley_way_points_= new ValleyWayPoint[ MF_MAX_VALLEY_WAY_POINTS ];
 	valley_way_point_count_= 0;
 
-	static_objects_count_= 1024;
-	static_objects_= new mf_StaticLevelObject[ static_objects_count_ ];
+	static_objects_row_count_= terrain_size_[1] / MF_STATIC_OBJECTS_ROW_SIZE_CL;
+	static_objects_rows_= new mf_StaticLevelObjectsRow[ static_objects_row_count_ ];
+	/*for( unsigned int i= 0; i< static_objects_row_count_; i++ )
+	{
+		static_objects_rows_[i].objects_count= 16;
+		static_objects_rows_[i].objects= new mf_StaticLevelObject[ static_objects_rows_[i].objects_count ];
+	}*/
 
 	GenTarrain();
 	PlaceStaticObjects();
@@ -75,7 +80,10 @@ mf_Level::~mf_Level()
 	delete[] terrain_heightmap_data_;
 	delete[] terrain_normal_textures_map_;
 	delete[] valley_way_points_;
-	delete[] static_objects_;
+
+	//for( unsigned int i= 0; i< static_objects_row_count_; i++ )
+	//	delete[] static_objects_rows_[i].objects;
+	delete[] static_objects_rows_;
 }
 
 void mf_Level::GenTarrain()
@@ -332,9 +340,18 @@ void mf_Level::PlaceTextures()
 	}
 }
 
+
+#define MF_MAX_POITS_IN_GRID 16
+
+struct mf_GridCell
+{
+	float points[ MF_MAX_POITS_IN_GRID * 2 ];
+	unsigned int point_count;
+};
+
 void mf_Level::PlaceStaticObjects()
 {
-	mf_Rand randomizer;
+	/*mf_Rand randomizer;
 	for( unsigned int i= 0; i< static_objects_count_; i++ )
 	{
 		int x= randomizer.RandI( 0, terrain_size_[0] - 1 );
@@ -346,5 +363,26 @@ void mf_Level::PlaceStaticObjects()
 		static_objects_[i].scale= 1.0f;
 		static_objects_[i].z_angle= randomizer.RandF( 0.0f, MF_2PI );
 		static_objects_[i].type= (mf_StaticLevelObject::Type) randomizer.RandI( 0, mf_StaticLevelObject::LastType );
+	}*/
+
+	const unsigned int grid_cell_size= 8;
+	const unsigned int 
+	unsigned int cells_x= terrain_size_[0] / grid_cell_size;
+	unsigned int cells_y= terrain_size_[1] / grid_cell_size;
+	mf_GridCell* grid= new mf_GridCell[ cells_x * cells_y ];
+	
+
+	mf_Rand randomizer;
+
+	float current_point[2];
+	current_point[0]= randomizer.RandF( float(terrain_size_[0]) );
+	current_point[1]= randomizer.RandF( float(terrain_size_[1]) );
+
+	const unsigned int final_point_count= 2048;
+	unsigned int point_count= 0;
+
+	while( point_count < final_point_count )
+	{
+		float 
 	}
 }

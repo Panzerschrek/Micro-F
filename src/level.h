@@ -1,6 +1,7 @@
 #pragma once
 #include "micro-f.h"
 
+#define MF_STATIC_OBJECTS_ROW_SIZE_CL 64
 
 struct mf_StaticLevelObject
 {
@@ -14,6 +15,12 @@ struct mf_StaticLevelObject
 	float pos[3]; // world space position
 	float scale;
 	float z_angle;
+};
+
+struct mf_StaticLevelObjectsRow
+{
+	mf_StaticLevelObject* objects;
+	unsigned int objects_count;
 };
 
 class mf_Level
@@ -30,8 +37,8 @@ public:
 	float TerrainCellSize() const;
 	float TerrainWaterLevel() const;
 
-	const mf_StaticLevelObject* GetStaticObjects() const;
-	unsigned int StaticObjectsCount() const;
+	//const mf_StaticLevelObject* GetStaticObjects() const;
+	//unsigned int StaticObjectsCount() const;
 
 private:
 	void GenTarrain();
@@ -58,8 +65,8 @@ private:
 	ValleyWayPoint* valley_way_points_;
 	unsigned int valley_way_point_count_;
 
-	mf_StaticLevelObject* static_objects_;
-	unsigned int static_objects_count_;
+	mf_StaticLevelObjectsRow* static_objects_rows_;
+	unsigned int static_objects_row_count_;
 };
 
 inline const unsigned short* mf_Level::GetTerrianHeightmapData() const
@@ -97,7 +104,7 @@ inline float mf_Level::TerrainWaterLevel() const
 	return terrain_water_level_;
 }
 
-inline const mf_StaticLevelObject* mf_Level::GetStaticObjects() const
+/*inline const mf_StaticLevelObject* mf_Level::GetStaticObjects() const
 {
 	return static_objects_;
 }
@@ -105,4 +112,4 @@ inline const mf_StaticLevelObject* mf_Level::GetStaticObjects() const
 inline unsigned int mf_Level::StaticObjectsCount() const
 {
 	return static_objects_count_;
-}
+}*/
