@@ -285,7 +285,7 @@ void GenPalm( mf_DrawingModel* model )
 void GenOak( mf_DrawingModel* model )
 {
 	const float c_oak_height= 10.0f;
-	const float c_oak_trunk_diameter= 0.3f * 2.3f;
+	const float c_oak_trunk_diameter= 2.3f;
 
 	static const float oak_scale[]= { c_oak_trunk_diameter * 0.5f, c_oak_trunk_diameter * 0.5f, c_oak_height * 0.5f };
 	static const float oak_shift[]= { 0.0f, 0.0f, c_oak_height * 0.5f };
