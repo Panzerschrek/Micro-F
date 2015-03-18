@@ -40,24 +40,109 @@ void mf_Texture::Noise( unsigned int octave_count )
 		}
 }
 
-void mf_Texture::RandomPoints()
+void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2 )
 {
-	/*unsigned int cell_size= 8;
-	unsigned int max_points_in_cell= 8;
-	unsigned int tex_size[]= { 1 << size_log2_[0],  1 << size_log2_[1] };
-	unsigned int grid_size[2];
+	const int neighbor_k= 20;
+	const float min_dst= float(min_distanse_div_sqrt2) * MF_SQRT_2 + 0.01f;
+	const float min_dst2= min_dst * min_dst;
+	mf_Rand randomizer;
 
+	int grid_size[2];
 	for( unsigned int i= 0; i< 2; i++ )
 	{
-		grid_size[i]= tex_size[i] / cell_size;
-		if( grid_size[i] * cell_size < tex_size[i] ) grid_size[i]++;
+		grid_size[i]= size_[i] / min_distanse_div_sqrt2;
+		if( grid_size[i] * min_distanse_div_sqrt2 < size_[i] ) grid_size[i]++;
 	}
 
-	unsigned short* grid= new unsigned short[ grid_size[0] * grid_size[1] * 2 * max_points_in_cell ];
+	// coord int grid - in pixels
+	int max_point_count= grid_size[0] * grid_size[1];
+	int* grid= new int[ max_point_count * 2 ];
+	for( int i= 0; i< max_point_count; i++ )
+		grid[i*2]= -1;
 
-	float point[2];
-	point[0]= RandF(float(tex_size[0]-1));
-	point[1]= RandF(float(tex_size[1]-1));*/
+	int** processing_stack= new int*[ max_point_count ];
+
+	int init_pos[2];
+	init_pos[0]= randomizer.RandI( size_[0] - 1 );
+	init_pos[1]= randomizer.RandI( size_[1] - 1 );
+	int init_pos_grid_pos[2];
+	init_pos_grid_pos[0]= init_pos[0] / min_distanse_div_sqrt2;
+	init_pos_grid_pos[1]= init_pos[1] / min_distanse_div_sqrt2;
+	processing_stack[0]= &grid[ (init_pos_grid_pos[0] + init_pos_grid_pos[1] * grid_size[0]) * 2 ];
+	processing_stack[0][0]= init_pos[0];
+	processing_stack[0][1]= init_pos[1];
+
+	int processing_stack_pos= 1;
+	while( processing_stack_pos != 0 )
+	{
+		int* current_point= processing_stack[ processing_stack_pos - 1 ];
+		MF_ASSERT( current_point[0] != -1 );
+		processing_stack_pos--;
+
+		for( int n= 0; n< neighbor_k; n++ )
+		{
+			int pos[2];
+			int grid_pos[2];
+
+			float angle= randomizer.RandF( MF_2PI );
+			float r= randomizer.RandF( min_dst, min_dst*2.0f );
+
+			pos[0]= current_point[0] + int(r * mf_Math::cos(angle));
+			pos[1]= current_point[1] + int(r * mf_Math::sin(angle));
+			grid_pos[0]= pos[0] / min_distanse_div_sqrt2;
+			grid_pos[1]= pos[1] / min_distanse_div_sqrt2;
+			if( grid_pos[0] >= grid_size[0] || pos[0] < 0 || pos[0] >= int(size_[0]) ) continue;
+			if( grid_pos[1] >= grid_size[1] || pos[1] < 0 || pos[1] >= int(size_[1]) ) continue;
+
+			int loop_coord_begin[2];
+			int loop_coord_end[2];
+			for( unsigned int i= 0; i< 2; i++ )
+			{
+				loop_coord_begin[i]= grid_pos[i] - 4;
+				if( loop_coord_begin[i] < 0 ) loop_coord_begin[i]= 0;
+				loop_coord_end[i]= grid_pos[i] + 3;
+				if( loop_coord_end[i] >= int(grid_size[i]) ) loop_coord_end[i]= grid_size[i] - 1;
+			}
+			for( int y= loop_coord_begin[1]; y<= loop_coord_end[1]; y++ )
+				for( int x= loop_coord_begin[0]; x<= loop_coord_end[0]; x++ )
+				{
+					int* cell= &grid[ (x + y * grid_size[0]) * 2 ];
+					if( cell[0] != -1 )
+					{
+						int d_dst[2];
+						d_dst[0]= pos[0] - cell[0];
+						d_dst[1]= pos[1] - cell[1];
+						if( float( d_dst[0] * d_dst[0] + d_dst[1] * d_dst[1] ) < min_dst2 )
+							goto xy_loop_break;
+					}
+				}
+			
+			int* cell= &grid[ (grid_pos[0] + grid_pos[1] * grid_size[0]) * 2 ];
+			MF_ASSERT( cell[0] == -1 );
+			cell[0]= pos[0];
+			cell[1]= pos[1];
+			MF_ASSERT( processing_stack_pos < max_point_count );
+			processing_stack[ processing_stack_pos++ ]= cell;
+
+			xy_loop_break:;
+		} // try place points near
+	} // while 1
+
+	static const float black_color[]= { 0.0f, 0.0f, 0.0f, 0.0f };
+	Fill( black_color );
+
+	for( int i= 0; i< max_point_count; i++ )
+	{
+		if( grid[i*2] != -1 )
+		{
+			int k= grid[i*2] + (grid[i*2+1] << size_log2_[0]);
+			k*= 4;
+			data_[k]= data_[k+1]= data_[k+2]= data_[k+3]= 1.0f;
+		}
+	}
+
+	delete[] processing_stack;
+	delete[] grid;
 }
 
 void mf_Texture::GenNormalMap()

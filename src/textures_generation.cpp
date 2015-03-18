@@ -431,6 +431,8 @@ void GenDirtWithGrassTexture( mf_Texture* tex )
 	static const float second_noise_mul[]= { 2.0f, 2.0f, 2.0f, 2.0f };
 	noise_sub_tex.Mul( second_noise_mul );
 	tex->Mul( &noise_sub_tex );
+
+	tex->PoissonDiskPoints( 12 );
 }
 
 void GenSandTexture( mf_Texture* tex )

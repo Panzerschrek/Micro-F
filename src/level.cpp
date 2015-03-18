@@ -357,7 +357,7 @@ void mf_Level::PlaceStaticObjects()
 
 	const unsigned int grid_cell_size= 10; // target value is 4. current - for fast generation for debugging
 	//const float min_objects_distance_cl= float(grid_cell_size) * MF_SQRT_2;
-	const unsigned int neighbor_k= 12;
+	const unsigned int neighbor_k= 16;
 
 	unsigned int grid_size[2];
 	for( unsigned int i= 0; i< 2; i++ )
@@ -421,7 +421,7 @@ void mf_Level::PlaceStaticObjects()
 				loop_coord_begin[i]= xy_int[i] - 4;
 				if( loop_coord_begin[i] < 0 ) loop_coord_begin[i]= 0;
 				loop_coord_end[i]= xy_int[i] + 3;
-				if( loop_coord_end[i] >= int(grid_size[i]) ) loop_coord_end[i]= grid_size[i];
+				if( loop_coord_end[i] >= int(grid_size[i]) ) loop_coord_end[i]= grid_size[i] - 1;
 			}
 			for( int y= loop_coord_begin[1]; y<= loop_coord_end[1]; y++ )
 				for( int x= loop_coord_begin[0]; x<= loop_coord_end[0]; x++ )
