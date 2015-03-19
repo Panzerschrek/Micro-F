@@ -432,7 +432,8 @@ void GenDirtWithGrassTexture( mf_Texture* tex )
 	noise_sub_tex.Mul( second_noise_mul );
 	tex->Mul( &noise_sub_tex );
 
-	tex->PoissonDiskPoints( 12 );
+	tex->PoissonDiskPoints( 32 );
+	tex->Shift( tex->SizeX()>>1, tex->SizeY() >> 1 );
 }
 
 void GenSandTexture( mf_Texture* tex )

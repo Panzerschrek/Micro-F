@@ -47,6 +47,10 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2 )
 	const float min_dst2= min_dst * min_dst;
 	mf_Rand randomizer;
 
+	int size_minus_1[2];
+	size_minus_1[0]= size_[0] - 1;
+	size_minus_1[1]= size_[1] - 1;
+
 	int grid_size[2];
 	for( unsigned int i= 0; i< 2; i++ )
 	{
@@ -89,29 +93,24 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2 )
 
 			pos[0]= current_point[0] + int(r * mf_Math::cos(angle));
 			pos[1]= current_point[1] + int(r * mf_Math::sin(angle));
+			pos[0]= (pos[0] + size_[0]) & size_minus_1[0];
+			pos[1]= (pos[1] + size_[1]) & size_minus_1[1];
 			grid_pos[0]= pos[0] / min_distanse_div_sqrt2;
 			grid_pos[1]= pos[1] / min_distanse_div_sqrt2;
-			if( grid_pos[0] >= grid_size[0] || pos[0] < 0 || pos[0] >= int(size_[0]) ) continue;
-			if( grid_pos[1] >= grid_size[1] || pos[1] < 0 || pos[1] >= int(size_[1]) ) continue;
 
-			int loop_coord_begin[2];
-			int loop_coord_end[2];
-			for( unsigned int i= 0; i< 2; i++ )
-			{
-				loop_coord_begin[i]= grid_pos[i] - 4;
-				if( loop_coord_begin[i] < 0 ) loop_coord_begin[i]= 0;
-				loop_coord_end[i]= grid_pos[i] + 3;
-				if( loop_coord_end[i] >= int(grid_size[i]) ) loop_coord_end[i]= grid_size[i] - 1;
-			}
-			for( int y= loop_coord_begin[1]; y<= loop_coord_end[1]; y++ )
-				for( int x= loop_coord_begin[0]; x<= loop_coord_end[0]; x++ )
+			for( int y= grid_pos[1] - 4; y<= grid_pos[1] + 3; y++ )
+				for( int x= grid_pos[0] - 4; x<= grid_pos[0] + 3; x++ )
 				{
-					int* cell= &grid[ (x + y * grid_size[0]) * 2 ];
+					int wrap_xy[2];
+					wrap_xy[0]= (x + grid_size[0] ) % grid_size[0];
+					wrap_xy[1]= (y + grid_size[1] ) % grid_size[1];
+
+					int* cell= &grid[ (wrap_xy[0] + wrap_xy[1] * grid_size[0]) * 2 ];
 					if( cell[0] != -1 )
 					{
 						int d_dst[2];
-						d_dst[0]= pos[0] - cell[0];
-						d_dst[1]= pos[1] - cell[1];
+						d_dst[0]= pos[0] - cell[0] + ( wrap_xy[0] - x ) * min_distanse_div_sqrt2;
+						d_dst[1]= pos[1] - cell[1] + ( wrap_xy[1] - y ) * min_distanse_div_sqrt2;
 						if( float( d_dst[0] * d_dst[0] + d_dst[1] * d_dst[1] ) < min_dst2 )
 							goto xy_loop_break;
 					}
@@ -128,18 +127,52 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2 )
 		} // try place points near
 	} // while 1
 
-	static const float black_color[]= { 0.0f, 0.0f, 0.0f, 0.0f };
-	Fill( black_color );
+	float intencity_multipler= 1.0f / float(min_distanse_div_sqrt2 * 3);
 
-	for( int i= 0; i< max_point_count; i++ )
+	float* d= data_;
+	for( int y= 0; y< int(size_[1]); y++ )
 	{
-		if( grid[i*2] != -1 )
+		int grid_pos[2];
+		grid_pos[1]= y / min_distanse_div_sqrt2;
+		for( int x= 0; x< int(size_[0]); x++, d+= 4 )
 		{
-			int k= grid[i*2] + (grid[i*2+1] << size_log2_[0]);
-			k*= 4;
-			data_[k]= data_[k+1]= data_[k+2]= data_[k+3]= 1.0f;
-		}
-	}
+			grid_pos[0]= x / min_distanse_div_sqrt2;
+
+			int nearest_point_dst2[2]= { 0xfffffff, 0xfffffff };
+
+			for( int v= grid_pos[1] - 3; v<= grid_pos[1] + 3; v++ )
+			{
+				int grid_uv[2];
+				grid_uv[1]= ( v + grid_size[1] ) % grid_size[1];
+				for( int u= grid_pos[0] - 3; u <= grid_pos[0] + 3; u++ )
+				{
+					grid_uv[0]= ( u + grid_size[0] ) % grid_size[0];
+					int* cell= &grid[ (grid_uv[0] + grid_uv[1] * grid_size[0]) * 2 ];
+					if( cell[0] != -1 )
+					{
+						int d_dst[2];
+						d_dst[0]= cell[0] - x + ( u - grid_uv[0] ) * min_distanse_div_sqrt2;
+						d_dst[1]= cell[1] - y + ( v - grid_uv[1] ) * min_distanse_div_sqrt2;
+						int dst2= d_dst[0] * d_dst[0] + d_dst[1] * d_dst[1];
+						if( dst2 < nearest_point_dst2[0] )
+						{
+							nearest_point_dst2[1]= nearest_point_dst2[0];
+							nearest_point_dst2[0]= dst2;
+						}
+						else if( dst2 < nearest_point_dst2[1] )
+							nearest_point_dst2[1]= dst2;
+					}
+				} // for grid xy
+			} // for grid v
+
+			d[0]= mf_Math::sqrt(float(nearest_point_dst2[0])) * intencity_multipler;
+			d[1]= ( mf_Math::sqrt(float(nearest_point_dst2[1])) - mf_Math::sqrt(float(nearest_point_dst2[0])) )
+				* intencity_multipler;
+			d[2]= mf_Math::sqrt(float(nearest_point_dst2[1])) * intencity_multipler;
+			d[3]= 0.0f;
+
+		} // for x
+	} // for y
 
 	delete[] processing_stack;
 	delete[] grid;
