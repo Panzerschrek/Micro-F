@@ -52,10 +52,12 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2 )
 	size_minus_1[1]= size_[1] - 1;
 
 	int grid_size[2];
+	int grid_cell_size_to_tex_size_k[2];
 	for( unsigned int i= 0; i< 2; i++ )
 	{
 		grid_size[i]= size_[i] / min_distanse_div_sqrt2;
 		if( grid_size[i] * min_distanse_div_sqrt2 < size_[i] ) grid_size[i]++;
+		grid_cell_size_to_tex_size_k[i]= grid_size[i] * min_distanse_div_sqrt2 - size_[i];
 	}
 
 	// coord int grid - in pixels
@@ -111,6 +113,12 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2 )
 						int d_dst[2];
 						d_dst[0]= pos[0] - cell[0] + ( wrap_xy[0] - x ) * min_distanse_div_sqrt2;
 						d_dst[1]= pos[1] - cell[1] + ( wrap_xy[1] - y ) * min_distanse_div_sqrt2;
+
+						if( wrap_xy[0] < x ) d_dst[0]+= grid_cell_size_to_tex_size_k[0];
+						else if( wrap_xy[0] > x ) d_dst[0]-= grid_cell_size_to_tex_size_k[0];
+						if( wrap_xy[1] < y ) d_dst[1]+= grid_cell_size_to_tex_size_k[1];
+						else if( wrap_xy[1] > y ) d_dst[1]-= grid_cell_size_to_tex_size_k[1];
+
 						if( float( d_dst[0] * d_dst[0] + d_dst[1] * d_dst[1] ) < min_dst2 )
 							goto xy_loop_break;
 					}
@@ -153,6 +161,12 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2 )
 						int d_dst[2];
 						d_dst[0]= cell[0] - x + ( u - grid_uv[0] ) * min_distanse_div_sqrt2;
 						d_dst[1]= cell[1] - y + ( v - grid_uv[1] ) * min_distanse_div_sqrt2;
+
+						if( grid_uv[0] > u ) d_dst[0]+= grid_cell_size_to_tex_size_k[0];
+						else if( grid_uv[0] < u ) d_dst[0]-= grid_cell_size_to_tex_size_k[0];
+						if( grid_uv[1] > v ) d_dst[1]+= grid_cell_size_to_tex_size_k[1];
+						else if( grid_uv[1] < v ) d_dst[1]-= grid_cell_size_to_tex_size_k[1];
+
 						int dst2= d_dst[0] * d_dst[0] + d_dst[1] * d_dst[1];
 						if( dst2 < nearest_point_dst2[0] )
 						{
@@ -169,8 +183,11 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2 )
 			d[1]= ( mf_Math::sqrt(float(nearest_point_dst2[1])) - mf_Math::sqrt(float(nearest_point_dst2[0])) )
 				* intencity_multipler;
 			d[2]= mf_Math::sqrt(float(nearest_point_dst2[1])) * intencity_multipler;
-			d[3]= 0.0f;
-
+			d[3]= 1.0f;
+			{
+				int* cell= &grid[ (grid_pos[0] + grid_pos[1] * grid_size[0]) * 2 ];
+				if( cell[0] == x && cell[1] == y ) d[3]= 0.0f;
+			}
 		} // for x
 	} // for y
 
