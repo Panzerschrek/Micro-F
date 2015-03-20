@@ -53,6 +53,11 @@ private:
 		unsigned int h; // height in terrain scale
 	};
 
+	struct ValleyYparams
+	{
+		unsigned short x_begin, x_end, x_center;
+	};
+
 	unsigned short* terrain_heightmap_data_;
 	 // combined data of terrain normals and textures. Format : n.x, n.y, n.z, texture_number
 	char* terrain_normal_textures_map_;
@@ -64,6 +69,7 @@ private:
 
 	ValleyWayPoint* valley_way_points_;
 	unsigned int valley_way_point_count_;
+	ValleyYparams* valley_y_params_;
 
 	mf_StaticLevelObjectsRow* static_objects_rows_;
 	unsigned int static_objects_row_count_;

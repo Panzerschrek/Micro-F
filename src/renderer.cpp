@@ -165,7 +165,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	{ // static level meshes
 		mf_DrawingModel model;
 		GenOak( &model );
-		//GenCylinder( &model, 6, 1, true );
+		//GenCylinder( &model, 8, 1, true );
 
 		level_static_objects_vbo_.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
 		level_static_objects_vbo_.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
@@ -1050,11 +1050,6 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 
 	sky_vbo_.Bind();
 
-#ifdef MF_DEBUG
-	char str[64];
-	sprintf( str, "sky triangles: %d", sky_vbo_.IndexDataSize() / (3*sizeof(unsigned short)) );
-	text_->AddText( 0, 2, 1, mf_Text::default_color, str );
-#endif
 	glDrawElements(
 		GL_TRIANGLES,
 		sky_vbo_.IndexDataSize() / sizeof(unsigned short),
@@ -1181,6 +1176,17 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	else glCullFace( GL_BACK );
 	level_static_objects_vbo_.Bind();
 
+	// init independent parts of main object matrix
+	float rot_z_scale_translate_mat[16];
+	rot_z_scale_translate_mat[ 2]= 0.0f;
+	rot_z_scale_translate_mat[ 3]= 0.0f;
+	rot_z_scale_translate_mat[ 6]= 0.0f;
+	rot_z_scale_translate_mat[ 7]= 0.0f;
+	rot_z_scale_translate_mat[ 8]= 0.0f;
+	rot_z_scale_translate_mat[ 9]= 0.0f;
+	rot_z_scale_translate_mat[11]= 0.0f;
+	rot_z_scale_translate_mat[15]= 1.0f;
+
 	const mf_StaticLevelObject* objects= level_->GetStaticObjectsRows()[0].objects;
 	unsigned int objects_count= level_->GetStaticObjectsRows()[0].objects_count;
 	for( unsigned int i= 0; i< objects_count; i+= objects_per_instance )
@@ -1191,15 +1197,25 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 
 		for( unsigned int j= 0; j< objects_per_instance && (i+j) < objects_count; j++ )
 		{
-			float translate_mat[16];
-			float rot_z_mat[16];
-			float tmp_mat[16];
-			Mat4Translate( translate_mat, objects[i+j].pos );
-			Mat4RotateZ( rot_z_mat, objects[i+j].z_angle );
-			Mat4Mul( rot_z_mat, translate_mat, tmp_mat );
-			Mat4Mul( tmp_mat, view_matrix_, mat[j] );
+			const mf_StaticLevelObject* obj= &objects[i+j];
 
+			// fast calculating of model matrix ( without 2 full matrix multiplications )
+			float s_sin_z= mf_Math::sin( obj->z_angle ) * obj->scale;
+			float s_cos_z= mf_Math::cos( obj->z_angle ) * obj->scale;
+			rot_z_scale_translate_mat[ 0]= s_cos_z;
+			rot_z_scale_translate_mat[ 1]= s_sin_z;
+			rot_z_scale_translate_mat[ 4]= -s_sin_z;
+			rot_z_scale_translate_mat[ 5]= s_cos_z;
+			rot_z_scale_translate_mat[10]= obj->scale;
+			rot_z_scale_translate_mat[12]= obj->pos[0];
+			rot_z_scale_translate_mat[13]= obj->pos[1];
+			rot_z_scale_translate_mat[14]= obj->pos[2];
+			Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[j] );
+
+			float rot_z_mat[16];
+			Mat4RotateZ( rot_z_mat, obj->z_angle );
 			Mat4ToMat3( rot_z_mat, normal_mat[j] );
+
 			textures[j]= 0.01f;
 		}
 

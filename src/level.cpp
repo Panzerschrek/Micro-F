@@ -60,6 +60,8 @@ mf_Level::mf_Level()
 	terrain_heightmap_data_= new unsigned short[ terrain_size_[0] * terrain_size_[1] ];
 	terrain_normal_textures_map_= new char[ terrain_size_[0] * terrain_size_[1] * 4 ];
 
+	valley_y_params_= new ValleyYparams[ terrain_size_[1] ];
+
 	valley_way_points_= new ValleyWayPoint[ MF_MAX_VALLEY_WAY_POINTS ];
 	valley_way_point_count_= 0;
 
@@ -79,6 +81,7 @@ mf_Level::~mf_Level()
 {
 	delete[] terrain_heightmap_data_;
 	delete[] terrain_normal_textures_map_;
+	delete[] valley_y_params_;
 	delete[] valley_way_points_;
 
 	//for( unsigned int i= 0; i< static_objects_row_count_; i++ )
@@ -233,6 +236,9 @@ void mf_Level::GenValleyWayPoints()
 		valley_way_point_count_++;
 	}
 
+	for( unsigned int y= 0; y< terrain_size_[1]; y++ )
+		valley_y_params_[y].x_center= (unsigned short)( terrain_size_[0]/2 );
+
 	for( unsigned int i= 1; i< valley_way_point_count_ - 3; i++ )
 	{
 		// search cubic spline for smoothing x(y) river function
@@ -294,6 +300,7 @@ void mf_Level::GenValleyWayPoints()
 			double y_d= double(y) + 0.5;
 			double x_center_d= (y_d * abcd[0] * y_d * y_d) + (y_d * abcd[1] * y_d) + (y_d * abcd[2]) + (abcd[3]);
 			int x_center= int(x_center_d);
+			valley_y_params_[y].x_center= (unsigned short) x_center;
 
 			static const double init_width2= 48.0;
 			double der= 3.0 * y_d * y_d * abcd[0] + 2.0 * y_d * abcd[1] + abcd[2];
@@ -348,16 +355,25 @@ struct mf_GridCell
 	}
 
 	bool Initialized() const { return xy[0] != -1.0f; }
+
 	float xy[2];
+	float point_radius;
+	mf_StaticLevelObject::Type type;
 };
 
 void mf_Level::PlaceStaticObjects()
 {
 	mf_Rand randomizer;
 
-	const unsigned int grid_cell_size= 10; // target value is 4. current - for fast generation for debugging
-	//const float min_objects_distance_cl= float(grid_cell_size) * MF_SQRT_2;
+	const unsigned int grid_cell_size= 3;
+	const float grid_cell_size_f= float(grid_cell_size);
+	const unsigned int max_radius_scaler= 8;
+	const float max_radius_scaler_f= float(max_radius_scaler);
+	
 	const unsigned int neighbor_k= 16;
+
+	const float radius_eps= 0.01f;
+	const float min_object_radius_cl= MF_SQRT_2 * 0.5f * ( 1.0f + radius_eps );
 
 	unsigned int grid_size[2];
 	for( unsigned int i= 0; i< 2; i++ )
@@ -379,6 +395,7 @@ void mf_Level::PlaceStaticObjects()
 	processing_stack[0]= &grid[ int(init_xy[0]) + int(init_xy[1]) * grid_size[0] ];
 	processing_stack[0]->xy[0]= init_xy[0];
 	processing_stack[0]->xy[1]= init_xy[1];
+	processing_stack[0]->point_radius= min_object_radius_cl;
 	final_points[ point_count ]= processing_stack[0];
 	point_count++;
 
@@ -393,11 +410,25 @@ void mf_Level::PlaceStaticObjects()
 		MF_ASSERT( current_point->Initialized() );
 		processing_stack_pos--;
 
+		float current_point_terrain_space_xy[2];
+		current_point_terrain_space_xy[0]= current_point->xy[0] * grid_cell_size_f;
+		current_point_terrain_space_xy[1]= current_point->xy[1] * grid_cell_size_f;
+		int current_point_terrain_space_xy_i[2];
+		current_point_terrain_space_xy_i[1]= int(current_point_terrain_space_xy[1]);
+		float radius_scaler= mf_Math::fabs(float(
+			current_point_terrain_space_xy[0]
+			- int(valley_y_params_[current_point_terrain_space_xy_i[1]].x_center)))
+			/ float(terrain_size_[0]/2);
+		radius_scaler= mf_Math::clamp( 0.0f, 1.0f, radius_scaler );
+		radius_scaler= max_radius_scaler_f * radius_scaler + 1.0f * ( 1.0f - radius_scaler );
+
 		// try place neighbor points
 		for( unsigned int i= 0; i< neighbor_k; i++ )
 		{
+			float point_radius= min_object_radius_cl * radius_scaler;
+
 			float angle= randomizer.RandF( 0.0f, MF_2PI );
-			float r= randomizer.RandF( MF_SQRT_2 + 0.01f, 2.0f * MF_SQRT_2 );
+			float r= randomizer.RandF( point_radius * 2.0f, point_radius * 4.0f );
 			float xy[2]=
 			{
 				mf_Math::sin(angle) * r + current_point->xy[0],
@@ -407,20 +438,25 @@ void mf_Level::PlaceStaticObjects()
 			bool is_outside_rect= false;
 			for( unsigned int k= 0; k< 2; k++ )
 			{
-				if( xy_int[k] < 0 ) is_outside_rect= true;
-				else if( xy_int[k] >= int(grid_size[k]) ) is_outside_rect= true;
+				if( xy_int[k] < 1 ) is_outside_rect= true;
+				else if( xy_int[k] >= int(grid_size[k]) - 1 ) is_outside_rect= true;
 			}
 			if (is_outside_rect) continue;
 
-			bool space_around_is_free= true;
-			
+			float terrain_space_xy[2];
+			terrain_space_xy[0]= xy[0] * grid_cell_size_f;
+			terrain_space_xy[1]= xy[1] * grid_cell_size_f;
+			if( float(terrain_heightmap_data_[ int(terrain_space_xy[0]) + int(terrain_space_xy[1]) * terrain_size_[0] ])
+				* terrain_amplitude_
+				/ 65535.0f < terrain_water_level_ ) continue;
+
 			int loop_coord_begin[2];
 			int loop_coord_end[2];
 			for( unsigned int i= 0; i< 2; i++ )
 			{
-				loop_coord_begin[i]= xy_int[i] - 4;
+				loop_coord_begin[i]= xy_int[i] - 2 * max_radius_scaler;
 				if( loop_coord_begin[i] < 0 ) loop_coord_begin[i]= 0;
-				loop_coord_end[i]= xy_int[i] + 3;
+				loop_coord_end[i]= xy_int[i] + 2 * max_radius_scaler;
 				if( loop_coord_end[i] >= int(grid_size[i]) ) loop_coord_end[i]= grid_size[i] - 1;
 			}
 			for( int y= loop_coord_begin[1]; y<= loop_coord_end[1]; y++ )
@@ -430,27 +466,27 @@ void mf_Level::PlaceStaticObjects()
 					if( cell->Initialized() )
 					{
 						float dx_dy[2]= { cell->xy[0] - xy[0], cell->xy[1] - xy[1] };
-						if( dx_dy[0] * dx_dy[0] + dx_dy[1] * dx_dy[1] <= 2.01f /*MF_INV_SQRT_2 * MF_INV_SQRT_2*/ )
-						{
-							space_around_is_free= false;
-							break;
-						}
+						float radius_sum= point_radius + cell->point_radius;
+						if( dx_dy[0] * dx_dy[0] + dx_dy[1] * dx_dy[1] <= radius_sum * radius_sum )
+							goto xy_loop_break;
 					}
 				}// for neighbor grid cells
 
-			mf_GridCell* cell= &grid[ xy_int[0] + xy_int[1] * grid_size[0] ];
-			if( space_around_is_free )
 			{
+				mf_GridCell* cell= &grid[ xy_int[0] + xy_int[1] * grid_size[0] ];
+
 				MF_ASSERT( !cell->Initialized() );
 				MF_ASSERT( point_count < target_point_count );
 				
 				cell->xy[0]= xy[0]; cell->xy[1]= xy[1];
+				cell->point_radius= point_radius;
 				final_points[ point_count ]= cell;
 				point_count++;
 
 				processing_stack[ processing_stack_pos ]= cell;
 				processing_stack_pos++;
 			}
+			xy_loop_break:;
 		} // for place points
 	} // while low points
 
@@ -462,8 +498,8 @@ void mf_Level::PlaceStaticObjects()
 
 		float terrain_space_xy[2]=
 		{
-			final_points[i]->xy[0] * float(grid_cell_size),
-			final_points[i]->xy[1] * float(grid_cell_size)
+			final_points[i]->xy[0] * grid_cell_size_f,
+			final_points[i]->xy[1] * grid_cell_size_f
 		};
 		obj->pos[0]= terrain_space_xy[0] * terrain_cell_size_;
 		obj->pos[1]= terrain_space_xy[1] * terrain_cell_size_;
@@ -480,4 +516,6 @@ void mf_Level::PlaceStaticObjects()
 	delete[] grid;
 	delete[] processing_stack;
 	delete[] final_points;
+
+	MF_DEBUG_INFO_STR_I( "Static objects on level: ", point_count );
 }
