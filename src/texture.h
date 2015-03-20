@@ -21,14 +21,13 @@ public:
 
 	void Noise( unsigned int octave_count= 8 );
 
-
 	// Generates cellular texture, based on Poisson disk points.
 	// R - distance to neraest point
 	// G - distance to nearest cell border
 	// B - distance to second nearest point
 	// A - zero, but one in output points
 	// param min_distanse_div_sqrt2 - minimal distance between points / sqrt(2)
-	void PoissonDiskPoints( unsigned int min_distanse_div_sqrt2 );
+	void PoissonDiskPoints( unsigned int min_distanse_div_sqrt2, unsigned int rand_seed= 0 );
 
 	void GenNormalMap(); // takes heightmap in alpha channel and writes d/dx in r-channel and d/dy in g-channel
 	void Gradient( unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, const float* color0, const float* color1 );

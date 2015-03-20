@@ -40,12 +40,13 @@ void mf_Texture::Noise( unsigned int octave_count )
 		}
 }
 
-void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2 )
+void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2, unsigned int rand_seed  )
 {
+	mf_Rand randomizer(rand_seed);
+
 	const int neighbor_k= 20;
 	const float min_dst= float(min_distanse_div_sqrt2) * MF_SQRT_2 + 0.01f;
 	const float min_dst2= min_dst * min_dst;
-	mf_Rand randomizer;
 
 	int size_minus_1[2];
 	size_minus_1[0]= size_[0] - 1;
