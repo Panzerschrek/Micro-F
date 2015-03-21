@@ -28,6 +28,7 @@ enum mf_GuiTexture
 extern void (* const terrain_texture_gen_func[])(mf_Texture* t);
 extern void (* const aircraft_texture_gen_func[])(mf_Texture* t);
 extern void (* const gui_texture_gen_func[])(mf_Texture* t);
+extern void (* const static_level_object_texture_gen_func[])(mf_Texture* t);
 
 void GenNaviballTexture( mf_Texture* tex );
 void GenControlPanelTexture( mf_Texture* tex );

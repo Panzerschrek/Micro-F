@@ -478,9 +478,46 @@ void mf_Texture::SinWaveDeformY( float amplitude, float freq, float phase )
 	data_= new_data;
 }
 
+void mf_Texture::DownscaleX()
+{
+	unsigned int size_x_minus_1= size_[0] - 1;
+
+	float* new_data= new float[ size_[0] * size_[1] * 4 ];
+
+	for( unsigned int y= 0; y< size_[1]; y++ )
+	{
+		float* data_src= data_ + (y << size_log2_[0]) * 4;
+		float* data_dst= new_data + (y << size_log2_[0]) * 4;
+
+		for( unsigned int x= 0; x< size_[0]; x++, data_dst+= 4 )
+		{
+			unsigned int x_src= ( (x<<1) & size_x_minus_1 ) * 4;
+			for( unsigned int j= 0; j< 4; j++ )
+				data_dst[j]= (data_src[x_src+j] + data_src[x_src+4+j]) * 0.5f;
+		}
+	}
+
+	delete[] data_;
+	data_= new_data;
+}
+
+void mf_Texture::DownscaleY()
+{
+}
+
 void mf_Texture::Copy( const mf_Texture* t )
 {
 	memcpy( data_, t->data_, ( 1<<( size_log2_[0] + size_log2_[1] + 2 ) ) * sizeof(float) );
+}
+
+void mf_Texture::CopyRect( const mf_Texture* src, unsigned int width, unsigned int height, unsigned int x_dst, unsigned int y_dst, unsigned int x_src, unsigned int y_src )
+{
+	for( unsigned int v= 0; v< height; v++ )
+	{
+		const float* src_data= src->GetData() + ( x_src + ((v + y_src) << src->SizeXLog2()) ) * 4;
+		float* dst_data= data_+ ( x_dst + ((v + y_dst) << size_log2_[0]) ) * 4;
+		memcpy( dst_data, src_data, width * sizeof(float) * 4 );
+	}
 }
 
 void mf_Texture::Rotate( float deg )

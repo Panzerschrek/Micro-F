@@ -4,6 +4,7 @@
 #include "texture.h"
 #include "mf_math.h"
 #include "aircraft.h"
+#include "level.h"
 
 static const float g_dirt_color[]= { 0.588f, 0.349f, 0.211f, 0.0f };
 static const float g_indicators_background_color[]= { 0.1f, 0.1f, 0.1f, 1.0f };
@@ -485,6 +486,45 @@ void (* const aircraft_texture_gen_func[mf_Aircraft::LastType])(mf_Texture* t)=
 	GenV1Texture
 };
 
+void GenPalmTexture( mf_Texture* tex )
+{
+	static const float palm_color[4]= { 0.1f, 0.6f, 0.2f, 1.0f };
+	tex->Fill( palm_color );
+}
+
+void GenOakTexture( mf_Texture* tex )
+{
+	mf_Texture extended_texture( tex->SizeXLog2() + 2, tex->SizeYLog2() );
+	{
+		mf_Texture extended_texture2( tex->SizeXLog2() + 2, tex->SizeYLog2() );
+
+		extended_texture.PoissonDiskPoints( 40 );
+		extended_texture2.PoissonDiskPoints( 19 );
+
+		static const float half_color[]= { 0.5f, 0.5f, 0.5f, 0.5f };
+		extended_texture.Mul( half_color );
+		extended_texture2.Mul( half_color );
+		extended_texture.Add( &extended_texture2 );
+	}
+
+	static const float extend_green_color[]= { 0.0f, 3.0f, 0.0f, 0.0f };
+	static const float clamp_color[]={ 0.0f, 1.0f, 0.0f, 0.0f };
+	extended_texture.Mul( extend_green_color );
+	extended_texture.Min( clamp_color );
+	extended_texture.DownscaleX();
+	extended_texture.DownscaleX();
+	tex->CopyRect( &extended_texture, tex->SizeY(), tex->SizeY(), 0, 0, 0, 0 );
+
+	tex->Grayscale();
+	static const float mul3_color[4]= { 3.0f, 3.0f, 3.0f, 1.0f };
+	tex->Mul( mul3_color );
+
+	static const float oak_color[4]= { 0.51f, 0.3764f, 0.239f, 1.0f };
+	static const float oak_color_dark[4]= { 0.159f, 0.1491f, 0.1f, 1.0f };
+	static const float sub_color[4]= { 1.0f, 1.0f, 1.0f, 1.0f };
+	tex->Mix( oak_color, oak_color_dark, sub_color );
+}
+
 void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 {
 	GenNaviballTexture,
@@ -495,4 +535,10 @@ void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 	GenNaviballGlassTexture,
 	GenGuiButtonTexture,
 	GenMenuBackgroundTexture
+};
+
+void (* const static_level_object_texture_gen_func[mf_StaticLevelObject::LastType])(mf_Texture* t)=
+{
+	GenPalmTexture,
+	GenOakTexture
 };

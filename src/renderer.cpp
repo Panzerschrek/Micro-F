@@ -274,6 +274,27 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 	}
+	{ // static level object textures
+		mf_Texture tex( 9, 9 );
+
+		glGenTextures( 1, &level_static_objects_data_.textures_array );
+		glBindTexture( GL_TEXTURE_2D_ARRAY, level_static_objects_data_.textures_array );
+		glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8,
+		tex.SizeX(), tex.SizeY(), mf_StaticLevelObject::LastType,
+			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+		for (unsigned int i= 0; i< mf_StaticLevelObject::LastType; i++ )
+		{
+			static_level_object_texture_gen_func[i]( &tex );
+			tex.LinearNormalization( 1.0f );
+			glTexSubImage3D( GL_TEXTURE_2D_ARRAY, 0,
+				0, 0, i,
+				tex.SizeX(), tex.SizeY(), 1,
+				GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
+		}
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+	}
 
 	{ // sun texture
 		mf_Texture sun_tex( 6, 6 );
@@ -1240,7 +1261,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	level_static_objects_vbo_.Bind();
 
 	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D_ARRAY, aircrafts_data_.textures_array );
+	glBindTexture( GL_TEXTURE_2D_ARRAY, level_static_objects_data_.textures_array );
 	level_static_objects_shader_.UniformInt( "tex", 0 );
 
 	level_static_objects_shader_.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
@@ -1278,50 +1299,61 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	{
 		const mf_StaticLevelObject* objects= level_->GetStaticObjectsRows()[row].objects;
 		unsigned int objects_count= level_->GetStaticObjectsRows()[row].objects_count;
-		for( unsigned int i= 0; i< objects_count; i+= objects_per_instance )
+
+		float mat[objects_per_instance][16];
+		float textures[objects_per_instance];
+		unsigned int objects_count_to_draw= 0;
+		mf_StaticLevelObject::Type current_object_type= mf_StaticLevelObject::Palm;
+		if( objects_count !=0 ) current_object_type= objects[0].type;
+
+		for( unsigned int i= 0; i<= objects_count; i++ )
 		{
-			float mat[objects_per_instance][16];
-			float textures[objects_per_instance];
-
-			unsigned int objects_count_to_draw= 0;
-			for( unsigned int j= 0; j< objects_per_instance && (i+j) < objects_count; j++ )
+			const mf_StaticLevelObject* obj= &objects[i];
+			if(
+				objects_count_to_draw == objects_per_instance ||
+				obj->type != current_object_type
+				|| i == objects_count )
 			{
-				objects_count_to_draw++;
-				const mf_StaticLevelObject* obj= &objects[i+j];
+				glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, sizeof(float) * 16 * objects_count_to_draw, mat );
+				glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.sun_vectors_data_offset, sizeof(float) * 4 * objects_count_to_draw, transformed_sun );
 
-				// fast calculating of model matrix ( without 2 full matrix multiplications )
-				float sin_z= mf_Math::sin( obj->z_angle );
-				float cos_z= mf_Math::cos( obj->z_angle );
-				rot_z_scale_translate_mat[ 0]= cos_z * obj->scale;
-				rot_z_scale_translate_mat[ 1]= sin_z * obj->scale;
-				rot_z_scale_translate_mat[ 4]= - rot_z_scale_translate_mat[1];
-				rot_z_scale_translate_mat[ 5]=   rot_z_scale_translate_mat[0];
-				rot_z_scale_translate_mat[10]= obj->scale;
-				rot_z_scale_translate_mat[12]= obj->pos[0];
-				rot_z_scale_translate_mat[13]= obj->pos[1];
-				rot_z_scale_translate_mat[14]= obj->pos[2];
-				Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[j] );
+				level_static_objects_shader_.UniformFloatArray( "texn", objects_per_instance, textures );
 
-				// transfor sun to model spasce, instead transform normals in vertex shader
-				transformed_sun[j][0]= shadowmap_fbo_.sun_vector[0] * cos_z + shadowmap_fbo_.sun_vector[1] * sin_z;
-				transformed_sun[j][1]= shadowmap_fbo_.sun_vector[1] * cos_z - shadowmap_fbo_.sun_vector[0] * sin_z;
-
-				textures[j]= 0.01f;
-			}
-			glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, sizeof(float) * 16 * objects_count_to_draw, mat );
-			glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.sun_vectors_data_offset, sizeof(float) * 4 * objects_count_to_draw, transformed_sun );
-
-			level_static_objects_shader_.UniformFloatArray( "texn", objects_per_instance, textures );
-
-			glDrawElementsInstanced( GL_TRIANGLES,
-				level_static_objects_vbo_.IndexDataSize() / sizeof(unsigned short),
-				GL_UNSIGNED_SHORT,
-				0, objects_count_to_draw );
-
+				glDrawElementsInstanced(
+					GL_TRIANGLES,
+					level_static_objects_data_.models[ current_object_type ].index_count,
+					GL_UNSIGNED_SHORT,
+					(void*) ( level_static_objects_data_.models[ current_object_type ].first_index * sizeof(unsigned short) ),
+					objects_count_to_draw );
 #ifdef MF_DEBUG
-			debug_total_objects_count+= objects_count_to_draw;
-			debug_draw_call_count++;
+				debug_total_objects_count+= objects_count_to_draw;
+				debug_draw_call_count++;
 #endif
+				objects_count_to_draw= 0;
+				current_object_type= obj->type;
+			} // if we need draw objects
+			if( i == objects_count ) break;
+
+			// fast calculating of model matrix ( without 2 full matrix multiplications )
+			float sin_z= mf_Math::sin( obj->z_angle );
+			float cos_z= mf_Math::cos( obj->z_angle );
+			rot_z_scale_translate_mat[ 0]= cos_z * obj->scale;
+			rot_z_scale_translate_mat[ 1]= sin_z * obj->scale;
+			rot_z_scale_translate_mat[ 4]= - rot_z_scale_translate_mat[1];
+			rot_z_scale_translate_mat[ 5]=   rot_z_scale_translate_mat[0];
+			rot_z_scale_translate_mat[10]= obj->scale;
+			rot_z_scale_translate_mat[12]= obj->pos[0];
+			rot_z_scale_translate_mat[13]= obj->pos[1];
+			rot_z_scale_translate_mat[14]= obj->pos[2];
+			Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[objects_count_to_draw] );
+
+			// transform sun to model spasce, instead transform normals in vertex shader
+			transformed_sun[objects_count_to_draw][0]= shadowmap_fbo_.sun_vector[0] * cos_z + shadowmap_fbo_.sun_vector[1] * sin_z;
+			transformed_sun[objects_count_to_draw][1]= shadowmap_fbo_.sun_vector[1] * cos_z - shadowmap_fbo_.sun_vector[0] * sin_z;
+
+			textures[objects_count_to_draw]= 0.01f + float(obj->type);
+
+			objects_count_to_draw++;
 		} // for static objects
 	} // for rows
 	glDisable( GL_CULL_FACE );

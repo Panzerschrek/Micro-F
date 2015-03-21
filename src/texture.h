@@ -42,8 +42,11 @@ public:
 	void SinWaveDeformY( float amplitude, float freq, float phase );
 	void DeformX( float dx_dy );
 	void DeformY( float dy_dx );
+	void DownscaleX();
+	void DownscaleY();
 
 	void Copy( const mf_Texture* t );
+	void CopyRect( const mf_Texture* src, unsigned int width, unsigned int height, unsigned int x_dst, unsigned int y_dst, unsigned int x_src, unsigned int y_src );
 	void Rotate( float deg );
 	void Shift( unsigned int dx, unsigned int dy );
 	void Invert( const float* add_color );

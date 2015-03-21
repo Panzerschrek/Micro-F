@@ -9,12 +9,6 @@
 
 #define MF_MAX_AIRCRAFT_MODELS 32
 
-struct mf_AircratfModelInfo
-{
-	unsigned int first_index;
-	unsigned int index_count;
-};
-
 class mf_Renderer
 {
 public:
@@ -52,6 +46,12 @@ private:
 	void DrawShadows();
 
 private:
+	struct mf_ModelInfoForDrawing
+	{
+		unsigned int first_index;
+		unsigned int index_count;
+	};
+
 	const mf_Player* player_;
 	const mf_Level* level_;
 	mf_Text* text_;
@@ -111,7 +111,7 @@ private:
 	struct
 	{
 		unsigned int model_count;
-		mf_AircratfModelInfo models[ mf_Aircraft::LastType ];
+		mf_ModelInfoForDrawing models[ mf_Aircraft::LastType ];
 		mf_VertexBuffer vbo;
 		GLuint textures_array;
 	} aircrafts_data_;
@@ -134,7 +134,8 @@ private:
 		unsigned int sun_vectors_data_offset;
 		GLuint matrices_sun_vectors_ubo;
 
-		mf_AircratfModelInfo models[ mf_StaticLevelObject::LastType ];
+		mf_ModelInfoForDrawing models[ mf_StaticLevelObject::LastType ];
+		GLuint textures_array;
 	} level_static_objects_data_;
 
 	mf_VertexBuffer level_static_objects_vbo_;
