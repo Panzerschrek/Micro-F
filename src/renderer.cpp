@@ -126,6 +126,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 	GenTerrainMesh();
 	GenWaterMesh();
 	PrepareAircraftModels();
+	PrepareLevelStaticObjectsModels();
 
 	{ // sky mesh
 		mf_DrawingModel model;
@@ -174,22 +175,6 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 		stars_vbo_.VertexAttrib( 1, 1, GL_UNSIGNED_BYTE, true, shift );
 	} // stars
 	{ // static level meshes
-		mf_DrawingModel model;
-		GenOak( &model );
-		//GenCylinder( &model, 8, 1, true );
-
-		level_static_objects_vbo_.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
-		level_static_objects_vbo_.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
-
-		mf_DrawingModelVertex vert;
-		unsigned int shift;
-		shift= (char*)vert.pos - (char*)&vert;
-		level_static_objects_vbo_.VertexAttrib( 0, 3, GL_FLOAT, false, shift );
-		shift= (char*)vert.normal - (char*)&vert;
-		level_static_objects_vbo_.VertexAttrib( 1, 3, GL_FLOAT, false, shift );
-		shift= (char*)vert.tex_coord - (char*)&vert;
-		level_static_objects_vbo_.VertexAttrib( 2, 2, GL_FLOAT, false, shift );
-
 		// setup ubo for matrices and sun vectors
 		int alignment;
 		glGetIntegerv( GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &alignment );
@@ -784,6 +769,37 @@ void mf_Renderer::PrepareAircraftModels()
 		vertex_shift+= model.VertexCount();
 		index_shift+= model.IndexCount();
 	}
+}
+
+void mf_Renderer::PrepareLevelStaticObjectsModels()
+{
+	mf_DrawingModel combined_model;
+
+	unsigned int index_offset= 0;
+	for( unsigned int i= 0; i< mf_StaticLevelObject::LastType; i++ )
+	{
+		mf_DrawingModel model;
+		level_static_models_gen_func[i]( &model );
+
+		level_static_objects_data_.models[i].first_index= index_offset;
+		level_static_objects_data_.models[i].index_count= model.IndexCount();
+		index_offset+= model.IndexCount();
+
+		combined_model.Add( &model );
+	}
+
+	level_static_objects_vbo_.VertexData( combined_model.GetVertexData(), combined_model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
+	level_static_objects_vbo_.IndexData( combined_model.GetIndexData(), combined_model.IndexCount() * sizeof(unsigned short) );
+
+	mf_DrawingModelVertex vert;
+	unsigned int shift;
+	shift= (char*)vert.pos - (char*)&vert;
+	level_static_objects_vbo_.VertexAttrib( 0, 3, GL_FLOAT, false, shift );
+	shift= (char*)vert.normal - (char*)&vert;
+	level_static_objects_vbo_.VertexAttrib( 1, 3, GL_FLOAT, false, shift );
+	shift= (char*)vert.tex_coord - (char*)&vert;
+	level_static_objects_vbo_.VertexAttrib( 2, 2, GL_FLOAT, false, shift );
+	
 }
 
 void mf_Renderer::CreateViewMatrix( float* out_matrix, bool water_reflection )

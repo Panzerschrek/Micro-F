@@ -119,15 +119,19 @@ void mf_DrawingModel::Add( const mf_DrawingModel* m )
 	mf_DrawingModelVertex* new_vertices= new mf_DrawingModelVertex[ vertex_count_ + m->vertex_count_ ];
 	unsigned short* new_indeces= new unsigned short[ index_count_ + m->index_count_ ];
 	
-	memcpy( new_vertices, vertices_, vertex_count_ * sizeof(mf_DrawingModelVertex) );
+	if( vertices_ != NULL )
+		memcpy( new_vertices, vertices_, vertex_count_ * sizeof(mf_DrawingModelVertex) );
 	memcpy( new_vertices + vertex_count_, m->vertices_, m->vertex_count_ * sizeof(mf_DrawingModelVertex) );
 
-	memcpy( new_indeces, indeces_, sizeof(unsigned short) * index_count_ );
+	if( indeces_ != NULL )
+		memcpy( new_indeces, indeces_, sizeof(unsigned short) * index_count_ );
 	for( unsigned int i= 0; i< m->index_count_; i++ )
 		new_indeces[ i + index_count_ ]= (unsigned short)( m->indeces_[i] + vertex_count_ );
 
-	delete[] vertices_;
-	delete[] indeces_;
+	if( vertices_ != NULL )
+		delete[] vertices_;
+	if( indeces_ != NULL )
+		delete[] indeces_;
 	vertices_= new_vertices;
 	indeces_= new_indeces;
 	vertex_count_+= m->vertex_count_;

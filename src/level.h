@@ -48,6 +48,8 @@ private:
 	void PlaceTextures();
 	void PlaceStaticObjects();
 
+	void SortStaticObjectsRow( mf_StaticLevelObjectsRow* row );
+
 private:
 	struct ValleyWayPoint
 	{

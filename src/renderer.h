@@ -31,6 +31,7 @@ private:
 	void GenTerrainMesh();
 	void GenWaterMesh();
 	void PrepareAircraftModels();
+	void PrepareLevelStaticObjectsModels();
 
 	void CreateViewMatrix( float* out_matrix, bool water_reflection );
 	void CreateTerrainMatrix( float* out_matrix );
@@ -132,6 +133,8 @@ private:
 		unsigned int matrices_data_offset;
 		unsigned int sun_vectors_data_offset;
 		GLuint matrices_sun_vectors_ubo;
+
+		mf_AircratfModelInfo models[ mf_StaticLevelObject::LastType ];
 	} level_static_objects_data_;
 
 	mf_VertexBuffer level_static_objects_vbo_;

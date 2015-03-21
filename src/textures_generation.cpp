@@ -432,10 +432,10 @@ void GenDirtWithGrassTexture( mf_Texture* tex )
 	noise_sub_tex.Mul( second_noise_mul );
 	tex->Mul( &noise_sub_tex );
 
-	static const float white_color[]= { 0.6f, 0.6f, 0.6f, 0.6f };
-	tex->Fill( white_color );
-	//tex->PoissonDiskPoints( 25 );
-	//tex->Shift( tex->SizeX()>>1, tex->SizeY() >> 1 );
+	//static const float white_color[]= { 0.6f, 0.6f, 0.6f, 0.6f };
+	//tex->Fill( white_color );
+	tex->PoissonDiskPoints( 25 );
+	tex->Shift( tex->SizeX()>>1, tex->SizeY() >> 1 );
 }
 
 void GenSandTexture( mf_Texture* tex )

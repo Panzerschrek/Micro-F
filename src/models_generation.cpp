@@ -1,6 +1,8 @@
 #include "micro-f.h"
 #include "models_generation.h"
 
+#include "level.h"
+
 #include "drawing_model.h"
 #include "../models/models.h"
 #include "mf_math.h"
@@ -316,3 +318,9 @@ void GenOak( mf_DrawingModel* model )
 		}
 	}
 }
+
+void (* const level_static_models_gen_func[mf_StaticLevelObject::LastType])(mf_DrawingModel* model)=
+{
+	GenPalm,
+	GenOak
+};

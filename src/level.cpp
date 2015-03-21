@@ -524,7 +524,7 @@ void mf_Level::PlaceStaticObjects()
 		unsigned short h= terrain_heightmap_data_[ int(terrain_space_xy[0]) + int(terrain_space_xy[1]) * terrain_size_[0] ];
 		obj->pos[2] = float(h) * terrain_amplitude_ / 65535.0f;
 
-		obj->type= mf_StaticLevelObject::Palm;
+		obj->type= ((randomizer.Rand()&1) == 0) ? mf_StaticLevelObject::Palm : mf_StaticLevelObject::Oak;
 		obj->scale= 0.25f * (
 			randomizer.RandF( 0.8f, 1.2f ) +
 			randomizer.RandF( 0.8f, 1.2f ) +
@@ -534,10 +534,46 @@ void mf_Level::PlaceStaticObjects()
 
 		row->last_object_index++;
 	}
+
+	for( unsigned int i= 0; i< static_objects_row_count_; i++ )
+	{
+		SortStaticObjectsRow( &static_objects_rows_[i] );
+	}
 	
 	delete[] grid;
 	delete[] processing_stack;
 	delete[] final_points;
 
 	MF_DEBUG_INFO_STR_I( "static objects on level: ", point_count );
+}
+
+void mf_Level::SortStaticObjectsRow( mf_StaticLevelObjectsRow* row )
+{
+	unsigned int count_by_type[ mf_StaticLevelObject::LastType ];
+	unsigned int offset_by_type[ mf_StaticLevelObject::LastType ];
+
+	for( unsigned int i= 0; i< mf_StaticLevelObject::LastType ; i++ )
+		count_by_type[i]= 0;
+
+	for( unsigned int i= 0; i< row->objects_count; i++ )
+		count_by_type[row->objects[i].type]++;
+
+	unsigned int offset= 0;
+	for( unsigned int i= 0; i< mf_StaticLevelObject::LastType; i++ )
+	{
+		offset_by_type[i]= offset;
+		offset+= count_by_type[i];
+	}
+
+	mf_StaticLevelObject* new_objects= new mf_StaticLevelObject[ row->objects_count ];
+
+	for( unsigned int i= 0; i< row->objects_count; i++ )
+	{
+		mf_StaticLevelObject* obj= &row->objects[i];
+		new_objects[ offset_by_type[obj->type] ]= *obj;
+		offset_by_type[obj->type]++;
+	}
+
+	delete[] row->objects;
+	row->objects= new_objects;
 }
