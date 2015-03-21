@@ -230,7 +230,7 @@ mf_MainLoop::mf_MainLoop(
 
 #ifdef MF_DEBUG
 	{
-		MF_DEBUG_INFO_STR( "------------OpneGl limitations------------" );
+		MF_DEBUG_INFO_STR( "------------OpenGL limitations------------" );
 		int max_unifroms= 0;
 		glGetIntegerv( GL_MAX_VERTEX_UNIFORM_COMPONENTS, &max_unifroms );
 		MF_DEBUG_INFO_STR_I( "max uniform components in vertex shader: ", max_unifroms );

@@ -43,7 +43,7 @@ static const float g_stars_distance_scaler= 1.7f;
 static const float g_sky_radius_scaler= 2.0f;
 static const float g_zfar_scaler= 2.5f;
 
-mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
+mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Text* text )
 	: player_(player), level_(level)
 	, text_(text)
 {
@@ -96,6 +96,7 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	aircraft_stencil_shadow_shader_.FindUniform( "mat" );
 	aircraft_stencil_shadow_shader_.FindUniform( "sun" );
 
+	// level shatic objects shader
 	level_static_objects_shader_.SetAttribLocation( "p", 0 );
 	level_static_objects_shader_.SetAttribLocation( "n", 1 );
 	level_static_objects_shader_.SetAttribLocation( "tc", 2 );
@@ -1291,8 +1292,8 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 
 				textures[j]= 0.01f;
 			}
-			glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, sizeof(float) * 16 * objects_per_instance, mat );
-			glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.sun_vectors_data_offset, sizeof(float) * 4 * objects_per_instance, transformed_sun );
+			glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, sizeof(float) * 16 * objects_count_to_draw, mat );
+			glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.sun_vectors_data_offset, sizeof(float) * 4 * objects_count_to_draw, transformed_sun );
 
 			level_static_objects_shader_.UniformFloatArray( "texn", objects_per_instance, textures );
 

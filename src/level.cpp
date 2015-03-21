@@ -539,5 +539,5 @@ void mf_Level::PlaceStaticObjects()
 	delete[] processing_stack;
 	delete[] final_points;
 
-	MF_DEBUG_INFO_STR_I( "Static objects on level: ", point_count );
+	MF_DEBUG_INFO_STR_I( "static objects on level: ", point_count );
 }

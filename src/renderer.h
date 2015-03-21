@@ -18,7 +18,7 @@ struct mf_AircratfModelInfo
 class mf_Renderer
 {
 public:
-	mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text );
+	mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Text* text );
 	~mf_Renderer();
 
 	void Resize();
@@ -51,8 +51,8 @@ private:
 	void DrawShadows();
 
 private:
-	mf_Player* player_;
-	mf_Level* level_;
+	const mf_Player* player_;
+	const mf_Level* level_;
 	mf_Text* text_;
 
 	float view_matrix_[16];
