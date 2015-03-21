@@ -137,6 +137,14 @@ void mf_GLSLProgram::UniformVec3( const char* name, const float* v )
 	glUniform3f( GetUniformId(name), v[0], v[1], v[2] );
 }
 
+void mf_GLSLProgram::UniformVec3Array( const char* name, unsigned int count, const float* v )
+{
+	GLint id= GetUniformId(name);
+	for( unsigned int i= 0; i< count; i++ )
+		glUniform3f( i + id, v[0+i*3], v[1+i*3], v[2+i*3] );
+
+}
+
 void mf_GLSLProgram::UniformMat4Array( const char* name, unsigned int count, const float* mat )
 {
 	glUniformMatrix4fv( GetUniformId(name), count, GL_FALSE, mat );

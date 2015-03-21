@@ -127,6 +127,11 @@ private:
 	mf_GLSLProgram stars_shader_;
 	mf_VertexBuffer stars_vbo_;
 
+	struct
+	{
+		GLuint matrices_ubo_;
+		GLuint sun_vectors_vbo_;
+	} level_static_objects_data_;
 	mf_VertexBuffer level_static_objects_vbo_;
 	mf_GLSLProgram level_static_objects_shader_;
 };

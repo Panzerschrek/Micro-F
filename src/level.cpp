@@ -508,8 +508,11 @@ void mf_Level::PlaceStaticObjects()
 		obj->pos[2] = float(h) * terrain_amplitude_ / 65535.0f;
 
 		obj->type= mf_StaticLevelObject::Palm;
-		obj->scale= randomizer.RandF( 0.9f, 1.1f ) + randomizer.RandF( 0.9f, 1.1f ) + randomizer.RandF( 0.9f, 1.1f ) + randomizer.RandF( 0.9f, 1.1f );
-		obj->scale*= 0.25f;
+		obj->scale= 0.25f * (
+			randomizer.RandF( 0.8f, 1.2f ) +
+			randomizer.RandF( 0.8f, 1.2f ) +
+			randomizer.RandF( 0.8f, 1.2f ) +
+			randomizer.RandF( 0.8f, 1.2f ) );
 		obj->z_angle= randomizer.RandF( 0.0f, MF_2PI );
 	}
 	

@@ -22,6 +22,8 @@
 
 #define MF_ZERO_STENCIL_VALUE 128
 
+#define MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL 64
+
 struct mf_StarVertex
 {
 	char xyz[3];
@@ -89,9 +91,9 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 	level_static_objects_shader_.SetAttribLocation( "p", 0 );
 	level_static_objects_shader_.SetAttribLocation( "n", 1 );
 	level_static_objects_shader_.SetAttribLocation( "tc", 2 );
-	level_static_objects_shader_.Create( mf_Shaders::static_models_shader_v, mf_Shaders::models_shader_f );
+	level_static_objects_shader_.Create( mf_Shaders::static_models_shader_v, mf_Shaders::static_models_shader_f );
 	static const char* const static_objects_shader_uniforms[]= {
-		/*vert*/ "mat", "nmat", "texn",/*frag*/ "tex", "sun", "sl", "al" };
+		/*vert*/ "mat", "texn",/*frag*/ "tex", "sun", "sl", "al" };
 	level_static_objects_shader_.FindUniforms( static_objects_shader_uniforms, sizeof(static_objects_shader_uniforms) / sizeof(char*) );
 
 	// sun shader
@@ -178,6 +180,10 @@ mf_Renderer::mf_Renderer( mf_Player* player, mf_Level* level, mf_Text* text )
 		level_static_objects_vbo_.VertexAttrib( 1, 3, GL_FLOAT, false, shift );
 		shift= (char*)vert.tex_coord - (char*)&vert;
 		level_static_objects_vbo_.VertexAttrib( 2, 2, GL_FLOAT, false, shift );
+
+
+		//glGenBuffers( 1, &level_static_objects_data_.matrices_ubo_ );
+		//glBindBufer( 
 	}
 
 	{
@@ -1167,7 +1173,6 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	glBindTexture( GL_TEXTURE_2D_ARRAY, aircrafts_data_.textures_array );
 	level_static_objects_shader_.UniformInt( "tex", 0 );
 
-	level_static_objects_shader_.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
 	level_static_objects_shader_.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
 	level_static_objects_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
 
@@ -1192,7 +1197,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	for( unsigned int i= 0; i< objects_count; i+= objects_per_instance )
 	{
 		float mat[objects_per_instance][16];
-		float normal_mat[objects_per_instance][9];
+		float transformed_sun[objects_per_instance][3];
 		float textures[objects_per_instance];
 
 		for( unsigned int j= 0; j< objects_per_instance && (i+j) < objects_count; j++ )
@@ -1200,28 +1205,29 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 			const mf_StaticLevelObject* obj= &objects[i+j];
 
 			// fast calculating of model matrix ( without 2 full matrix multiplications )
-			float s_sin_z= mf_Math::sin( obj->z_angle ) * obj->scale;
-			float s_cos_z= mf_Math::cos( obj->z_angle ) * obj->scale;
-			rot_z_scale_translate_mat[ 0]= s_cos_z;
-			rot_z_scale_translate_mat[ 1]= s_sin_z;
-			rot_z_scale_translate_mat[ 4]= -s_sin_z;
-			rot_z_scale_translate_mat[ 5]= s_cos_z;
+			float sin_z= mf_Math::sin( obj->z_angle );
+			float cos_z= mf_Math::cos( obj->z_angle );
+			rot_z_scale_translate_mat[ 0]= cos_z * obj->scale;
+			rot_z_scale_translate_mat[ 1]= sin_z * obj->scale;
+			rot_z_scale_translate_mat[ 4]= - rot_z_scale_translate_mat[1];
+			rot_z_scale_translate_mat[ 5]=   rot_z_scale_translate_mat[0];
 			rot_z_scale_translate_mat[10]= obj->scale;
 			rot_z_scale_translate_mat[12]= obj->pos[0];
 			rot_z_scale_translate_mat[13]= obj->pos[1];
 			rot_z_scale_translate_mat[14]= obj->pos[2];
 			Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[j] );
 
-			float rot_z_mat[16];
-			Mat4RotateZ( rot_z_mat, obj->z_angle );
-			Mat4ToMat3( rot_z_mat, normal_mat[j] );
+			// transfor sun to model spasce, instead transform normals in vertex shader
+			transformed_sun[j][0]= shadowmap_fbo_.sun_vector[0] * cos_z + shadowmap_fbo_.sun_vector[1] * sin_z;
+			transformed_sun[j][1]= shadowmap_fbo_.sun_vector[1] * cos_z - shadowmap_fbo_.sun_vector[0] * sin_z;
+			transformed_sun[j][2]= shadowmap_fbo_.sun_vector[2];
 
 			textures[j]= 0.01f;
 		}
 
 		level_static_objects_shader_.UniformFloatArray( "texn", objects_per_instance, textures );
 		level_static_objects_shader_.UniformMat4Array( "mat", objects_per_instance, (float*)mat );
-		level_static_objects_shader_.UniformMat3Array( "nmat", objects_per_instance, (float*)normal_mat );
+		level_static_objects_shader_.UniformVec3Array( "sun", objects_per_instance, (float*)transformed_sun );
 
 		glDrawElementsInstanced( GL_TRIANGLES,
 			level_static_objects_vbo_.IndexDataSize() / sizeof(unsigned short),
