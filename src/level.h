@@ -8,6 +8,7 @@ struct mf_StaticLevelObject
 	enum Type
 	{
 		Palm= 0,
+		Oak,
 		LastType
 	};
 	
@@ -21,6 +22,7 @@ struct mf_StaticLevelObjectsRow
 {
 	mf_StaticLevelObject* objects;
 	unsigned int objects_count;
+	unsigned int last_object_index; // for generation
 };
 
 class mf_Level

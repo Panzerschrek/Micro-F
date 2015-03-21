@@ -490,17 +490,34 @@ void mf_Level::PlaceStaticObjects()
 		} // for place points
 	} // while low points
 
-	static_objects_rows_[0].objects_count= point_count;
-	static_objects_rows_[0].objects= new mf_StaticLevelObject[ static_objects_rows_[0].objects_count ];
-	for( unsigned int i= 0; i< static_objects_rows_[0].objects_count; i++ )
+	// zero rows
+	for( unsigned int i= 0; i< static_objects_row_count_; i++ )
 	{
-		mf_StaticLevelObject* obj= &static_objects_rows_[0].objects[i];
+		static_objects_rows_[i].objects_count= 0;
+		static_objects_rows_[i].last_object_index= 0;
+	}
+	// calculate objects in row
+	for( unsigned int i= 0; i< point_count; i++ )
+	{
+		int ind= int(final_points[i]->xy[1] * grid_cell_size_f) / MF_STATIC_OBJECTS_ROW_SIZE_CL;
+		static_objects_rows_[ind].objects_count++;
+	}
+	// allocate memory for objects
+	for( unsigned int i= 0; i< static_objects_row_count_; i++ )
+		static_objects_rows_[i].objects= new mf_StaticLevelObject[ static_objects_rows_[i].objects_count ];
 
+	// place objects in rows
+	for( unsigned int i= 0; i< point_count; i++ )
+	{
 		float terrain_space_xy[2]=
 		{
 			final_points[i]->xy[0] * grid_cell_size_f,
 			final_points[i]->xy[1] * grid_cell_size_f
 		};
+
+		mf_StaticLevelObjectsRow* row= &static_objects_rows_[ int(terrain_space_xy[1]) / MF_STATIC_OBJECTS_ROW_SIZE_CL ];
+		mf_StaticLevelObject* obj= &row->objects[ row->last_object_index ];
+
 		obj->pos[0]= terrain_space_xy[0] * terrain_cell_size_;
 		obj->pos[1]= terrain_space_xy[1] * terrain_cell_size_;
 
@@ -514,6 +531,8 @@ void mf_Level::PlaceStaticObjects()
 			randomizer.RandF( 0.8f, 1.2f ) +
 			randomizer.RandF( 0.8f, 1.2f ) );
 		obj->z_angle= randomizer.RandF( 0.0f, MF_2PI );
+
+		row->last_object_index++;
 	}
 	
 	delete[] grid;

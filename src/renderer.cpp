@@ -1245,49 +1245,75 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	for( unsigned int i= 0; i< objects_per_instance; i++ )
 		transformed_sun[i][2]=  shadowmap_fbo_.sun_vector[2];
 
-	const mf_StaticLevelObject* objects= level_->GetStaticObjectsRows()[0].objects;
-	unsigned int objects_count= level_->GetStaticObjectsRows()[0].objects_count;
-	for( unsigned int i= 0; i< objects_count; i+= objects_per_instance )
+	int row_begin, row_end;
+	row_begin= int(player_->Pos()[1] / level_->TerrainCellSize()) - MF_TERRAIN_MESH_SIZE_Y_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / 2;
+	row_begin/= MF_STATIC_OBJECTS_ROW_SIZE_CL;
+	if( row_begin < 0 ) row_begin= 0;
+	row_end= row_begin + MF_TERRAIN_MESH_SIZE_Y_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / MF_STATIC_OBJECTS_ROW_SIZE_CL;
+	if( row_end >= int(level_->GetStaticObjectsRowCount()) ) row_end= level_->GetStaticObjectsRowCount() - 1;
+
+#ifdef MF_DEBUG
+	unsigned int debug_total_objects_count= 0;
+	unsigned int debug_draw_call_count= 0;
+#endif
+
+	for( int row= row_begin; row<= row_end; row++ )
 	{
-		float mat[objects_per_instance][16];
-		float textures[objects_per_instance];
-
-		unsigned int objects_count_to_draw= 0;
-		for( unsigned int j= 0; j< objects_per_instance && (i+j) < objects_count; j++ )
+		const mf_StaticLevelObject* objects= level_->GetStaticObjectsRows()[row].objects;
+		unsigned int objects_count= level_->GetStaticObjectsRows()[row].objects_count;
+		for( unsigned int i= 0; i< objects_count; i+= objects_per_instance )
 		{
-			objects_count_to_draw++;
-			const mf_StaticLevelObject* obj= &objects[i+j];
+			float mat[objects_per_instance][16];
+			float textures[objects_per_instance];
 
-			// fast calculating of model matrix ( without 2 full matrix multiplications )
-			float sin_z= mf_Math::sin( obj->z_angle );
-			float cos_z= mf_Math::cos( obj->z_angle );
-			rot_z_scale_translate_mat[ 0]= cos_z * obj->scale;
-			rot_z_scale_translate_mat[ 1]= sin_z * obj->scale;
-			rot_z_scale_translate_mat[ 4]= - rot_z_scale_translate_mat[1];
-			rot_z_scale_translate_mat[ 5]=   rot_z_scale_translate_mat[0];
-			rot_z_scale_translate_mat[10]= obj->scale;
-			rot_z_scale_translate_mat[12]= obj->pos[0];
-			rot_z_scale_translate_mat[13]= obj->pos[1];
-			rot_z_scale_translate_mat[14]= obj->pos[2];
-			Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[j] );
+			unsigned int objects_count_to_draw= 0;
+			for( unsigned int j= 0; j< objects_per_instance && (i+j) < objects_count; j++ )
+			{
+				objects_count_to_draw++;
+				const mf_StaticLevelObject* obj= &objects[i+j];
 
-			// transfor sun to model spasce, instead transform normals in vertex shader
-			transformed_sun[j][0]= shadowmap_fbo_.sun_vector[0] * cos_z + shadowmap_fbo_.sun_vector[1] * sin_z;
-			transformed_sun[j][1]= shadowmap_fbo_.sun_vector[1] * cos_z - shadowmap_fbo_.sun_vector[0] * sin_z;
+				// fast calculating of model matrix ( without 2 full matrix multiplications )
+				float sin_z= mf_Math::sin( obj->z_angle );
+				float cos_z= mf_Math::cos( obj->z_angle );
+				rot_z_scale_translate_mat[ 0]= cos_z * obj->scale;
+				rot_z_scale_translate_mat[ 1]= sin_z * obj->scale;
+				rot_z_scale_translate_mat[ 4]= - rot_z_scale_translate_mat[1];
+				rot_z_scale_translate_mat[ 5]=   rot_z_scale_translate_mat[0];
+				rot_z_scale_translate_mat[10]= obj->scale;
+				rot_z_scale_translate_mat[12]= obj->pos[0];
+				rot_z_scale_translate_mat[13]= obj->pos[1];
+				rot_z_scale_translate_mat[14]= obj->pos[2];
+				Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[j] );
 
-			textures[j]= 0.01f;
-		}
-		glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, sizeof(float) * 16 * objects_per_instance, mat );
-		glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.sun_vectors_data_offset, sizeof(float) * 4 * objects_per_instance, transformed_sun );
+				// transfor sun to model spasce, instead transform normals in vertex shader
+				transformed_sun[j][0]= shadowmap_fbo_.sun_vector[0] * cos_z + shadowmap_fbo_.sun_vector[1] * sin_z;
+				transformed_sun[j][1]= shadowmap_fbo_.sun_vector[1] * cos_z - shadowmap_fbo_.sun_vector[0] * sin_z;
 
-		level_static_objects_shader_.UniformFloatArray( "texn", objects_per_instance, textures );
+				textures[j]= 0.01f;
+			}
+			glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, sizeof(float) * 16 * objects_per_instance, mat );
+			glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.sun_vectors_data_offset, sizeof(float) * 4 * objects_per_instance, transformed_sun );
 
-		glDrawElementsInstanced( GL_TRIANGLES,
-			level_static_objects_vbo_.IndexDataSize() / sizeof(unsigned short),
-			GL_UNSIGNED_SHORT,
-			0, objects_count_to_draw );
-	} // for static objects
+			level_static_objects_shader_.UniformFloatArray( "texn", objects_per_instance, textures );
+
+			glDrawElementsInstanced( GL_TRIANGLES,
+				level_static_objects_vbo_.IndexDataSize() / sizeof(unsigned short),
+				GL_UNSIGNED_SHORT,
+				0, objects_count_to_draw );
+
+#ifdef MF_DEBUG
+			debug_total_objects_count+= objects_count_to_draw;
+			debug_draw_call_count++;
+#endif
+		} // for static objects
+	} // for rows
 	glDisable( GL_CULL_FACE );
+
+#ifdef MF_DEBUG
+	char str[128];
+	sprintf( str, "draw calls for level static models: %d\ntotal models: %d", debug_draw_call_count, debug_total_objects_count );
+	text_->AddText( 1, 3, 1, mf_Text::default_color, str );
+#endif
 }
 
 void mf_Renderer::DrawWater()
