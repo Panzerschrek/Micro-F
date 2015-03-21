@@ -229,7 +229,6 @@ const char* const water_shadowmap_shader_v=
 "}"
 ;
 
-
 const char* const models_shader_v=
 "#version 330\n"
 "uniform mat4 mat;" // view matrix
@@ -316,8 +315,11 @@ const char* const models_stencil_shadow_shader_g=
 
 const char* const static_models_shader_v=
 "#version 330\n"
-"uniform mat4 mat[16];" // view matrix
-"uniform float texn[16];" // texture number ( in array of textures )
+"layout(std140)uniform mat_block"
+"{"
+	"mat4 mat[256];" // view matrix
+"};"
+"uniform float texn[256];" // texture number ( in array of textures )
 "in vec3 p;" // position
 "in vec3 n;" // normal
 "in vec2 tc;" // texture coord
@@ -335,7 +337,10 @@ const char* const static_models_shader_v=
 const char* const static_models_shader_f=
 "#version 330\n"
 "uniform sampler2DArray tex;" // diffuse texture
-"uniform vec3 sun[16];" // model space sun vectors
+"layout(std140)uniform sun_block"
+"{"
+	"vec4 sun[256];" // model space sun
+"};"
 "uniform vec3 sl;" //sun light
 "uniform vec3 al;" // ambient light
 "in vec3 fn;" // fragment normal
@@ -344,7 +349,7 @@ const char* const static_models_shader_f=
 "in float fiid;" // fragment instance id
 "void main()"
 "{"
-	"float l= max(0.0,dot(sun[uint(fiid)],normalize(fn)));"
+	"float l= max(0.0,dot(sun[uint(fiid)].xyz,normalize(fn)));"
 	"c_=vec4(texture(tex,ftc).xyz*(al+sl*l),0.5);"
 "}";
 

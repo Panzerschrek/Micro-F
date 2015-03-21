@@ -20,6 +20,8 @@ extern PFNGLUSEPROGRAMPROC			glUseProgram;
 extern PFNGLGETPROGRAMIVPROC		glGetProgramiv;
 extern PFNGLGETPROGRAMINFOLOGPROC	glGetProgramInfoLog;
 extern PFNGLGETATTRIBLOCATIONPROC	glGetAttribLocation;
+extern PFNGLGETUNIFORMBLOCKINDEXPROC	glGetUniformBlockIndex;
+extern PFNGLUNIFORMBLOCKBINDINGPROC	glUniformBlockBinding;
 
 /*attributes*/
 extern PFNGLVERTEXATTRIBPOINTERPROC		glVertexAttribPointer;
@@ -31,6 +33,7 @@ extern PFNGLBINDATTRIBLOCATIONPROC			glBindAttribLocation;
 /*VBO*/
 extern PFNGLGENBUFFERSPROC			glGenBuffers;
 extern PFNGLBINDBUFFERPROC			glBindBuffer;
+extern PFNGLBINDBUFFERRANGEPROC		glBindBufferRange;
 extern PFNGLBUFFERDATAPROC			glBufferData;
 extern PFNGLBUFFERSUBDATAPROC		glBufferSubData;
 extern PFNGLGENVERTEXARRAYSPROC		glGenVertexArrays;

@@ -129,9 +129,11 @@ private:
 
 	struct
 	{
-		GLuint matrices_ubo_;
-		GLuint sun_vectors_vbo_;
+		unsigned int matrices_data_offset;
+		unsigned int sun_vectors_data_offset;
+		GLuint matrices_sun_vectors_ubo;
 	} level_static_objects_data_;
+
 	mf_VertexBuffer level_static_objects_vbo_;
 	mf_GLSLProgram level_static_objects_shader_;
 };

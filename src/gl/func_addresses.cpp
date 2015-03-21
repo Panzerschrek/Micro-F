@@ -20,6 +20,8 @@ PFNGLUSEPROGRAMPROC				glUseProgram= NULL;
 PFNGLGETPROGRAMIVPROC			glGetProgramiv= NULL;
 PFNGLGETPROGRAMINFOLOGPROC		glGetProgramInfoLog= NULL;
 PFNGLGETATTRIBLOCATIONPROC		glGetAttribLocation= NULL;
+PFNGLGETUNIFORMBLOCKINDEXPROC	glGetUniformBlockIndex= NULL;
+PFNGLUNIFORMBLOCKBINDINGPROC	glUniformBlockBinding= NULL;
 
 /*attributes*/
 PFNGLBINDATTRIBLOCATIONPROC			glBindAttribLocation= NULL;
@@ -31,6 +33,7 @@ PFNGLDISABLEVERTEXATTRIBARRAYPROC 	glDisableVertexAttribArray= NULL;
 /*VBO*/
 PFNGLGENBUFFERSPROC			glGenBuffers= NULL;
 PFNGLBINDBUFFERPROC			glBindBuffer= NULL;
+PFNGLBINDBUFFERRANGEPROC	glBindBufferRange= NULL;
 PFNGLBUFFERDATAPROC			glBufferData= NULL;
 PFNGLBUFFERSUBDATAPROC		glBufferSubData= NULL;
 PFNGLGENVERTEXARRAYSPROC	glGenVertexArrays= NULL;
@@ -115,6 +118,7 @@ void GetGLFunctions( void* (*GetProcAddressFunc)(const char*) )
 
 	glGenBuffers= (PFNGLGENBUFFERSPROC ) GET_PROC_ADDRESS( glGenBuffers );
 	glBindBuffer= (PFNGLBINDBUFFERPROC ) GET_PROC_ADDRESS( glBindBuffer );
+	glBindBufferRange= (PFNGLBINDBUFFERRANGEPROC) GET_PROC_ADDRESS( glBindBufferRange );
 	glBufferData= ( PFNGLBUFFERDATAPROC	) GET_PROC_ADDRESS( glBufferData );
 	glBufferSubData= (PFNGLBUFFERSUBDATAPROC ) GET_PROC_ADDRESS( glBufferSubData );
 	//glDeleteBuffers= (PFNGLDELETEBUFFERSPROC ) GET_PROC_ADDRESS( glDeleteBuffers );
@@ -137,6 +141,8 @@ void GetGLFunctions( void* (*GetProcAddressFunc)(const char*) )
 	glUniform4f= (PFNGLUNIFORM4FPROC ) GET_PROC_ADDRESS( glUniform4f );
 	glUniform1f= ( PFNGLUNIFORM1FPROC ) GET_PROC_ADDRESS( glUniform1f );
 	glUniform1fv= ( PFNGLUNIFORM1FVPROC ) GET_PROC_ADDRESS( glUniform1fv );
+	glGetUniformBlockIndex= (PFNGLGETUNIFORMBLOCKINDEXPROC) GET_PROC_ADDRESS( glGetUniformBlockIndex );
+	glUniformBlockBinding= (PFNGLUNIFORMBLOCKBINDINGPROC) GET_PROC_ADDRESS( glUniformBlockBinding );
 
 	glActiveTexture= ( PFNGLACTIVETEXTUREPROC ) GET_PROC_ADDRESS( glActiveTexture );
 	glGenerateMipmap= (PFNGLGENERATEMIPMAPPROC	) GET_PROC_ADDRESS( glGenerateMipmap );

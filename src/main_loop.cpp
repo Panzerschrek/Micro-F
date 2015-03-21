@@ -229,9 +229,21 @@ mf_MainLoop::mf_MainLoop(
 	glDepthFunc( GL_LEQUAL );
 
 #ifdef MF_DEBUG
-	int max_unifroms= 0;
-	glGetIntegerv( GL_MAX_VERTEX_UNIFORM_COMPONENTS, &max_unifroms );
-	MF_DEBUG_INFO_STR_I( "max uniform components: ", max_unifroms );
+	{
+		MF_DEBUG_INFO_STR( "------------OpneGl limitations------------" );
+		int max_unifroms= 0;
+		glGetIntegerv( GL_MAX_VERTEX_UNIFORM_COMPONENTS, &max_unifroms );
+		MF_DEBUG_INFO_STR_I( "max uniform components in vertex shader: ", max_unifroms );
+
+		int uniform_block_size;
+		glGetIntegerv( GL_MAX_UNIFORM_BLOCK_SIZE, &uniform_block_size );
+		MF_DEBUG_INFO_STR_I( "max uniform block size: ", uniform_block_size );
+
+		int max_vertex_shader_uniform_blocks;
+		glGetIntegerv( GL_MAX_VERTEX_UNIFORM_BLOCKS, &max_vertex_shader_uniform_blocks );
+		MF_DEBUG_INFO_STR_I( "max vertex shader uniform blocks: ", max_vertex_shader_uniform_blocks );
+		MF_DEBUG_INFO_STR( "------------------------------------------" );
+	}
 #endif
 
 	prev_game_tick_= 0;

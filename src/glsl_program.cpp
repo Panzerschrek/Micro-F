@@ -96,6 +96,16 @@ void mf_GLSLProgram::SetAttribLocation( const char* attrib_name, unsigned int at
 	attrib_count_++;
 }
 
+unsigned int mf_GLSLProgram::GetUniformBlockIndex( const char* name )
+{
+	return glGetUniformBlockIndex( program_id_, name );
+}
+
+void mf_GLSLProgram::UniformBlockBinding( unsigned int uniform_block_index, unsigned int binding )
+{
+	glUniformBlockBinding( program_id_, uniform_block_index, binding );
+}
+
 void mf_GLSLProgram::FindUniform( const char* uniform )
 {
 	uniforms_[ uniform_count_ ]= glGetUniformLocation( program_id_, uniform );

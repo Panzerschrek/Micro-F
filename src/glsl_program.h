@@ -16,6 +16,9 @@ public:
 
 	void Create( const char* vertex_shader, const char* fragment_shader= NULL, const char* geometry_shader= NULL );
 
+	unsigned int GetUniformBlockIndex( const char* name );
+	void UniformBlockBinding( unsigned int uniform_block_index, unsigned int binding );
+
 	void SetAttribLocation( const char* attrib_name, unsigned int attrib );
 	void FindUniform( const char* name );
 	void FindUniforms( const char* const* names, unsigned int count );
