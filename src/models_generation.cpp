@@ -325,6 +325,67 @@ void GenOak( mf_DrawingModel* model )
 			v[j].pos[1]= (v[j].pos[1] + shift_y) * diameter_multipler;
 		}
 	}
+
+	// genearate leafs
+	const unsigned int c_leaf_segments_count= 9;
+	const unsigned int c_vertices_per_leaf= 4;
+	const unsigned int c_indeces_per_leaf= 6;
+	static const float c_leaf_scale= 3.0f;
+	static const float leaf_segment_vertices[c_vertices_per_leaf * 3]=
+	{
+		-1.0f *c_leaf_scale, 0.0f *c_leaf_scale, -1.5f,
+		 1.0f *c_leaf_scale, 0.0f *c_leaf_scale, -1.5f,
+		-2.5f *c_leaf_scale, 4.0f *c_leaf_scale, -1.5f,
+		 2.5f *c_leaf_scale, 4.0f *c_leaf_scale, -1.5f,
+	};
+	static const float leaf_segment_vertices_tc[c_vertices_per_leaf * 2]=
+	{
+		-0.25f, 0.0f,    0.25f, 0.0f,
+		 -1.0f, 1.0f,     1.0f, 1.0f
+	};
+	static unsigned short leaf_segment_indeces[c_indeces_per_leaf]=
+	{
+		2,1,0,  2,3,1
+	};
+	static const float leaf_normal[]= { 0.0f, 0.0f, -1.0f };
+
+	mf_DrawingModelVertex* leafs_vertices= new mf_DrawingModelVertex[ c_vertices_per_leaf * c_leaf_segments_count ];
+	unsigned short* leafs_indeces= new unsigned short[ c_indeces_per_leaf * c_leaf_segments_count ];
+	for( unsigned int seg= 0; seg< c_leaf_segments_count; seg++ )
+	{
+		float transformed_normal[3];
+		float z_angle= randomizer.RandF( 0.17f ) + MF_2PI * float(seg) / float(c_leaf_segments_count);
+		float x_angle= randomizer.RandF( 0.98f, 1.18f );
+
+		float rotate_z_mat[16];
+		float rotate_x_mat[16];
+		float mat[16];
+		Mat4RotateZ( rotate_z_mat, z_angle );
+		Mat4RotateX( rotate_x_mat, x_angle );
+		Mat4Mul( rotate_x_mat, rotate_z_mat, mat );
+
+		mf_DrawingModelVertex* vert= leafs_vertices + seg * c_vertices_per_leaf;
+		Vec3Mat4Mul( leaf_normal, mat, transformed_normal );
+		for( unsigned int v= 0; v< c_vertices_per_leaf; v++ )
+		{
+			Vec3Mat4Mul( leaf_segment_vertices + v*3, mat, vert[v].pos );
+			vert[v].pos[2]+= 8.0f;
+			VEC3_CPY(vert[v].normal, transformed_normal);
+			vert[v].tex_coord[0]= leaf_segment_vertices_tc[v*2  ];
+			vert[v].tex_coord[1]= leaf_segment_vertices_tc[v*2+1];
+		}
+		unsigned short* ind= leafs_indeces + seg * c_indeces_per_leaf;
+		for( unsigned int i= 0; i< c_indeces_per_leaf; i++ )
+			ind[i]= (unsigned short) (leaf_segment_indeces[i] + seg * c_vertices_per_leaf);
+		
+	}// for segments
+
+	mf_DrawingModel leafs_model;
+	leafs_model.SetVertexData( leafs_vertices, c_vertices_per_leaf * c_leaf_segments_count );
+	leafs_model.SetIndexData( leafs_indeces, c_indeces_per_leaf * c_leaf_segments_count );
+
+	model->Add( &leafs_model );
+
 	static const float shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * TextureOakBark) + MF_TEX_COORD_SHIFT_EPS, 0.f };
 	model->ShiftTexCoord( shift_vec );
 }
