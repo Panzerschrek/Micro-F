@@ -47,6 +47,23 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 	: player_(player), level_(level)
 	, text_(text)
 {
+
+	// tonemapping shader
+	hdr_data_.tonemapping_shader.Create( mf_Shaders::tonemapping_shader_v, mf_Shaders::tonemapping_shader_f );
+	hdr_data_.tonemapping_shader.FindUniform( "tex" );
+	hdr_data_.tonemapping_shader.FindUniform( "ck" );
+	hdr_data_.tonemapping_shader.FindUniform( "bhn" );
+	hdr_data_.tonemapping_shader.FindUniform( "btex" );
+
+	// brightness fetch shader
+	hdr_data_.brightness_fetch_shader.Create( mf_Shaders::brightness_fetch_shader_v, mf_Shaders::brightness_fetch_shader_f );
+	hdr_data_.brightness_fetch_shader.FindUniform( "tex" );
+
+	// brightness history shader
+	hdr_data_.brightness_history_shader.Create( mf_Shaders::brightness_history_write_shader_v, mf_Shaders::brightness_history_write_shader_f );
+	hdr_data_.brightness_history_shader.FindUniform( "tex" ); // brightness texture from previous pass
+	hdr_data_.brightness_history_shader.FindUniform( "p" ); // input position
+
 	// prepare terrain shader
 	terrain_shader_.SetAttribLocation( "p", 0 );
 	terrain_shader_.Create( mf_Shaders::terrain_shader_v, mf_Shaders::terrain_shader_f );
@@ -336,6 +353,8 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 
 	CreateWaterReflectionFramebuffer();
 	CreateShadowmapFramebuffer();
+	CreateHDRFramebuffer();
+	CreateBrightnessFetchFramebuffer();
 
 	/*{
 		mf_Texture tex[6]=
@@ -375,7 +394,12 @@ void mf_Renderer::Resize()
 	glDeleteTextures( 1, &water_reflection_fbo_.tex_id );
 	glDeleteTextures( 1, &water_reflection_fbo_.depth_tex_id );
 
+	glDeleteFramebuffers( 1, &hdr_data_.main_framebuffer_id );
+	glDeleteTextures( 1, &hdr_data_.main_framebuffer_color_tex_id );
+	glDeleteTextures( 1, &hdr_data_.main_framebuffer_depth_tex_id );
+
 	CreateWaterReflectionFramebuffer();
+	CreateHDRFramebuffer();
 }
 
 void mf_Renderer::DrawFrame()
@@ -399,12 +423,12 @@ void mf_Renderer::DrawFrame()
 	}
 	DrawLevelStaticObjects( true );
 	DrawSky( true );
-	DrawStars( true );
+	//DrawStars( true );
 	DrawSun( true );
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
 
-	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.main_framebuffer_id );
 	glViewport( 0, 0, main_loop->ViewportWidth(), main_loop->ViewportHeight() );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
@@ -417,9 +441,64 @@ void mf_Renderer::DrawFrame()
 	}
 	DrawLevelStaticObjects( false );
 	DrawSky( false );
-	DrawStars( false );
+	//DrawStars( false );
 	DrawSun( false );
 	DrawWater();
+
+	// make brightness fetch
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_fetch_framebuffer_id );
+	glViewport( 0, 0, 1 << hdr_data_.brightness_fetch_texture_size_log2, 1 << hdr_data_.brightness_fetch_texture_size_log2 );
+
+	hdr_data_.brightness_fetch_shader.Bind();
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_color_tex_id );
+	hdr_data_.brightness_fetch_shader.UniformInt( "tex", 0 );
+
+	glDisable( GL_DEPTH_TEST );
+	glDrawArrays( GL_TRIANGLES, 0, 3*2 );
+	glEnable( GL_DEPTH_TEST );
+
+	// write brightness to history
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_history_framebiffer_id );
+	glViewport( 0, 0, hdr_data_.brightness_history_tex_width, 1 );
+
+	hdr_data_.brightness_history_shader.Bind();
+	hdr_data_.brightness_history_shader.UniformFloat( "p",
+		(float(hdr_data_.current_brightness_history_pixel)+0.5f) / float(hdr_data_.brightness_history_tex_width) * 2.0f - 1.0f );
+
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_fetch_color_tex_id );
+	glGenerateMipmap( GL_TEXTURE_2D );
+	hdr_data_.brightness_history_shader.UniformInt( "tex", 1 );
+
+	glDisable( GL_DEPTH_TEST );
+	glDrawArrays( GL_POINTS, 0, 1 );
+	glEnable( GL_DEPTH_TEST );
+
+	// make tonemapping
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	glViewport( 0, 0, main_loop->ViewportWidth(), main_loop->ViewportHeight() );
+
+	hdr_data_.tonemapping_shader.Bind();
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_color_tex_id );
+	hdr_data_.tonemapping_shader.UniformInt( "tex", 0 );
+
+	hdr_data_.tonemapping_shader.UniformInt( "bhn", hdr_data_.current_brightness_history_pixel + 4 * hdr_data_.brightness_history_tex_width );
+	hdr_data_.current_brightness_history_pixel++;
+	hdr_data_.current_brightness_history_pixel%= hdr_data_.brightness_history_tex_width;
+
+	hdr_data_.tonemapping_shader.UniformFloat( "ck", -2.0f );
+
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_history_color_tex_id );
+	hdr_data_.tonemapping_shader.UniformInt( "btex", 1 );
+
+	glDisable( GL_DEPTH_TEST );
+	glDrawArrays( GL_TRIANGLES, 0, 3*2 );
+	glEnable( GL_DEPTH_TEST );
 
 #ifdef MF_DEBUG
 	{
@@ -441,9 +520,9 @@ void mf_Renderer::CreateWaterReflectionFramebuffer()
 	// color texture
 	glGenTextures( 1, &water_reflection_fbo_.tex_id );
 	glBindTexture( GL_TEXTURE_2D, water_reflection_fbo_.tex_id );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA16F,
 		water_reflection_fbo_.size[0], water_reflection_fbo_.size[1],
-		0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+		0, GL_RGBA, GL_FLOAT, NULL );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -483,6 +562,7 @@ void mf_Renderer::CreateShadowmapFramebuffer()
 	shadowmap_fbo_.ambient_sky_light_intensity[0]= 0.2f;
 	shadowmap_fbo_.ambient_sky_light_intensity[1]= 0.23f;
 	shadowmap_fbo_.ambient_sky_light_intensity[2]= 0.29f;
+	Vec3Mul( shadowmap_fbo_.ambient_sky_light_intensity, 0.5f );
 
 	shadowmap_fbo_.size[0]= 2048;
 	shadowmap_fbo_.size[1]= 2048;
@@ -503,6 +583,97 @@ void mf_Renderer::CreateShadowmapFramebuffer()
 	glBindFramebuffer( GL_FRAMEBUFFER, shadowmap_fbo_.fbo_id );
 	glFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowmap_fbo_.depth_tex_id, 0 );
 	GLuint color_attachment= GL_NONE;
+	glDrawBuffers( 1, &color_attachment );
+
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+}
+
+void mf_Renderer::CreateHDRFramebuffer()
+{
+	unsigned int size_x= mf_MainLoop::Instance()->ViewportWidth();
+	unsigned int size_y= mf_MainLoop::Instance()->ViewportHeight();
+
+	// color texture
+	glGenTextures( 1, &hdr_data_.main_framebuffer_color_tex_id );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_color_tex_id );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA16F,
+		size_x, size_y,
+		0, GL_RGBA, GL_FLOAT, NULL );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+
+	// depth buffer
+	glGenTextures( 1, &hdr_data_.main_framebuffer_depth_tex_id );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_depth_tex_id );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8,
+		size_x, size_y,
+		0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+
+	glGenFramebuffers( 1, &hdr_data_.main_framebuffer_id );
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.main_framebuffer_id );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.main_framebuffer_color_tex_id, 0 );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, hdr_data_.main_framebuffer_depth_tex_id, 0 );
+	GLuint color_attachment= GL_COLOR_ATTACHMENT0;
+	glDrawBuffers( 1, &color_attachment );
+
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+}
+
+void mf_Renderer::CreateBrightnessFetchFramebuffer()
+{
+	hdr_data_.brightness_fetch_texture_size_log2= 7;
+	unsigned int size_x= 1 << hdr_data_.brightness_fetch_texture_size_log2;
+	unsigned int size_y= 1 << hdr_data_.brightness_fetch_texture_size_log2;
+
+	// color texture
+	glGenTextures( 1, &hdr_data_.brightness_fetch_color_tex_id );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_fetch_color_tex_id );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R16F,
+		size_x, size_y,
+		0, GL_RED, GL_FLOAT, NULL );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+
+	glGenFramebuffers( 1, &hdr_data_.brightness_fetch_framebuffer_id );
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_fetch_framebuffer_id );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.brightness_fetch_color_tex_id, 0 );
+	GLuint color_attachment= GL_COLOR_ATTACHMENT0;
+	glDrawBuffers( 1, &color_attachment );
+
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	/*
+	BRIGHTNESS HISTORY
+	*/
+	hdr_data_.brightness_history_tex_width= 128;
+	hdr_data_.current_brightness_history_pixel= 0;
+
+	float history_values[ 128 ];
+	for( unsigned int i= 0; i< 128; i++ ) history_values[i]= 1.0f;
+
+	// color texture
+	glGenTextures( 1, &hdr_data_.brightness_history_color_tex_id );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_history_color_tex_id );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R16F,
+		hdr_data_.brightness_history_tex_width, 1,
+		0, GL_RED, GL_FLOAT, history_values );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+
+	glGenFramebuffers( 1, &hdr_data_.brightness_history_framebiffer_id );
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_history_framebiffer_id );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.brightness_history_color_tex_id, 0 );
+	color_attachment= GL_COLOR_ATTACHMENT0;
 	glDrawBuffers( 1, &color_attachment );
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -1034,7 +1205,7 @@ void mf_Renderer::DrawSun( bool draw_to_water_framebuffer )
 
 	sun_shader_.UniformMat4( "mat", mat );
 
-	float sprite_size= (128.0f/1024.0f) / mf_Math::tan(player_->Fov() * 0.5f);
+	float sprite_size= (64.0f/1024.0f) / mf_Math::tan(player_->Fov() * 0.5f);
 	if( draw_to_water_framebuffer )
 		sprite_size*= float(water_reflection_fbo_.size[1]);
 	else
