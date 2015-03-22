@@ -82,7 +82,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 	aircraft_shader_.SetAttribLocation( "tc", 2 );
 	aircraft_shader_.Create( mf_Shaders::models_shader_v, mf_Shaders::models_shader_f );
 	static const char* const aircraft_shader_uniforms[]= {
-		/*vert*/ "mat", "nmat", "texn",/*frag*/ "tex", "sun", "sl", "al" };
+		/*vert*/ "mat", "nmat", "mmat", "texn",/*frag*/ "tex", "sun", "sl", "al" };
 	aircraft_shader_.FindUniforms( aircraft_shader_uniforms, sizeof(aircraft_shader_uniforms) / sizeof(char*) );
 
 	// aircraft shadow shader
@@ -889,7 +889,7 @@ void mf_Renderer::CreateTerrainMatrix( float* out_matrix )
 
 }
 
-void mf_Renderer::CreateAircraftMatrix( const mf_Aircraft* aircraft, float* out_matrix, float* optional_normal_matrix )
+void mf_Renderer::CreateAircraftMatrix( const mf_Aircraft* aircraft, float* out_matrix, float* optional_normal_matrix, float* output_player_relative_mat )
 {
 	float translate_mat[16];
 	float common_rotate_mat[16];
@@ -907,6 +907,13 @@ void mf_Renderer::CreateAircraftMatrix( const mf_Aircraft* aircraft, float* out_
 
 	if( optional_normal_matrix != NULL )
 		Mat4ToMat3( common_rotate_mat, optional_normal_matrix );
+
+	if( output_player_relative_mat != NULL )
+	{
+		Mat4Identity( translate_mat );
+		Vec3Sub( aircraft->Pos(), player_->Pos(), translate_mat + 12 );
+		Mat4Mul( common_rotate_mat, translate_mat, output_player_relative_mat );
+	}
 }
 
 void mf_Renderer::GetTerrainMeshShift( float* out_shift )
@@ -1196,7 +1203,7 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 		{
 			const mf_Aircraft* aircraft= aircrafts[i];
 
-			float mat[16];;
+			float mat[16];
 			float transformed_sun[3];
 			CreateAircraftMatrix( aircraft, mat, NULL );
 
@@ -1232,10 +1239,12 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 			const mf_Aircraft* aircraft= aircrafts[i];
 			float normal_mat[9];
 			float mat[16];
+			float cam_relative_mat[16];
 
-			CreateAircraftMatrix( aircraft, mat, normal_mat );
+			CreateAircraftMatrix( aircraft, mat, NULL, cam_relative_mat );
 			aircraft_shader_.UniformMat4( "mat", mat );
 			aircraft_shader_.UniformMat3( "nmat", normal_mat );
+			aircraft_shader_.UniformMat4( "mmat", cam_relative_mat );
 
 			aircraft_shader_.UniformFloat( "texn", float(aircraft->GetType()) + 0.1f );
 			

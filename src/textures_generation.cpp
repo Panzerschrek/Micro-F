@@ -255,19 +255,19 @@ void GenF1949Texture( mf_Texture* tex )
 {
 	const unsigned int tex_scaler= 1<< ( tex->SizeXLog2() - 8 );
 
-	static const float plane_color[]= { 0.2f, 0.4f, 0.1f, 0.0f };
+	static const float plane_color[]= { 0.2f, 0.4f, 0.1f, 0.2f };
 	tex->Fill( plane_color );
 	static const float turbine_back_color[]= { 0.7f, 0.1f, 0.3f, 0.0f };
 	tex->FillRect( 1 * tex_scaler, 1 * tex_scaler, 34 * tex_scaler, 35 * tex_scaler, turbine_back_color );
 	static const float turbine_front_color[]= { 0.3f, 0.1f, 0.7f, 0.0f };
 	tex->FillRect( 27 * tex_scaler, 36 * tex_scaler, 71 * tex_scaler, 81 * tex_scaler, turbine_front_color );
-	static const float window_color[]= {0.5f, 0.5f, 0.9f, 1.0f };
+	static const float window_color[]= {0.5f, 0.5f, 0.9f, 0.5f };
 	tex->FillRect( 207 * tex_scaler, 1 * tex_scaler, 49 * tex_scaler, 88 * tex_scaler, window_color );
 
 	mf_Texture tex2( tex->SizeXLog2(), tex->SizeYLog2() );
 	tex2.Noise();
-	static const float add_color[]= { 1.5f, 1.5f, 1.5f, 1.5f };
-	static const float mul_color[]= { 0.4f, 0.4f, 0.4f, 0.0f };
+	static const float add_color[]= { 1.5f, 1.5f, 1.5f, 0.0f };
+	static const float mul_color[]= { 0.4f, 0.4f, 0.4f, 1.0f };
 	tex2.Add( add_color );
 	tex2.Mul( mul_color );
 	tex->Mul( &tex2 );
@@ -284,13 +284,13 @@ void GenF2XXXTexture( mf_Texture* tex )
 	MF_ASSERT( tex->SizeX() >= 512 );
 	const unsigned int tex_scaler= 1<< ( tex->SizeXLog2() - 9 );
 
-	static const float main_color[]= { 0.7f, 0.7f, 0.7f, 0.0f };
+	static const float main_color[]= { 0.7f, 0.7f, 0.7f, 0.1f };
 	tex->Fill( main_color );
 
-	static const float outer_field_color[]= { 0.27f, 0.239f, 0.521f, 0.0f };
+	static const float outer_field_color[]= { 0.27f, 0.239f, 0.521f, 0.8f };
 	tex->FillRect( 1, 1, tex_scaler * 187, tex_scaler * 222, outer_field_color );
 
-	static const float inner_field_color[]= { 0.4f, 0.4f, 0.5f, 0.0f };
+	static const float inner_field_color[]= { 0.4f, 0.4f, 0.5f, 0.3f };
 	tex->FillRect( tex_scaler * 189, 1, tex_scaler * 195, tex_scaler * 222, inner_field_color );
 
 	static const float engine_color[]= { 1.0f, 0.7f, 0.65f, 0.0f };
@@ -314,14 +314,13 @@ void GenV1Texture( mf_Texture* tex )
 	MF_ASSERT( tex->SizeX() >= 512 );
 	const unsigned int tex_scaler= 1<< ( tex->SizeXLog2() - 9 );
 
-	static const float main_color[]= { 0.6f, 0.6f, 0.6f, 0.0f };
+	static const float main_color[]= { 0.6f, 0.6f, 0.6f, 0.3f };
 	tex->Fill( main_color );
-
 	{
 		mf_Texture noise_tex( tex->SizeXLog2(), tex->SizeYLog2() );
 		noise_tex.Noise();
-		static const float mul_color[]= { 0.25f, 0.25f, 0.25f, 0.0f };
-		static const float add_color[]= { 0.75f, 0.75f, 0.75f, 0.0f };
+		static const float mul_color[]= { 0.25f, 0.25f, 0.25f, 0.25f };
+		static const float add_color[]= { 0.75f, 0.75f, 0.75f, 0.75f };
 		noise_tex.Mul( mul_color );
 		noise_tex.Add( add_color );
 		tex->Mul( &noise_tex );

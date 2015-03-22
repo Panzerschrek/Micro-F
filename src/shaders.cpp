@@ -233,16 +233,19 @@ const char* const models_shader_v=
 "#version 330\n"
 "uniform mat4 mat;" // view matrix
 "uniform mat3 nmat;" // normal matrix
+"uniform mat4 mmat;" // model matrix - for convertion of model to world space
 "uniform float texn;" // texture number ( in array of textures )
 "in vec3 p;" // position
 "in vec3 n;" // normal
 "in vec2 tc;" // texture coord
+"out vec3 fp;"
 "out vec3 fn;" // fragment normal
 "out vec3 ftc;" // fragment tex coord
 "void main()"
 "{"
 	"fn=nmat*n;"
 	"ftc=vec3(tc,texn);"
+	"fp=(mmat*vec4(p,1.0)).xyz;"
 	"gl_Position=mat*vec4(p,1.0);"
 "}";
 
@@ -252,13 +255,18 @@ const char* const models_shader_f=
 "uniform vec3 sun;"
 "uniform vec3 sl;" //sun light
 "uniform vec3 al;" // ambient light
+"in vec3 fp;" // fragment position
 "in vec3 fn;" // fragment normal
 "in vec3 ftc;" // fragment tex coord
 "out vec4 c_;" // out color
 "void main()"
 "{"
-	"float l= max(0.0,dot(sun,normalize(fn)));"
-	"c_=vec4(texture(tex,ftc).xyz*(al+sl*l),0.5);"
+	"vec4 texc=texture(tex,ftc);"
+	"vec3 nn=normalize(fn);"
+	"float ldot=max(0.0,dot(sun,nn));"
+	"float l=ldot;"
+	"l+=step(0.0,ldot)*texc.a*4.0*pow(max(dot(reflect(normalize(fp),nn),sun),0.01),texc.a*255.0);"
+	"c_=vec4(texc.xyz*(al+sl*l),0.5);"
 "}";
 
 const char* const models_shadowmap_shader_v=
