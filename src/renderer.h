@@ -61,6 +61,7 @@ private:
 
 	float view_matrix_[16];
 	float terrain_shadow_matrix_[16];
+	float common_shadow_matrix_[16];
 
 	mf_GLSLProgram terrain_shader_;
 

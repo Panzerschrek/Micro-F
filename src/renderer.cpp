@@ -23,14 +23,14 @@
 #define MF_ZERO_STENCIL_VALUE 128
 
 // GL_MAX_UNIFORM_BLOCK_SIZE is 16384 or highter
-// it menas, that we can place 256 4x4 matrices
+// it menas, that we can place 256 4x4 matrices ( 128 objects with projection and shadow matrices )
 // also:
 // GL_MAX_FRAGMENT_UNIFORM_BLOCKS 12 or highter
 // GL_MAX_GEOMETRY_UNIFORM_BLOCKS 12 or highter
 // GL_MAX_VERTEX_UNIFORM_BLOCKS   12 or heighter
 // GL_MAX_VERTEX_UNIFORM_COMPONENTS is 1024 or highter,
 // that means, that we can place 1024 float in simple array
-#define MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL 256
+#define MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL 128
 
 struct mf_StarVertex
 {
@@ -113,13 +113,13 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 	aircraft_stencil_shadow_shader_.FindUniform( "mat" );
 	aircraft_stencil_shadow_shader_.FindUniform( "sun" );
 
-	// level shatic objects shader
+	// level static objects shader
 	level_static_objects_shader_.SetAttribLocation( "p", 0 );
 	level_static_objects_shader_.SetAttribLocation( "n", 1 );
 	level_static_objects_shader_.SetAttribLocation( "tc", 2 );
 	level_static_objects_shader_.Create( mf_Shaders::static_models_shader_v, mf_Shaders::static_models_shader_f );
 	static const char* const static_objects_shader_uniforms[]= {
-		/*vert*//*frag*/ "tex", "sl", "al" };
+		/*vert*//*frag*/ "tex", "stex", "sl", "al" };
 	level_static_objects_shader_.FindUniforms( static_objects_shader_uniforms, sizeof(static_objects_shader_uniforms) / sizeof(char*) );
 
 	level_static_objects_shadowmap_shader_.SetAttribLocation( "p", 0 );
@@ -202,7 +202,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 		glGetIntegerv( GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &alignment );
 
 		level_static_objects_data_.matrices_data_offset= 0;
-		level_static_objects_data_.sun_vectors_data_offset= MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL * 16 * sizeof(float);
+		level_static_objects_data_.sun_vectors_data_offset= MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL * 16 * sizeof(float) * 2;
 		if( level_static_objects_data_.sun_vectors_data_offset % alignment != 0 )
 			level_static_objects_data_.sun_vectors_data_offset+= alignment - level_static_objects_data_.sun_vectors_data_offset % alignment;
 
@@ -210,7 +210,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 		glBindBuffer( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_sun_vectors_ubo );
 		glBufferData(
 			GL_UNIFORM_BUFFER,
-				MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL * 16 * sizeof(float) +
+				MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL * 16 * sizeof(float) * 2 +
 				MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL *  4 * sizeof(float) +
 				alignment * 4,
 			NULL,
@@ -228,7 +228,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 			mat_binding,
 			level_static_objects_data_.matrices_sun_vectors_ubo,
 			level_static_objects_data_.matrices_data_offset,
-			sizeof(float) * 16 * MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL );
+			2 * sizeof(float) * 16 * MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL );
 
 		glBindBufferRange(
 			GL_UNIFORM_BUFFER,
@@ -248,7 +248,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 			mat_binding,
 			level_static_objects_data_.matrices_sun_vectors_ubo,
 			level_static_objects_data_.matrices_data_offset,
-			sizeof(float) * 16 * MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL );
+			2 * sizeof(float) * 16 * MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL );
 
 		level_static_objects_shadowmap_shader_.UniformBlockBinding( mat_block_index, mat_binding );
 	}
@@ -1471,6 +1471,10 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	glBindTexture( GL_TEXTURE_2D_ARRAY, level_static_objects_data_.textures_array );
 	level_static_objects_shader_.UniformInt( "tex", 0 );
 
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_2D, shadowmap_fbo_.depth_tex_id );
+	level_static_objects_shader_.UniformInt( "stex", 1 );
+
 	level_static_objects_shader_.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
 	level_static_objects_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
 
@@ -1503,7 +1507,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 		const mf_StaticLevelObject* objects= level_->GetStaticObjectsRows()[row].objects;
 		unsigned int objects_count= level_->GetStaticObjectsRows()[row].objects_count;
 
-		float mat[ MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL ][16];
+		float mat[2][ MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL ][16];
 		unsigned int objects_count_to_draw= 0;
 		mf_StaticLevelObject::Type current_object_type= mf_StaticLevelObject::Palm;
 		if( objects_count !=0 ) current_object_type= objects[0].type;
@@ -1516,7 +1520,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 				obj->type != current_object_type
 				|| i == objects_count )
 			{
-				glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, sizeof(float) * 16 * objects_count_to_draw, mat );
+				glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, sizeof(mat), mat );
 				glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.sun_vectors_data_offset, sizeof(float) * 4 * objects_count_to_draw, transformed_sun );
 
 				glDrawElementsInstanced(
@@ -1545,7 +1549,8 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 			rot_z_scale_translate_mat[12]= obj->pos[0];
 			rot_z_scale_translate_mat[13]= obj->pos[1];
 			rot_z_scale_translate_mat[14]= obj->pos[2];
-			Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[objects_count_to_draw] );
+			Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[0][objects_count_to_draw] );
+			Mat4Mul( rot_z_scale_translate_mat, common_shadow_matrix_, mat[1][objects_count_to_draw] );
 
 			// transform sun to model spasce, instead transform normals in vertex shader
 			transformed_sun[objects_count_to_draw][0]= shadowmap_fbo_.sun_vector[0] * cos_z + shadowmap_fbo_.sun_vector[1] * sin_z;
@@ -1658,6 +1663,8 @@ void mf_Renderer::DrawShadows()
 		corrected_proj_mat[10]*= -1.0f;
 		corrected_proj_mat[14]*= -1.0f;
 		Mat4Mul( primary_proj_mat, corrected_proj_mat, projection_final_mat );
+
+		memcpy( common_shadow_matrix_, projection_final_mat, sizeof(float) * 16 );
 	} // calculate projection matrix
 	{ // draw terrain
 		float terrain_mat[16];
@@ -1747,6 +1754,7 @@ void mf_Renderer::DrawShadows()
 	{ // draw level static objects
 
 		level_static_objects_shadowmap_shader_.Bind();
+		glBindBuffer( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_sun_vectors_ubo );
 
 		glEnable( GL_CULL_FACE );
 		glCullFace( GL_FRONT );
@@ -1754,7 +1762,7 @@ void mf_Renderer::DrawShadows()
 
 		glActiveTexture( GL_TEXTURE0 );
 		glBindTexture( GL_TEXTURE_2D_ARRAY, level_static_objects_data_.textures_array );
-		level_static_objects_shader_.UniformInt( "tex", 0 );
+		level_static_objects_shadowmap_shader_.UniformInt( "tex", 0 );
 
 		// init independent parts of main object matrix
 		float rot_z_scale_translate_mat[16];
@@ -1804,7 +1812,7 @@ void mf_Renderer::DrawShadows()
 				float shadow_space_object_pos[3];
 				Vec3Mat4Mul( obj->pos, projection_final_mat, shadow_space_object_pos );
 				shadow_space_object_pos[2]= 0.0f;
-				const float c_max_object_dst2= 0.3f * 0.3f;
+				const float c_max_object_dst2= 0.5f * 0.5f;
 				if( Vec3Dot( shadow_space_object_pos, shadow_space_object_pos ) < c_max_object_dst2 )
 				{
 					// fast calculating of model matrix ( without 2 full matrix multiplications )

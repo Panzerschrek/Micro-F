@@ -325,11 +325,12 @@ const char* const static_models_shader_v=
 "#version 330\n"
 "layout(std140)uniform mat_block"
 "{"
-	"mat4 mat[256];" // view matrix
+	"mat4 mat[128+128];" // first 128 - view matrix, second 128 - shadow matrix
 "};"
 "in vec3 p;" // position
 "in vec3 n;" // normal
 "in vec2 tc;" // texture coord
+"out vec3 fstc;" // fragment shadow tex coord
 "out vec3 fn;" // fragment normal
 "out vec3 ftc;" // fragment tex coord
 "out float fiid;" // fragment instance id
@@ -338,27 +339,31 @@ const char* const static_models_shader_v=
 	"fn=n;"
 	"fiid=float(gl_InstanceID)+0.1;"
 	"ftc=vec3(tc,tc.x/16.0);"
+	"vec3 sp=(mat[gl_InstanceID+128]*vec4(p,1.0)).xyz;"
+	"fstc=sp*0.5+vec3(0.5,0.5,0.5);"
 	"gl_Position=mat[gl_InstanceID]*vec4(p,1.0);"
 "}";
 
 const char* const static_models_shader_f=
 "#version 330\n"
 "uniform sampler2DArray tex;" // diffuse texture
+"uniform sampler2DShadow stex;" // shadowmap
 "layout(std140)uniform sun_block"
 "{"
-	"vec4 sun[256];" // model space sun
+	"vec4 sun[128];" // model space sun
 "};"
 "uniform vec3 sl;" //sun light
 "uniform vec3 al;" // ambient light
+"in vec3 fstc;" // fragment shadow tex coord
 "in vec3 fn;" // fragment normal
 "in vec3 ftc;" // fragment tex coord
-"out vec4 c_;" // out color
 "in float fiid;" // fragment instance id
+"out vec4 c_;" // out color
 "void main()"
 "{"
-	"float l= max(0.0,dot(sun[uint(fiid)].xyz,normalize(fn)));"
 	"vec4 texc=texture(tex,ftc);"
 	"if(texc.a<0.5)discard;"
+	"float l= max(0.0,dot(sun[uint(fiid)].xyz,normalize(fn)))*texture(stex,fstc);"
 	"c_=vec4(texc.xyz*(al+sl*l),0.5);"
 "}";
 
@@ -366,7 +371,7 @@ const char* const static_models_shadowmap_shader_v=
 "#version 330\n"
 "layout(std140)uniform mat_block"
 "{"
-	"mat4 mat[256];" // view matrix
+	"mat4 mat[128 + 128];" // view matrix. last 128 - unused
 "};"
 "in vec3 p;" // position
 "in vec2 tc;" // texture coord
