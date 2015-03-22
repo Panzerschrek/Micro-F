@@ -486,7 +486,7 @@ void mf_Renderer::DrawFrame()
 	glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_color_tex_id );
 	hdr_data_.tonemapping_shader.UniformInt( "tex", 0 );
 
-	hdr_data_.tonemapping_shader.UniformInt( "bhn", hdr_data_.current_brightness_history_pixel + hdr_data_.brightness_history_tex_width );
+	hdr_data_.tonemapping_shader.UniformInt( "bhn", hdr_data_.current_brightness_history_pixel + 4 * hdr_data_.brightness_history_tex_width );
 	hdr_data_.current_brightness_history_pixel++;
 	hdr_data_.current_brightness_history_pixel%= hdr_data_.brightness_history_tex_width;
 

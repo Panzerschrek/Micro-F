@@ -514,7 +514,12 @@ const char* const tonemapping_shader_v=
 "noperspective out float b;"
 "void main()"
 "{"
-	"b=-1.0/texelFetch(btex,ivec2(bhn%64,0),0).x;"
+	"float bsum=0.0;"
+	"int ts=textureSize(btex,0).x;"
+	"for(int i=0; i< ts; i++)"
+	"bsum+=float(ts-i)/texelFetch(btex,ivec2((bhn-i)%ts,0),0).x;"
+	"bsum=bsum/float(ts*ts/2);"
+	"b=-bsum;"
 	"ftc=coord[gl_VertexID];"
 	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
 "}";
@@ -522,7 +527,7 @@ const char* const tonemapping_shader_v=
 const char* const tonemapping_shader_f=
 "#version 330\n"
 "uniform sampler2D tex;"
-"uniform float ck;" // color k - coefficent for tonemapping. Must be negative
+"uniform float ck;" // color k - coefficent for final color calculation
 "noperspective in vec2 ftc;"
 "noperspective in float b;"
 "out vec4 c_;"
