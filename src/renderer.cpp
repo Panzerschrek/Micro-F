@@ -465,7 +465,7 @@ void mf_Renderer::DrawFrame()
 
 	hdr_data_.brightness_history_shader.Bind();
 	hdr_data_.brightness_history_shader.UniformFloat( "p",
-		float(hdr_data_.current_brightness_history_pixel) / float(hdr_data_.brightness_history_tex_width) * 2.0f - 1.0f );
+		(float(hdr_data_.current_brightness_history_pixel)+0.5f) / float(hdr_data_.brightness_history_tex_width) * 2.0f - 1.0f );
 
 	glActiveTexture( GL_TEXTURE1 );
 	glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_fetch_color_tex_id );
