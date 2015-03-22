@@ -292,7 +292,7 @@ void GenOak( mf_DrawingModel* model )
 	static const float oak_scale[]= { c_oak_trunk_diameter * 0.5f, c_oak_trunk_diameter * 0.5f, c_oak_height * 0.5f };
 	static const float oak_shift[]= { 0.0f, 0.0f, c_oak_height * 0.5f };
 
-	const int c_trunk_segments= 7;
+	const int c_trunk_segments= 6;
 	const int c_trunk_partitions= 8;
 	GenCylinder( model, c_trunk_segments, c_trunk_partitions, false );
 	model->Scale( oak_scale );
@@ -319,8 +319,38 @@ void GenOak( mf_DrawingModel* model )
 	}
 }
 
+void GenSpruce( mf_DrawingModel* model )
+{
+	const float c_spruce_height= 15.0f;
+	const float c_spruce_trunk_diameter= 1.5f;
+
+	static const float spruce_scale[]= { c_spruce_trunk_diameter * 0.5f, c_spruce_trunk_diameter * 0.5f, c_spruce_height * 0.5f };
+	static const float spruce_shift[]= { 0.0f, 0.0f, c_spruce_height * 0.5f };
+
+	const int c_trunk_segments= 6;
+	const int c_trunk_partitions= 5;
+	GenCylinder( model, c_trunk_segments, c_trunk_partitions, false );
+	model->Scale( spruce_scale );
+	model->Shift( spruce_shift );
+
+	mf_DrawingModelVertex* vertices= (mf_DrawingModelVertex*) model->GetVertexData();
+	for( unsigned int i= 0; i<= c_trunk_partitions; i++ )
+	{
+		mf_DrawingModelVertex* v= vertices + i * (c_trunk_segments+1);
+
+		float diameter_multipler= 1.0f - float(i) / float(c_trunk_partitions);
+		diameter_multipler= ( diameter_multipler + 1.0f ) / 2.0f;
+		for( unsigned int j= 0; j< c_trunk_segments+1; j++ )
+		{
+			v[j].pos[0]*= diameter_multipler;
+			v[j].pos[1]*= diameter_multipler;
+		}
+	}
+}
+
 void (* const level_static_models_gen_func[mf_StaticLevelObject::LastType])(mf_DrawingModel* model)=
 {
 	GenPalm,
-	GenOak
+	GenOak,
+	GenSpruce
 };

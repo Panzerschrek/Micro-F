@@ -524,7 +524,7 @@ void mf_Level::PlaceStaticObjects()
 		unsigned short h= terrain_heightmap_data_[ int(terrain_space_xy[0]) + int(terrain_space_xy[1]) * terrain_size_[0] ];
 		obj->pos[2] = float(h) * terrain_amplitude_ / 65535.0f;
 
-		obj->type= ((randomizer.Rand()&1) == 0) ? mf_StaticLevelObject::Palm : mf_StaticLevelObject::Oak;
+		obj->type= mf_StaticLevelObject::Type( randomizer.Rand() % mf_StaticLevelObject::LastType );
 		obj->scale= 0.25f * (
 			randomizer.RandF( 0.8f, 1.2f ) +
 			randomizer.RandF( 0.8f, 1.2f ) +

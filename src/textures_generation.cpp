@@ -525,6 +525,16 @@ void GenOakTexture( mf_Texture* tex )
 	tex->Mix( oak_color, oak_color_dark, sub_color );
 }
 
+void GenSpruceTexture( mf_Texture* tex )
+{
+	static const float bark_color[]= { 0.356f, 0.18f, 0.03f, 1.0f };
+	tex->Noise();
+	tex->DownscaleX();
+	tex->DownscaleX();
+	tex->Mul( bark_color );
+
+}
+
 void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 {
 	GenNaviballTexture,
@@ -540,5 +550,6 @@ void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 void (* const static_level_object_texture_gen_func[mf_StaticLevelObject::LastType])(mf_Texture* t)=
 {
 	GenPalmTexture,
-	GenOakTexture
+	GenOakTexture,
+	GenSpruceTexture
 };
