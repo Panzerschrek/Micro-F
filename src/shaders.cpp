@@ -349,7 +349,9 @@ const char* const static_models_shader_f=
 "void main()"
 "{"
 	"float l= max(0.0,dot(sun[uint(fiid)].xyz,normalize(fn)));"
-	"c_=vec4(texture(tex,ftc).xyz*(al+sl*l),0.5);"
+	"vec4 texc=texture(tex,ftc);"
+	"if(texc.a<0.5)discard;"
+	"c_=vec4(texc.xyz*(al+sl*l),0.5);"
 "}";
 
 

@@ -29,6 +29,7 @@ enum mf_StaticLevelObjectTexture
 {
 	TexturePalmBark,
 	TextureOakBark,
+	TextureOakLeafs,
 	TextureSpruceBark,
 	LastStaticLevelObjectTexture
 };

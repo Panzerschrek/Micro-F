@@ -13,6 +13,18 @@ static const float g_indicators_border_color[]= { 0.4f, 0.3f, 0.2f, 1.0f };
 static const float g_invisible_color[]= { 0.0f, 0.0f, 0.0f, 0.0f };
 
 
+void SetAlphaToZero( mf_Texture* tex )
+{
+	static const float min_color[]= { 100500.0f, 100500.0f, 100500.0f, 0.0f };
+	tex->Min( min_color );
+}
+
+void SetAlphaToOne( mf_Texture* tex )
+{
+	static const float max_color[]= { 0.0f, 0.0f, 0.0f, 1.0f };
+	tex->Max( max_color );
+}
+
 // returns noise in range [0;0xfffffff]
 int Noise3(int x, int y, int z, int seed )
 {
@@ -523,6 +535,39 @@ void GenOakTexture( mf_Texture* tex )
 	static const float oak_color_dark[4]= { 0.159f, 0.1491f, 0.1f, 1.0f };
 	static const float sub_color[4]= { 1.0f, 1.0f, 1.0f, 1.0f };
 	tex->Mix( oak_color, oak_color_dark, sub_color );
+
+	SetAlphaToOne( tex );
+}
+
+void GenOakLeafsTexture( mf_Texture* tex )
+{
+	tex->PoissonDiskPoints( 19 );
+
+	static const float extend_green[]= { 0.0f, 4.0f, 0.0f, 0.f };
+	tex->Mul( extend_green );
+
+	static const float clamp_green[]= { 0.0f, 1.0f, 0.0f, 0.0f };
+	tex->Min(clamp_green);
+
+	float* data= tex->GetData();
+
+	static const float leaf_color[]= { 0.2f, 0.6f, 0.2f, 1.0f };
+	for( unsigned int i= 0; i< tex->SizeX() * tex->SizeY(); i++, data+= 4 )
+	{
+		float c= data[1];
+		data[0]= leaf_color[0];
+		data[1]= leaf_color[1];
+		data[2]= leaf_color[2];
+		data[3]= c;
+	}
+
+	mf_Texture circle( tex->SizeXLog2(), tex->SizeYLog2() );
+	static const float background_alpha_color[]= { 0.0f, 0.0f, 0.0f, 0.2f };
+	circle.Fill( background_alpha_color );
+	static const float circle_color[]= { 1.0f, 1.0f, 1.0f, 1.0f };
+	circle.FillEllipse( tex->SizeX()/2, tex->SizeY()/2, tex->SizeX()/2-2, circle_color );
+
+	tex->Mul( &circle );
 }
 
 void GenSpruceTexture( mf_Texture* tex )
@@ -533,6 +578,7 @@ void GenSpruceTexture( mf_Texture* tex )
 	tex->DownscaleX();
 	tex->Mul( bark_color );
 
+	SetAlphaToOne( tex );
 }
 
 void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
@@ -551,5 +597,6 @@ void (* const static_level_object_texture_gen_func[LastStaticLevelObjectTexture]
 {
 	GenPalmTexture,
 	GenOakTexture,
+	GenOakLeafsTexture,
 	GenSpruceTexture
 };

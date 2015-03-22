@@ -326,6 +326,9 @@ void GenOak( mf_DrawingModel* model )
 		}
 	}
 
+	static const float trunk_shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * TextureOakBark) + MF_TEX_COORD_SHIFT_EPS, 0.f };
+	model->ShiftTexCoord( trunk_shift_vec );
+
 	// genearate leafs
 	const unsigned int c_leaf_segments_count= 9;
 	const unsigned int c_vertices_per_leaf= 4;
@@ -384,10 +387,10 @@ void GenOak( mf_DrawingModel* model )
 	leafs_model.SetVertexData( leafs_vertices, c_vertices_per_leaf * c_leaf_segments_count );
 	leafs_model.SetIndexData( leafs_indeces, c_indeces_per_leaf * c_leaf_segments_count );
 
-	model->Add( &leafs_model );
+	static const float leafs_shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * TextureOakLeafs) + MF_TEX_COORD_SHIFT_EPS, 0.f };
+	leafs_model.ShiftTexCoord( leafs_shift_vec );
 
-	static const float shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * TextureOakBark) + MF_TEX_COORD_SHIFT_EPS, 0.f };
-	model->ShiftTexCoord( shift_vec );
+	model->Add( &leafs_model );
 }
 
 void GenSpruce( mf_DrawingModel* model )
