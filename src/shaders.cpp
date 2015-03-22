@@ -229,7 +229,7 @@ const char* const water_shadowmap_shader_v=
 "}"
 ;
 
-const char* const models_shader_v=
+const char* const aircrafts_shader_v=
 "#version 330\n"
 "uniform mat4 mat;" // view matrix
 "uniform mat3 nmat;" // normal matrix
@@ -249,7 +249,7 @@ const char* const models_shader_v=
 	"gl_Position=mat*vec4(p,1.0);"
 "}";
 
-const char* const models_shader_f=
+const char* const aircrafts_shader_f=
 "#version 330\n"
 "uniform sampler2DArray tex;" // diffuse texture
 "uniform vec3 sun;"
@@ -269,7 +269,7 @@ const char* const models_shader_f=
 	"c_=vec4(texc.xyz*(al+sl*l),0.5);"
 "}";
 
-const char* const models_shadowmap_shader_v=
+const char* const aircrafts_shadowmap_shader_v=
 "#version 330\n"
 "uniform mat4 mat;" // view matrix
 "in vec3 p;" // position
@@ -278,7 +278,7 @@ const char* const models_shadowmap_shader_v=
 	"gl_Position=mat*vec4(p,1.0);"
 "}";
 
-const char* const models_stencil_shadow_shader_v=
+const char* const aircrafts_stencil_shadow_shader_v=
 "#version 330\n"
 "in vec3 p;" // position
 "void main()"
@@ -286,7 +286,7 @@ const char* const models_stencil_shadow_shader_v=
 	"gl_Position=vec4(p,1.0);"
 "}";
 
-const char* const models_stencil_shadow_shader_g=
+const char* const aircrafts_stencil_shadow_shader_g=
 "#version 330\n"
 "layout(triangles,invocations=1)in;"
 "layout(triangle_strip,max_vertices=24)out;"
@@ -362,6 +362,31 @@ const char* const static_models_shader_f=
 	"c_=vec4(texc.xyz*(al+sl*l),0.5);"
 "}";
 
+const char* const static_models_shadowmap_shader_v=
+"#version 330\n"
+"layout(std140)uniform mat_block"
+"{"
+	"mat4 mat[256];" // view matrix
+"};"
+"in vec3 p;" // position
+"in vec2 tc;" // texture coord
+"out vec3 ftc;" // fragment tex coord
+"void main()"
+"{"
+	"ftc=vec3(tc,tc.x/16.0);"
+	"gl_Position=mat[gl_InstanceID]*vec4(p,1.0);"
+"}";
+
+const char* const static_models_shadowmap_shader_f=
+"#version 330\n"
+"uniform sampler2DArray tex;" // diffuse texture
+"in vec3 ftc;" // fragment tex coord
+"out vec4 c_;" // out color
+"void main()"
+"{"
+	"if(texture(tex,ftc).a<0.5)discard;"
+	"c_=vec4(0.0,0.0,0.0,0.5);"
+"}";
 
 const char* const naviball_shader_v=
 "#version 330\n"

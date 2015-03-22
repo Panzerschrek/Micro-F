@@ -37,6 +37,7 @@ private:
 	float GetSceneRadius(); // returns half of iagonal of scene bounding box
 
 	void CalculateWaterMeshVisiblyPart( unsigned int* first_quad, unsigned int* quad_count );
+	void CalculateStaticLevelObjectsVisiblyRows( unsigned int* out_first_row, unsigned int* out_last_row );
 
 	void DrawTerrain( bool draw_to_water_framebuffer );
 	void DrawSun( bool draw_to_water_framebuffer );
@@ -162,4 +163,5 @@ private:
 
 	mf_VertexBuffer level_static_objects_vbo_;
 	mf_GLSLProgram level_static_objects_shader_;
+	mf_GLSLProgram level_static_objects_shadowmap_shader_;
 };

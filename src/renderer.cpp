@@ -97,19 +97,19 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 	aircraft_shader_.SetAttribLocation( "p", 0 );
 	aircraft_shader_.SetAttribLocation( "n", 1 );
 	aircraft_shader_.SetAttribLocation( "tc", 2 );
-	aircraft_shader_.Create( mf_Shaders::models_shader_v, mf_Shaders::models_shader_f );
+	aircraft_shader_.Create( mf_Shaders::aircrafts_shader_v, mf_Shaders::aircrafts_shader_f );
 	static const char* const aircraft_shader_uniforms[]= {
 		/*vert*/ "mat", "nmat", "mmat", "texn",/*frag*/ "tex", "sun", "sl", "al" };
 	aircraft_shader_.FindUniforms( aircraft_shader_uniforms, sizeof(aircraft_shader_uniforms) / sizeof(char*) );
 
 	// aircraft shadow shader
 	aircraft_shadowmap_shader_.SetAttribLocation( "p", 0 );
-	aircraft_shadowmap_shader_.Create( mf_Shaders::models_shadowmap_shader_v, NULL );
+	aircraft_shadowmap_shader_.Create( mf_Shaders::aircrafts_shadowmap_shader_v, NULL );
 	aircraft_shadowmap_shader_.FindUniform( "mat" );
 
 	// aircraft stencil shadow
 	aircraft_stencil_shadow_shader_.SetAttribLocation( "p", 0 );
-	aircraft_stencil_shadow_shader_.Create( mf_Shaders::models_stencil_shadow_shader_v, NULL, mf_Shaders::models_stencil_shadow_shader_g );
+	aircraft_stencil_shadow_shader_.Create( mf_Shaders::aircrafts_stencil_shadow_shader_v, NULL, mf_Shaders::aircrafts_stencil_shadow_shader_g );
 	aircraft_stencil_shadow_shader_.FindUniform( "mat" );
 	aircraft_stencil_shadow_shader_.FindUniform( "sun" );
 
@@ -121,6 +121,11 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 	static const char* const static_objects_shader_uniforms[]= {
 		/*vert*//*frag*/ "tex", "sl", "al" };
 	level_static_objects_shader_.FindUniforms( static_objects_shader_uniforms, sizeof(static_objects_shader_uniforms) / sizeof(char*) );
+
+	level_static_objects_shadowmap_shader_.SetAttribLocation( "p", 0 );
+	level_static_objects_shadowmap_shader_.SetAttribLocation( "tc", 2 );
+	level_static_objects_shadowmap_shader_.Create( mf_Shaders::static_models_shadowmap_shader_v, mf_Shaders::static_models_shadowmap_shader_f );
+	level_static_objects_shadowmap_shader_.FindUniform( "tex" );
 
 	// sun shader
 	sun_shader_.Create( mf_Shaders::sun_shader_v, mf_Shaders::sun_shader_f );
@@ -234,6 +239,18 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 
 		level_static_objects_shader_.UniformBlockBinding( mat_block_index, mat_binding );
 		level_static_objects_shader_.UniformBlockBinding( sun_block_index, sun_binding );
+
+		// uniforms for shadowmap shader
+		mat_block_index= level_static_objects_shadowmap_shader_.GetUniformBlockIndex( "mat_block" );
+
+		glBindBufferRange(
+			GL_UNIFORM_BUFFER,
+			mat_binding,
+			level_static_objects_data_.matrices_sun_vectors_ubo,
+			level_static_objects_data_.matrices_data_offset,
+			sizeof(float) * 16 * MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL );
+
+		level_static_objects_shadowmap_shader_.UniformBlockBinding( mat_block_index, mat_binding );
 	}
 
 	{
@@ -564,8 +581,8 @@ void mf_Renderer::CreateShadowmapFramebuffer()
 	shadowmap_fbo_.ambient_sky_light_intensity[2]= 0.29f;
 	Vec3Mul( shadowmap_fbo_.ambient_sky_light_intensity, 0.5f );
 
-	shadowmap_fbo_.size[0]= 2048;
-	shadowmap_fbo_.size[1]= 2048;
+	shadowmap_fbo_.size[0]= 4096;
+	shadowmap_fbo_.size[1]= 4096;
 
 	glGenTextures( 1, &shadowmap_fbo_.depth_tex_id );
 	glBindTexture( GL_TEXTURE_2D, shadowmap_fbo_.depth_tex_id );
@@ -1125,7 +1142,19 @@ void mf_Renderer::CalculateWaterMeshVisiblyPart( unsigned int* first_quad, unsig
 	else if( y_max >= int(water_mesh_.quad_row_count) ) y_max= water_mesh_.quad_row_count - 1;
 	*quad_count= water_mesh_.quad_rows[y_max].first_quad_number - water_mesh_.quad_rows[y_min].first_quad_number;
 	*first_quad= water_mesh_.quad_rows[y_min].first_quad_number;
+}
 
+void mf_Renderer::CalculateStaticLevelObjectsVisiblyRows( unsigned int* out_first_row, unsigned int* out_last_row )
+{
+	int row_begin, row_end;
+	row_begin= int(player_->Pos()[1] / level_->TerrainCellSize()) - MF_TERRAIN_MESH_SIZE_Y_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / 2;
+	row_begin/= MF_STATIC_OBJECTS_ROW_SIZE_CL;
+	if( row_begin < 0 ) row_begin= 0;
+	row_end= row_begin + MF_TERRAIN_MESH_SIZE_Y_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / MF_STATIC_OBJECTS_ROW_SIZE_CL;
+	if( row_end >= int(level_->GetStaticObjectsRowCount()) ) row_end= level_->GetStaticObjectsRowCount() - 1;
+
+	*out_first_row= row_begin;
+	*out_last_row= row_end;
 }
 
 void mf_Renderer::DrawTerrain(bool draw_to_water_framebuffer )
@@ -1430,8 +1459,6 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 
 void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 {
-	const unsigned int objects_per_instance= MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL;
-
 	level_static_objects_shader_.Bind();
 	glBindBuffer( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_sun_vectors_ubo );
 
@@ -1459,28 +1486,24 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	rot_z_scale_translate_mat[15]= 1.0f;
 
 	// setup contstant component of sun vector for all models
-	float transformed_sun[objects_per_instance][4];
-	for( unsigned int i= 0; i< objects_per_instance; i++ )
+	float transformed_sun[ MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL ][4];
+	for( unsigned int i= 0; i< MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL; i++ )
 		transformed_sun[i][2]=  shadowmap_fbo_.sun_vector[2];
 
-	int row_begin, row_end;
-	row_begin= int(player_->Pos()[1] / level_->TerrainCellSize()) - MF_TERRAIN_MESH_SIZE_Y_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / 2;
-	row_begin/= MF_STATIC_OBJECTS_ROW_SIZE_CL;
-	if( row_begin < 0 ) row_begin= 0;
-	row_end= row_begin + MF_TERRAIN_MESH_SIZE_Y_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / MF_STATIC_OBJECTS_ROW_SIZE_CL;
-	if( row_end >= int(level_->GetStaticObjectsRowCount()) ) row_end= level_->GetStaticObjectsRowCount() - 1;
+	unsigned int row_begin, row_end;
+	CalculateStaticLevelObjectsVisiblyRows( &row_begin, &row_end );
 
 #ifdef MF_DEBUG
 	unsigned int debug_total_objects_count= 0;
 	unsigned int debug_draw_call_count= 0;
 #endif
 
-	for( int row= row_begin; row<= row_end; row++ )
+	for( unsigned int row= row_begin; row<= row_end; row++ )
 	{
 		const mf_StaticLevelObject* objects= level_->GetStaticObjectsRows()[row].objects;
 		unsigned int objects_count= level_->GetStaticObjectsRows()[row].objects_count;
 
-		float mat[objects_per_instance][16];
+		float mat[ MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL ][16];
 		unsigned int objects_count_to_draw= 0;
 		mf_StaticLevelObject::Type current_object_type= mf_StaticLevelObject::Palm;
 		if( objects_count !=0 ) current_object_type= objects[0].type;
@@ -1489,7 +1512,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 		{
 			const mf_StaticLevelObject* obj= &objects[i];
 			if(
-				objects_count_to_draw == objects_per_instance ||
+				objects_count_to_draw == MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL ||
 				obj->type != current_object_type
 				|| i == objects_count )
 			{
@@ -1721,4 +1744,87 @@ void mf_Renderer::DrawShadows()
 				(void*) ( aircrafts_data_.models[ aircraft->GetType() ].first_index * sizeof(unsigned short) ) );
 		}
 	} // draw aircrafts
+	{ // draw level static objects
+
+		level_static_objects_shadowmap_shader_.Bind();
+
+		glEnable( GL_CULL_FACE );
+		glCullFace( GL_FRONT );
+		level_static_objects_vbo_.Bind();
+
+		glActiveTexture( GL_TEXTURE0 );
+		glBindTexture( GL_TEXTURE_2D_ARRAY, level_static_objects_data_.textures_array );
+		level_static_objects_shader_.UniformInt( "tex", 0 );
+
+		// init independent parts of main object matrix
+		float rot_z_scale_translate_mat[16];
+		rot_z_scale_translate_mat[ 2]= 0.0f;
+		rot_z_scale_translate_mat[ 3]= 0.0f;
+		rot_z_scale_translate_mat[ 6]= 0.0f;
+		rot_z_scale_translate_mat[ 7]= 0.0f;
+		rot_z_scale_translate_mat[ 8]= 0.0f;
+		rot_z_scale_translate_mat[ 9]= 0.0f;
+		rot_z_scale_translate_mat[11]= 0.0f;
+		rot_z_scale_translate_mat[15]= 1.0f;
+
+		unsigned int row_begin, row_end;
+		CalculateStaticLevelObjectsVisiblyRows( &row_begin, &row_end );
+		row_begin++; row_end--;
+
+		for( unsigned int row= row_begin; row<= row_end; row++ )
+		{
+			const mf_StaticLevelObject* objects= level_->GetStaticObjectsRows()[row].objects;
+			unsigned int objects_count= level_->GetStaticObjectsRows()[row].objects_count;
+
+			float mat[ MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL ][16];
+			unsigned int objects_count_to_draw= 0;
+			mf_StaticLevelObject::Type current_object_type= mf_StaticLevelObject::Palm;
+			if( objects_count !=0 ) current_object_type= objects[0].type;
+
+			for( unsigned int i= 0; i<= objects_count; i++ )
+			{
+				const mf_StaticLevelObject* obj= &objects[i];
+				if(
+					objects_count_to_draw == MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL ||
+					obj->type != current_object_type
+					|| i == objects_count )
+				{
+					glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, sizeof(float) * 16 * objects_count_to_draw, mat );
+					glDrawElementsInstanced(
+						GL_TRIANGLES,
+						level_static_objects_data_.models[ current_object_type ].index_count,
+						GL_UNSIGNED_SHORT,
+						(void*) ( level_static_objects_data_.models[ current_object_type ].first_index * sizeof(unsigned short) ),
+						objects_count_to_draw );
+					objects_count_to_draw= 0;
+					current_object_type= obj->type;
+				} // if we need draw objects
+				if( i == objects_count ) break;
+
+				float shadow_space_object_pos[3];
+				Vec3Mat4Mul( obj->pos, projection_final_mat, shadow_space_object_pos );
+				shadow_space_object_pos[2]= 0.0f;
+				const float c_max_object_dst2= 0.3f * 0.3f;
+				if( Vec3Dot( shadow_space_object_pos, shadow_space_object_pos ) < c_max_object_dst2 )
+				{
+					// fast calculating of model matrix ( without 2 full matrix multiplications )
+					float sin_z= mf_Math::sin( obj->z_angle );
+					float cos_z= mf_Math::cos( obj->z_angle );
+					rot_z_scale_translate_mat[ 0]= cos_z * obj->scale;
+					rot_z_scale_translate_mat[ 1]= sin_z * obj->scale;
+					rot_z_scale_translate_mat[ 4]= - rot_z_scale_translate_mat[1];
+					rot_z_scale_translate_mat[ 5]=   rot_z_scale_translate_mat[0];
+					rot_z_scale_translate_mat[10]= obj->scale;
+					rot_z_scale_translate_mat[12]= obj->pos[0];
+					rot_z_scale_translate_mat[13]= obj->pos[1];
+					rot_z_scale_translate_mat[14]= obj->pos[2];
+					Mat4Mul( rot_z_scale_translate_mat, projection_final_mat, mat[objects_count_to_draw] );
+
+					objects_count_to_draw++;
+				} // if object not too far
+			} // for static objects
+		} // for rows
+		glDisable( GL_CULL_FACE );
+
+	} // draw level static objects
 }
