@@ -405,7 +405,7 @@ const char* const sky_shader_v=
 "uniform float tu;" // turbidity
 "in vec3 p;"
 "out vec3 fc;"
-
+"out vec3 fp;" // frag pos
 "vec3 perezZenith(float thetaSun)"
 "{"
 	"const float pi = 3.1415926;"
@@ -444,12 +444,15 @@ const char* const sky_shader_v=
 "{"
 	"float cosTheta=max((p.z+0.01)/1.01,0.01);" // poniženije linii gorizonta, t. k. v igre samolöt videt daleko i cutj niže sebä
 	"fc=perezSky(cosTheta,dot(sun,p),sun.z);"
+	"fp=p;"
 	"gl_Position=mat*vec4(p,1.0);"
 "}"
 ;
 const char* const sky_shader_f=
 "#version 330\n"
+"uniform samplerCube tex;" // clouds texture
 "in vec3 fc;"
+"in vec3 fp;"
 "out vec4 c_;"
 "void main()"
 "{"
@@ -463,7 +466,9 @@ const char* const sky_shader_f=
 	"const vec3 rCoeffs=vec3(3.240479, -1.53715, -0.49853 );"
 	"const vec3 gCoeffs=vec3(-0.969256, 1.875991, 0.041556);"
 	"const vec3 bCoeffs=vec3(0.055684, -0.204043, 1.057311);"
-	"c_=vec4(dot(rCoeffs, XYZ), dot(gCoeffs, XYZ), dot(bCoeffs, XYZ), 1.0);"
+	"vec3 skyc=vec3(dot(rCoeffs, XYZ), dot(gCoeffs, XYZ), dot(bCoeffs, XYZ));"
+	"vec4 texc=texture(tex,fp);"
+	"c_=vec4(mix(skyc,texc.xyz,texc.a),1.0);"
 "}";
 
 

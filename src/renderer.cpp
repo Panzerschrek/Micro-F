@@ -113,7 +113,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 	// sky shader
 	sky_shader_.SetAttribLocation( "p", 0 );
 	sky_shader_.Create( mf_Shaders::sky_shader_v, mf_Shaders::sky_shader_f );
-	static const char* const sky_shader_unifroms[]= { "mat", "sun", "sky_k", "tu" };
+	static const char* const sky_shader_unifroms[]= { "mat", "sun", "sky_k", "tu", "tex" };
 	sky_shader_.FindUniforms( sky_shader_unifroms, sizeof(sky_shader_unifroms) / sizeof(char*) );
 
 	// stars shader
@@ -337,22 +337,23 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 	CreateWaterReflectionFramebuffer();
 	CreateShadowmapFramebuffer();
 
-	/*{
+	{
+		const unsigned int tex_size_log2= 9;
 		mf_Texture tex[6]=
 		{
-			mf_Texture(8,8),
-			mf_Texture(8,8),
-			mf_Texture(8,8),
-			mf_Texture(8,8),
-			mf_Texture(8,8),
-			mf_Texture(8,8)
+			mf_Texture(tex_size_log2,tex_size_log2),
+			mf_Texture(tex_size_log2,tex_size_log2),
+			mf_Texture(tex_size_log2,tex_size_log2),
+			mf_Texture(tex_size_log2,tex_size_log2),
+			mf_Texture(tex_size_log2,tex_size_log2),
+			mf_Texture(tex_size_log2,tex_size_log2)
 		};
-		GenMoonTexture( tex );
+		GenSkyboxTexture( tex );
 
 		GLuint tex_id;
 
-		glGenTextures( 1, &tex_id );
-		glBindTexture( GL_TEXTURE_CUBE_MAP, tex_id );
+		glGenTextures( 1, &sky_cubemap_ );
+		glBindTexture( GL_TEXTURE_CUBE_MAP, sky_cubemap_ );
 		for( unsigned int i= 0; i< 6; i++ )
 		{
 			tex[i].LinearNormalization( 1.0f );
@@ -361,8 +362,9 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 				tex[i].SizeX(), tex[i].SizeY(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex[i].GetNormalizedData() );
 		}
 		glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-		glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	}*/
+		glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glGenerateMipmap( GL_TEXTURE_CUBE_MAP );
+	}
 }
 
 mf_Renderer::~mf_Renderer()
@@ -1093,7 +1095,12 @@ void mf_Renderer::DrawStars( bool draw_to_water_framebuffer )
 
 void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 {
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_CUBE_MAP, sky_cubemap_ );
+
 	sky_shader_.Bind();
+
+	sky_shader_.UniformInt( "tex", 0 );
 
 	float mat[16];
 	float translate_mat[16];

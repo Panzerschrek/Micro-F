@@ -44,6 +44,7 @@ void GenV1Texture( mf_Texture* tex );
 
 void GenSunTexture( mf_Texture* tex );
 void GenMoonTexture( mf_Texture* textures ); // input - array of six textures - cubemap sides
+void GenSkyboxTexture( mf_Texture* textures ); // input - array of six cubemaps
 
 void GenDirtTexture( mf_Texture* tex );
 void GenDirtWithGrassTexture( mf_Texture* tex );

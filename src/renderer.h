@@ -124,6 +124,7 @@ private:
 
 	mf_GLSLProgram sky_shader_;
 	mf_VertexBuffer sky_vbo_;
+	GLuint sky_cubemap_;
 
 	mf_GLSLProgram stars_shader_;
 	mf_VertexBuffer stars_vbo_;

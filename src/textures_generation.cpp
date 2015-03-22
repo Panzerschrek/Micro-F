@@ -16,7 +16,7 @@ static const float g_invisible_color[]= { 0.0f, 0.0f, 0.0f, 0.0f };
 // returns noise in range [0;0xfffffff]
 int Noise3(int x, int y, int z, int seed )
 {
-#if 1
+#if 0
 	const int X_NOISE_GEN = 1;
 	const int Y_NOISE_GEN = 31337;
 	const int Z_NOISE_GEN = 263;
@@ -51,17 +51,16 @@ unsigned short Noise3Interpolated( int x, int y, int z, int k, int seed )
 	int Y= y >> k;
 	int Z= z >> k;
 
-	int k16= k + 16;
 	int noise[8]=
 	{
-		Noise3( X  , Y  , Z  , seed )>>k16,
-		Noise3( X+1, Y  , Z  , seed )>>k16,
-		Noise3( X  , Y+1, Z  , seed )>>k16,
-		Noise3( X+1, Y+1, Z  , seed )>>k16,
-		Noise3( X  , Y  , Z+1, seed )>>k16,
-		Noise3( X+1, Y  , Z+1, seed )>>k16,
-		Noise3( X+1, Y+1, Z+1, seed )>>k16,
-		Noise3( X  , Y+1, Z+1, seed )>>k16
+		Noise3( X  , Y  , Z  , seed )>>16,
+		Noise3( X+1, Y  , Z  , seed )>>16,
+		Noise3( X  , Y+1, Z  , seed )>>16,
+		Noise3( X+1, Y+1, Z  , seed )>>16,
+		Noise3( X  , Y  , Z+1, seed )>>16,
+		Noise3( X+1, Y  , Z+1, seed )>>16,
+		Noise3( X  , Y+1, Z+1, seed )>>16,
+		Noise3( X+1, Y+1, Z+1, seed )>>16
 	};
 
 	int dx= x & k_mask;
@@ -73,19 +72,19 @@ unsigned short Noise3Interpolated( int x, int y, int z, int k, int seed )
 
 	int z_interpolated[4]=
 	{
-		dz * noise[4] + inv_dz * noise[0], // x   y  
-		dz * noise[5] + inv_dz * noise[1], // x+1 y  
-		dz * noise[6] + inv_dz * noise[2], // x   y+1
-		dz * noise[7] + inv_dz * noise[3]  // x+1 y+1
+		(dz * noise[4] + inv_dz * noise[0])>>k, // x   y  
+		(dz * noise[5] + inv_dz * noise[1])>>k, // x+1 y  
+		(dz * noise[6] + inv_dz * noise[2])>>k, // x   y+1
+		(dz * noise[7] + inv_dz * noise[3])>>k  // x+1 y+1
 	};
 	int y_interpolated[2]=
 	{
-		dy * z_interpolated[2] + inv_dy * z_interpolated[0], //x
-		dy * z_interpolated[3] + inv_dy * z_interpolated[1] // x+1
+		(dy * z_interpolated[2] + inv_dy * z_interpolated[0])>>k, //x
+		(dy * z_interpolated[3] + inv_dy * z_interpolated[1])>>k // x+1
 	};
 
 	return (unsigned short)(
-		(y_interpolated[1] * dx + inv_dx * y_interpolated[0]) >> (k*2) );
+		(y_interpolated[1] * dx + inv_dx * y_interpolated[0]) >> k );
 };
 
 // return result in range [0;0xFFFF]
@@ -93,9 +92,12 @@ unsigned short Noise3Final( int x, int y, int z, int seed, unsigned int octave_c
 {
 	unsigned short r=0;
 
-	int od= 8 - octave_count;
-	for( int i= 1 + od, j= 7 - od; i< 8; i++, j-- )
-		r+= Noise3Interpolated( x,y,z,i, seed ) >> j;
+	//int od= 8 - octave_count;
+	//for( int i= 1 + od, j= 7 - od; i< 8; i++, j-- )
+	//	r+= Noise3Interpolated( x,y,z,i, seed ) >> j;
+
+	for( unsigned int i= 0; i< octave_count; i++ )
+		r+= Noise3Interpolated( x,y,z,octave_count - i,seed) >> (i+1);
 	return r;
 }
 
@@ -364,7 +366,8 @@ void GenSunTexture( mf_Texture* tex )
 
 void GenMoonTexture( mf_Texture* textures )
 {
-	static const char side_basises[6*9]=
+	(void)textures;
+	/*static const char side_basises[6*9]=
 	{
 		//TODO make correct basis for convertion uv to xyz
 		0,1,0 , 1,0,0, 0,0,0,
@@ -387,16 +390,128 @@ void GenMoonTexture( mf_Texture* textures )
 			for( int u= 0; u< size; u++, tex_data+= 4 )
 			{
 				int xyz[3];
-				xyz[0]= current_basis[0] * u + current_basis[1] * v + current_basis[2] * size;
-				xyz[1]= current_basis[3] * u + current_basis[4] * v + current_basis[5] * size;
-				xyz[2]= current_basis[6] * u + current_basis[7] * v + current_basis[8] * size;
+				//xyz[0]= current_basis[0] * u + current_basis[1] * v + current_basis[2] * size;
+				//xyz[1]= current_basis[3] * u + current_basis[4] * v + current_basis[5] * size;
+				//xyz[2]= current_basis[6] * u + current_basis[7] * v + current_basis[8] * size;
 
-				unsigned short noise= Noise3Final( xyz[0], xyz[1], xyz[2], 0, 6 );
+				//unsigned short noise= Noise3Final( xyz[0], xyz[1], xyz[2], 0, 6 );
+				unsigned short noise= Noise3Final( u, 1, v, 0, 6 );
 				tex_data[0]= tex_data[1]= tex_data[2]= tex_data[3]= 
 					float(noise) / 65536.0f;
 			}
 
-	}
+	}*/
+}
+
+const float c_clouds_height= 400.0f;
+const float c_clouds_depth= 128.0f;
+
+float CloudFunc( int x, int y, int z, int detalization )
+{
+	float depth_k= float(z-c_clouds_height) / c_clouds_depth;
+	//depth_k-= 0.5f;
+	//float destiny= 2.0f * mf_Math::sqrt( 0.25f - depth_k * depth_k );
+
+	float destiny= depth_k * ( 4.0f - 4.0f * depth_k );
+	return destiny *
+		float(Noise3Final( x>>detalization, y>>detalization, z>>detalization, 0, 6 - detalization )) *
+		( 2.0f / 65535.0f );
+}
+
+void GenSkyboxTexture( mf_Texture* textures )
+{
+	const float c_clouds_field_width= 1024.0f;
+	const float c_cloud_border= 1.0f / 32.0f;
+	const float c_cloud_destiny_border= 0.52f;
+
+	float sun_azimuth= -MF_PI3;
+	float sun_elevation= MF_PI6;
+	float sun_vector[3];
+	SphericalCoordinatesToVec( sun_azimuth, sun_elevation, sun_vector );
+
+	float sun_color[3];
+	float ambient_light_color[3];
+	sun_color[0]= 0.9f;
+	sun_color[1]= 0.9f;
+	sun_color[2]= 0.8f;
+	ambient_light_color[0]= 0.2f;
+	ambient_light_color[1]= 0.23f;
+	ambient_light_color[2]= 0.29f;
+
+	for( unsigned int i= 0; i< 6; i++ )
+		textures[i].Fill( g_invisible_color );
+
+	for( unsigned int i= 4; i< 5; i++ )
+	{
+		static const float basises[9 * 5]=
+		{
+			1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 1.0f//up
+		};
+		float* tex_data= textures[i].GetData();
+
+		unsigned int tex_size= textures[0].SizeX();
+		float inv_tex_size2= 2.0f / float(tex_size);
+
+		for( unsigned int y= 0; y< tex_size; y++ )
+			for( unsigned int x= 0; x< tex_size; x++ )
+			{
+				float vec[3]={
+					(float(x) * inv_tex_size2 - 1.0f) * c_clouds_height,
+					(float(y) * inv_tex_size2 - 1.0f) * c_clouds_height,
+					c_clouds_height };
+				float step[3];
+				VEC3_CPY( step, vec );
+				Vec3Normalize( step );
+				float sky_k= 1.0f; // if 1 - we not hit cloud, if 0 - we are in cloud
+				while( vec[2] < c_clouds_height + c_clouds_depth )
+				{
+					//float val= 2.0f * Noise3Final( int(vec[0]), int(vec[1]), int(vec[2]), c_seed, 6 ) / 65535.0f;
+					float val= CloudFunc( int(vec[0]), int(vec[1]), int(vec[2]), 0 );
+					if( val > c_cloud_destiny_border )
+					{
+						float mul= 1.0f - ( val - c_cloud_destiny_border ) * 2.0f;
+						if( mul < 0.0f) mul= 0.0f;
+						sky_k*= mul;
+						if( sky_k < c_cloud_border ) break;
+					}
+					Vec3Add( vec, step );
+				}
+
+				unsigned int k= ( x + y * tex_size) * 4;
+				if( sky_k < c_cloud_border )
+				{
+					int xyz[3]= { int(vec[0]), int(vec[1]), int(vec[2]) };
+					float cube_values[3][3][3];
+					for( int gx= -1; gx<= 1; gx++ )
+						for( int gy= -1; gy<= 1; gy++ )
+							for( int gz= -1; gz<= 1; gz++ )
+							{
+								cube_values[gx+1][gy+1][gz+1]= 
+									CloudFunc( xyz[0]+gx*2, xyz[1]+gy*2, xyz[2]+gz*2, 1 );
+							}
+
+					float normal[3]= { 0.0f, 0.0f, 0.0f };
+					for( unsigned int ga= 0; ga< 3; ga++ )
+						for( unsigned int gb= 0; gb< 3; gb++ )
+						{
+							normal[0]+= cube_values[0][ga][gb] - cube_values[2][ga][gb];
+							normal[1]+= cube_values[ga][2][gb] - cube_values[ga][0][gb];
+							normal[2]+= cube_values[ga][gb][0] - cube_values[ga][gb][2];
+						}
+
+					Vec3Normalize( normal );
+					float dot= 0.6f * Vec3Dot( sun_vector, normal );
+					if( dot < 0.0f ) dot= 0.0f;
+			
+					tex_data[k  ]= dot * sun_color[0] + ambient_light_color[0];
+					tex_data[k+1]= dot * sun_color[1] + ambient_light_color[1];
+					tex_data[k+2]= dot * sun_color[2] + ambient_light_color[2];
+					tex_data[k+3]= 1.0f - sky_k;
+				}
+				else
+					tex_data[k]= tex_data[k+1]= tex_data[k+2]= tex_data[k+3]= 0.0f;
+			} // for xy
+	}// for cube sides
 }
 
 void GenDirtTexture( mf_Texture* tex )
