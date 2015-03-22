@@ -6,6 +6,11 @@
 #include "drawing_model.h"
 #include "../models/models.h"
 #include "mf_math.h"
+#include "textures_generation.h"
+
+
+#define MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER 16
+#define MF_TEX_COORD_SHIFT_EPS 0.001953125f
 
 struct mf_BezierCurve
 {
@@ -282,6 +287,9 @@ void GenPalm( mf_DrawingModel* model )
 		v[i].pos[0]+= x_delta * x_delta * ( c_palm_height * 0.25f );
 		//TODO: deform normal
 	}
+
+	static const float shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * TexturePalmBark) + MF_TEX_COORD_SHIFT_EPS, 0.f };
+	model->ShiftTexCoord( shift_vec );
 }
 
 void GenOak( mf_DrawingModel* model )
@@ -317,6 +325,8 @@ void GenOak( mf_DrawingModel* model )
 			v[j].pos[1]= (v[j].pos[1] + shift_y) * diameter_multipler;
 		}
 	}
+	static const float shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * TextureOakBark) + MF_TEX_COORD_SHIFT_EPS, 0.f };
+	model->ShiftTexCoord( shift_vec );
 }
 
 void GenSpruce( mf_DrawingModel* model )
@@ -346,6 +356,8 @@ void GenSpruce( mf_DrawingModel* model )
 			v[j].pos[1]*= diameter_multipler;
 		}
 	}
+	static const float shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * TextureSpruceBark) + MF_TEX_COORD_SHIFT_EPS, 0.f };
+	model->ShiftTexCoord( shift_vec );
 }
 
 void (* const level_static_models_gen_func[mf_StaticLevelObject::LastType])(mf_DrawingModel* model)=

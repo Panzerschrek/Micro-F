@@ -319,7 +319,6 @@ const char* const static_models_shader_v=
 "{"
 	"mat4 mat[256];" // view matrix
 "};"
-"uniform float texn[256];" // texture number ( in array of textures )
 "in vec3 p;" // position
 "in vec3 n;" // normal
 "in vec2 tc;" // texture coord
@@ -330,7 +329,7 @@ const char* const static_models_shader_v=
 "{"
 	"fn=n;"
 	"fiid=float(gl_InstanceID)+0.1;"
-	"ftc=vec3(tc,texn[gl_InstanceID]);"
+	"ftc=vec3(tc,tc.x/16.0);"
 	"gl_Position=mat[gl_InstanceID]*vec4(p,1.0);"
 "}";
 

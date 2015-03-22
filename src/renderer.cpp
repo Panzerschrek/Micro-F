@@ -102,7 +102,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 	level_static_objects_shader_.SetAttribLocation( "tc", 2 );
 	level_static_objects_shader_.Create( mf_Shaders::static_models_shader_v, mf_Shaders::static_models_shader_f );
 	static const char* const static_objects_shader_uniforms[]= {
-		/*vert*/"texn",/*frag*/ "tex", "sl", "al" };
+		/*vert*//*frag*/ "tex", "sl", "al" };
 	level_static_objects_shader_.FindUniforms( static_objects_shader_uniforms, sizeof(static_objects_shader_uniforms) / sizeof(char*) );
 
 	// sun shader
@@ -280,9 +280,9 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 		glGenTextures( 1, &level_static_objects_data_.textures_array );
 		glBindTexture( GL_TEXTURE_2D_ARRAY, level_static_objects_data_.textures_array );
 		glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8,
-		tex.SizeX(), tex.SizeY(), mf_StaticLevelObject::LastType,
+		tex.SizeX(), tex.SizeY(), LastStaticLevelObjectTexture,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
-		for (unsigned int i= 0; i< mf_StaticLevelObject::LastType; i++ )
+		for (unsigned int i= 0; i< LastStaticLevelObjectTexture; i++ )
 		{
 			static_level_object_texture_gen_func[i]( &tex );
 			tex.LinearNormalization( 1.0f );
@@ -1301,7 +1301,6 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 		unsigned int objects_count= level_->GetStaticObjectsRows()[row].objects_count;
 
 		float mat[objects_per_instance][16];
-		float textures[objects_per_instance];
 		unsigned int objects_count_to_draw= 0;
 		mf_StaticLevelObject::Type current_object_type= mf_StaticLevelObject::Palm;
 		if( objects_count !=0 ) current_object_type= objects[0].type;
@@ -1316,8 +1315,6 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 			{
 				glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, sizeof(float) * 16 * objects_count_to_draw, mat );
 				glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.sun_vectors_data_offset, sizeof(float) * 4 * objects_count_to_draw, transformed_sun );
-
-				level_static_objects_shader_.UniformFloatArray( "texn", objects_per_instance, textures );
 
 				glDrawElementsInstanced(
 					GL_TRIANGLES,
@@ -1350,8 +1347,6 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 			// transform sun to model spasce, instead transform normals in vertex shader
 			transformed_sun[objects_count_to_draw][0]= shadowmap_fbo_.sun_vector[0] * cos_z + shadowmap_fbo_.sun_vector[1] * sin_z;
 			transformed_sun[objects_count_to_draw][1]= shadowmap_fbo_.sun_vector[1] * cos_z - shadowmap_fbo_.sun_vector[0] * sin_z;
-
-			textures[objects_count_to_draw]= 0.01f + float(obj->type);
 
 			objects_count_to_draw++;
 		} // for static objects

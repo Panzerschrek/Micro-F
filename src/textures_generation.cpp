@@ -547,7 +547,7 @@ void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 	GenMenuBackgroundTexture
 };
 
-void (* const static_level_object_texture_gen_func[mf_StaticLevelObject::LastType])(mf_Texture* t)=
+void (* const static_level_object_texture_gen_func[LastStaticLevelObjectTexture])(mf_Texture* t)=
 {
 	GenPalmTexture,
 	GenOakTexture,

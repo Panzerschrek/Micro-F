@@ -25,6 +25,14 @@ enum mf_GuiTexture
 	LastGuiTexture
 };
 
+enum mf_StaticLevelObjectTexture
+{
+	TexturePalmBark,
+	TextureOakBark,
+	TextureSpruceBark,
+	LastStaticLevelObjectTexture
+};
+
 extern void (* const terrain_texture_gen_func[])(mf_Texture* t);
 extern void (* const aircraft_texture_gen_func[])(mf_Texture* t);
 extern void (* const gui_texture_gen_func[])(mf_Texture* t);
