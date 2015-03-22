@@ -209,7 +209,7 @@ const char* const water_shader_f=
 	"float s=0.005*sin(fp.x*1.7+ph*2.8);"
 	"float c=0.005*cos(fp.y*1.5+ph*2.7);"
 	"float a=pow(1.0-normalize(fvtc).z,5.0);"
-	"c_=vec4(texture(tex,(gl_FragCoord.xy*its.xy)+vec2(s,c)).xyz*vec3(0.6,0.7,0.8),clamp(a,0.1,0.9));"
+	"c_=vec4(texture(tex,(gl_FragCoord.xy*its.xy)+vec2(s,c)).xyz,clamp(a,0.1,0.9));"
 "}"
 ;
 
@@ -519,7 +519,7 @@ const char* const tonemapping_shader_v=
 	"for(int i=0; i< ts; i++)"
 	"bsum+=float(ts-i)/texelFetch(btex,ivec2((bhn-i)%ts,0),0).x;"
 	"bsum=bsum/float(ts*ts/2);"
-	"b=-bsum;"
+	"b=clamp(-bsum,-20.0,-0.0005);"
 	"ftc=coord[gl_VertexID];"
 	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
 "}";
@@ -535,10 +535,8 @@ const char* const tonemapping_shader_f=
 "{"
 	"vec3 c= texture(tex,ftc).xyz;"
 	"c=vec3(1.0,1.0,1.0)-exp(c*b);"
-	//"c=vec3(1.0,1.0,1.0)-exp(-c);"
 	"c_=vec4(c,1.0);"
 "}";
-
 
 const char* const brightness_fetch_shader_v=
 "#version 330\n"

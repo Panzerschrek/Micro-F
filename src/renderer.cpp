@@ -562,6 +562,7 @@ void mf_Renderer::CreateShadowmapFramebuffer()
 	shadowmap_fbo_.ambient_sky_light_intensity[0]= 0.2f;
 	shadowmap_fbo_.ambient_sky_light_intensity[1]= 0.23f;
 	shadowmap_fbo_.ambient_sky_light_intensity[2]= 0.29f;
+	Vec3Mul( shadowmap_fbo_.ambient_sky_light_intensity, 0.5f );
 
 	shadowmap_fbo_.size[0]= 2048;
 	shadowmap_fbo_.size[1]= 2048;
@@ -655,12 +656,15 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 	hdr_data_.brightness_history_tex_width= 128;
 	hdr_data_.current_brightness_history_pixel= 0;
 
+	float history_values[ 128 ];
+	for( unsigned int i= 0; i< 128; i++ ) history_values[i]= 1.0f;
+
 	// color texture
 	glGenTextures( 1, &hdr_data_.brightness_history_color_tex_id );
 	glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_history_color_tex_id );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_R16F,
 		hdr_data_.brightness_history_tex_width, 1,
-		0, GL_RED, GL_FLOAT, NULL );
+		0, GL_RED, GL_FLOAT, history_values );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -1201,7 +1205,7 @@ void mf_Renderer::DrawSun( bool draw_to_water_framebuffer )
 
 	sun_shader_.UniformMat4( "mat", mat );
 
-	float sprite_size= (128.0f/1024.0f) / mf_Math::tan(player_->Fov() * 0.5f);
+	float sprite_size= (64.0f/1024.0f) / mf_Math::tan(player_->Fov() * 0.5f);
 	if( draw_to_water_framebuffer )
 		sprite_size*= float(water_reflection_fbo_.size[1]);
 	else
