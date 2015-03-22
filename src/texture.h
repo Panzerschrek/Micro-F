@@ -45,6 +45,8 @@ public:
 	void DownscaleX();
 	void DownscaleY();
 
+	void FillTriangle( const float* xy_coords, const float* color );
+
 	void Copy( const mf_Texture* t );
 	void CopyRect( const mf_Texture* src, unsigned int width, unsigned int height, unsigned int x_dst, unsigned int y_dst, unsigned int x_src, unsigned int y_src );
 	void Rotate( float deg );
@@ -77,6 +79,8 @@ private:
 	unsigned short FinalNoise( unsigned int x, unsigned int y, unsigned int octave_count );
 
 	void AllocateNormalizedData();
+
+	void FillTrianglePart( float y_begin, float y_end, float x_left0, float x_left1, float x_right0, float x_right1, const float* color );
 
 private:
 	float* data_;

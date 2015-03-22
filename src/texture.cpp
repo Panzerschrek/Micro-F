@@ -481,7 +481,6 @@ void mf_Texture::SinWaveDeformY( float amplitude, float freq, float phase )
 void mf_Texture::DownscaleX()
 {
 	unsigned int size_x_minus_1= size_[0] - 1;
-
 	float* new_data= new float[ size_[0] * size_[1] * 4 ];
 
 	for( unsigned int y= 0; y< size_[1]; y++ )
@@ -503,6 +502,70 @@ void mf_Texture::DownscaleX()
 
 void mf_Texture::DownscaleY()
 {
+	unsigned int size_y_minus_1= size_[1] - 1;
+	float* new_data= new float[ size_[0] * size_[1] * 4 ];
+
+	for( unsigned int y= 0; y< size_[1]; y++ )
+	{
+		unsigned int y0= (y<<1) & size_y_minus_1;
+		unsigned int y1= ((y<<1)+1) & size_y_minus_1;
+
+		float* data_src0= data_ + (y0 << size_log2_[0]) * 4;
+		float* data_src1= data_ + (y1 << size_log2_[0]) * 4;
+		float* data_dst= new_data + (y << size_log2_[0]) * 4;
+		for( unsigned int x= 0; x< size_[0]; x++, data_dst+= 4 )
+		{
+			for( unsigned int j= 0; j< 4; j++ )
+				data_dst[j]= (data_src0[j]+ data_src1[j]) * 0.5f;
+		}
+	}
+
+	delete[] data_;
+	data_= new_data;
+}
+
+void mf_Texture::FillTriangle( const float* xy_coords, const float* color )
+{
+	unsigned int upper_vertex, bottom_vertex, middle_vertex;
+
+	upper_vertex= ( xy_coords[0+1] > xy_coords[2+1] ) ? 0 : 2;
+	upper_vertex= ( xy_coords[upper_vertex+1] > xy_coords[4+1] ) ? upper_vertex : 4;
+
+	bottom_vertex= ( xy_coords[0+1] < xy_coords[2+1] ) ? 0 : 2;
+	bottom_vertex= ( xy_coords[bottom_vertex+1] < xy_coords[4+1] ) ? bottom_vertex : 4;
+
+	unsigned int vert_ind_sum= upper_vertex + bottom_vertex;
+	if( vert_ind_sum == 2 ) middle_vertex= 4;
+	else if( vert_ind_sum == 4 ) middle_vertex= 2;
+	else middle_vertex= 0;
+
+	float middle_x_right;
+	float middle_x_left;
+
+	float middle_k= ( xy_coords[middle_vertex+1] - xy_coords[bottom_vertex+1] ) / ( xy_coords[upper_vertex+1] - xy_coords[bottom_vertex+1] );
+	float middle_x= middle_k * xy_coords[upper_vertex] + (1.0f - middle_k) * xy_coords[bottom_vertex];
+	if( middle_x > xy_coords[middle_vertex] )
+	{
+		middle_x_right= middle_x;
+		middle_x_left= xy_coords[middle_vertex];
+	}
+	else
+	{
+		middle_x_left= middle_x;
+		middle_x_right= xy_coords[middle_vertex];
+	}
+
+	FillTrianglePart(
+		xy_coords[bottom_vertex+1], xy_coords[middle_vertex+1],
+		xy_coords[bottom_vertex], middle_x_left,
+		xy_coords[bottom_vertex], middle_x_right,
+		color );
+
+	FillTrianglePart(
+		xy_coords[middle_vertex+1], xy_coords[upper_vertex+1],
+		middle_x_left, xy_coords[upper_vertex],
+		middle_x_right, xy_coords[upper_vertex],
+		color );
 }
 
 void mf_Texture::Copy( const mf_Texture* t )
@@ -860,4 +923,36 @@ void mf_Texture::AllocateNormalizedData()
 {
 	if( normalized_data_ == NULL )
 		normalized_data_= new unsigned char[ 1<<(size_log2_[0] + size_log2_[1] + 2) ];
+}
+
+void mf_Texture::FillTrianglePart( float y_begin, float y_end, float x_left0, float x_left1, float x_right0, float x_right1, const float* color )
+{
+	int x_mask= size_[0] - 1;
+	int y_mask= size_[1] - 1;
+
+	int y_begin_i= int(mf_Math::ceil(y_begin));
+	int y_end_i= int(y_end);
+
+	float dy= y_end - y_begin;
+	if( dy < 0.001f ) return;
+	float dx_left= ( x_left1 - x_left0 ) / dy;
+	float dx_right= ( x_right1 - x_right0 ) / dy;
+
+	float init_dy= mf_Math::ceil(y_begin) - y_begin;
+	float x_left= x_left0 + init_dy * dx_left;
+	float x_right= x_right0 + init_dy * dx_right;
+
+	for( int y= y_begin_i; y<= y_end_i; y++, x_left+= dx_left, x_right+= dx_right )
+	{
+		int x_begin_i= int(mf_Math::ceil(x_left));
+		int x_end_i= int(x_right);
+
+		float* data= data_ + ((y&y_mask)<<size_log2_[0]) * 4;
+		for( int x= x_begin_i; x<= x_end_i; x++ )
+		{
+			int k= (x&x_mask)*4;
+			for(unsigned int j= 0; j< 4; j++ )
+				data[k+j]= color[j];
+		}
+	}
 }
