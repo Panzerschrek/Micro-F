@@ -549,7 +549,7 @@ const char* const tonemapping_shader_v=
 	"for(int i=0; i< ts; i++)"
 	"bsum+=float(ts-i)/texelFetch(btex,ivec2((bhn-i)%ts,0),0).x;"
 	"bsum=bsum/float(ts*ts/2);"
-	"b=clamp(-bsum,-20.0,-0.0005);"
+	"b=log(0.5)*clamp(bsum,0.0005,20.0);"
 	"ftc=coord[gl_VertexID];"
 	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
 "}";

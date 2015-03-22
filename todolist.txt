@@ -1,10 +1,16 @@
 ﻿Tekuscije zadaci, otcasti v porädke poniženija prioriteta:
 
 * razmescenije staticnyh modelej na urovne i ih risovanije
+	* [sdelano] risovanije modelej iz vidimoj casti mira
+	* [sdelano] otbrasyvanije tenej modelämi
+	* [sdelano] risovanije modelej s naloženijem tenej
 * stolknovenije s landšaftom
 * [sdelano] samozatenenije samolötov cerez stencil buffer
 * HDR
+	* [sdelano] risovanije v rgba16f teksturu, prostejšij tone-mapping
+	* nužen boleje složnyj tone-mapping
 * zvuki dlä samolötov
+	* [sdelano] V-1
 * escö samolöty ( dolžno bytj ot tröh do päti )
 	* [sdelano] F1949
 	* [sdelano] F2XXX
@@ -24,4 +30,5 @@
 	* [casticno sdelano] igrofoj interfejs
 * [sdelano] sozdanije nebesnoj sfery tesseläçije ikosaedra
 * [casticno sdelano] zvözdy
+* [jestj narabotki] oblaka
 * luna ( modelj + tekstura, generirujemaja po algoritmu generaçii tekstur dlä planet )
