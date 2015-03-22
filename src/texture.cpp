@@ -513,7 +513,7 @@ void mf_Texture::DownscaleY()
 		float* data_src0= data_ + (y0 << size_log2_[0]) * 4;
 		float* data_src1= data_ + (y1 << size_log2_[0]) * 4;
 		float* data_dst= new_data + (y << size_log2_[0]) * 4;
-		for( unsigned int x= 0; x< size_[0]; x++, data_dst+= 4 )
+		for( unsigned int x= 0; x< size_[0]; x++, data_dst+= 4, data_src0+=4, data_src1+=4 )
 		{
 			for( unsigned int j= 0; j< 4; j++ )
 				data_dst[j]= (data_src0[j]+ data_src1[j]) * 0.5f;

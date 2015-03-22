@@ -581,6 +581,144 @@ void GenSpruceTexture( mf_Texture* tex )
 	SetAlphaToOne( tex );
 }
 
+void GenSpruceBranch_r( mf_Texture* tex, float size, float ang, float* pos, int depth )
+{
+	mf_Rand randomizer;
+
+	static const float color[]= { 0.392f, 0.235f, 0.039f, 1.0f };
+	static const float needle_color[]= { 0.019f, 0.3137f, 0.019f, 1.0f };
+	float final_color[4];
+	final_color[3]= 1.0f;
+	static const float triangle[12]=
+	{
+		-16.0f, 0.0f, 0.0f,
+		 -6.0f, 1012.0f, 0.0f,
+		  6.0f, 1012.0f, 0.0f,
+		 16.0f, 0.0f,  0.0f
+	};
+	static const float needle_triangle[]=
+	{
+		-2.8f, 0.0f, 0.0f,
+		 2.8f, 0.0f, 0.0f,
+		 0.0f, 24.0f, 0.0f
+	};
+	float trans_triangle[12];
+	float trans_triangle_2d[8];
+
+	float m[16], m_s[16], m_r[16], m_t[16];
+
+	Mat4Identity(m_s);
+	Mat4Identity(m_t);
+
+	m_s[0]= m_s[5]= size;
+
+	m_t[12]= pos[0];
+	m_t[13]= pos[1];
+
+	Mat4RotateZ( m_r, ang );
+
+	Mat4Mul( m_r, m_s, m );
+	Mat4Mul( m, m_t );
+
+	for( int i= 0; i< 4; i++ )
+	{
+		Vec3Mat4Mul( triangle + 3*i, m, trans_triangle + 3*i );
+		trans_triangle_2d[i*2]= trans_triangle[i*3];
+		trans_triangle_2d[i*2+1]= trans_triangle[i*3+1];
+	}
+	tex->FillTriangle( trans_triangle_2d, color );
+	trans_triangle_2d[2]= trans_triangle_2d[6];
+	trans_triangle_2d[3]= trans_triangle_2d[7];
+	tex->FillTriangle( trans_triangle_2d, color );
+
+	const float needle_step= 6.0f;
+	int n= int( 1012.0f * size / needle_step);
+	float pos2[2]={pos[0],pos[1]};
+	float width= size * 16.0f;
+	float dw= size * ( 16.0f - 6.0f ) / float(n);
+	for( int i= 0; i< n; i++ , width-=dw )
+	{
+		pos2[0]+=  needle_step * mf_Math::cos(ang+MF_PI2);
+		pos2[1]+=  needle_step * mf_Math::sin(ang+MF_PI2);
+
+		Mat4Identity(m_s);;
+		Mat4Identity(m_t);
+
+		float color_delta= randomizer.RandF(0.0625f);
+		for( int i= 0; i< 3; i++ )
+			final_color[i]= needle_color[i] + color_delta;
+
+		float da= -MF_PI3;
+		for( int j= 0; j< 2; j++, da+= MF_2PI3 )
+		{
+			Mat4RotateZ( m_r, ang + da );
+
+			m_t[12]= pos2[0]-width*m_r[1];
+			m_t[13]= pos2[1]+width*m_r[0];
+
+			Mat4Mul( m_r, m_t, m );
+
+			for( int k= 0; k< 3; k++ )
+			{
+				Vec3Mat4Mul( needle_triangle + 3*k, m, trans_triangle );
+				trans_triangle_2d[k*2]= trans_triangle[0];
+				trans_triangle_2d[k*2+1]= trans_triangle[1];
+			}
+			tex->FillTriangle( trans_triangle_2d, final_color );
+		}
+	}
+
+	if( depth != 0 )
+	{
+		float pos2[]= { pos[0], pos[1] };
+		while( size > 0.1f )
+		{
+			pos2[0]+= size * 0.3333f * 1024.0f * mf_Math::cos(ang+MF_PI2);
+			pos2[1]+= size * 0.3333f * 1024.0f * mf_Math::sin(ang+MF_PI2);
+
+			GenSpruceBranch_r( tex, size * 0.3333f , ang +  MF_PI3, pos2, depth-1 );
+			GenSpruceBranch_r( tex, size * 0.3333f, ang -   MF_PI3, pos2, depth-1 );
+
+			size*= 0.6666f;
+		}
+	} // if not null depth
+}
+
+void GenSpruceBranch( mf_Texture* tex )
+{
+	MF_ASSERT( tex->SizeX() == tex->SizeY() );
+	mf_Texture big_tex( 10, 10 );
+
+	static const float color[4]= { 0.019f, 0.345f, 0.019f, 0.2f };
+	big_tex.Fill(color);
+
+	float pos[]= { 512.0f, 0.0f };
+	GenSpruceBranch_r( &big_tex, 1.0f, 0.0f, pos, 3 );
+
+	pos[1]= 80.0f;
+	GenSpruceBranch_r( &big_tex, 0.45f, MF_PI3, pos, 2 );
+	GenSpruceBranch_r( &big_tex, 0.45f, -MF_PI3, pos, 2 );
+
+	if( tex->SizeXLog2() == 8 )
+	{
+		big_tex.DownscaleX();
+		big_tex.DownscaleY();
+		big_tex.DownscaleX();
+		big_tex.DownscaleY();
+		tex->CopyRect( &big_tex, tex->SizeX(),tex->SizeY(), 0, 0, 0, 0 );
+	}
+	else if( tex->SizeXLog2() == 9 )
+	{
+		big_tex.DownscaleX();
+		big_tex.DownscaleY();
+		tex->CopyRect( &big_tex, tex->SizeX(),tex->SizeY(), 0, 0, 0, 0 );
+	}
+	else if( tex->SizeYLog2() == 10 )
+	{
+		tex->Copy( &big_tex );
+	}
+}
+
 void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 {
 	GenNaviballTexture,
@@ -598,5 +736,6 @@ void (* const static_level_object_texture_gen_func[LastStaticLevelObjectTexture]
 	GenPalmTexture,
 	GenOakTexture,
 	GenOakLeafsTexture,
-	GenSpruceTexture
+	GenSpruceTexture,
+	GenSpruceBranch
 };
