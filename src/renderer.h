@@ -21,6 +21,8 @@ public:
 private:
 	void CreateWaterReflectionFramebuffer();
 	void CreateShadowmapFramebuffer();
+	void CreateHDRFramebuffer();
+	void CreateBrightnessFetchFramebuffer();
 
 	void GenTerrainMesh();
 	void GenWaterMesh();
@@ -77,6 +79,26 @@ private:
 		GLuint depth_tex_id;
 	} water_reflection_fbo_;
 	mf_GLSLProgram water_shader_;
+
+	struct
+	{
+		GLuint main_framebuffer_id;
+		GLuint main_framebuffer_color_tex_id;
+		GLuint main_framebuffer_depth_tex_id;
+
+		GLuint brightness_fetch_framebuffer_id;
+		GLuint brightness_fetch_color_tex_id;
+		unsigned int brightness_fetch_texture_size_log2;
+
+		GLuint brightness_history_framebiffer_id;
+		GLuint brightness_history_color_tex_id;
+		unsigned int brightness_history_tex_width;
+		unsigned int current_brightness_history_pixel;
+	
+		mf_GLSLProgram brightness_fetch_shader;
+		mf_GLSLProgram brightness_history_shader;
+		mf_GLSLProgram tonemapping_shader;
+	} hdr_data_;
 
 	struct
 	{

@@ -463,7 +463,7 @@ const char* const sky_shader_f=
 "void main()"
 "{"
 	"vec3 clrYxy=fc;"
-	"clrYxy[0]=1.0 - exp(-clrYxy [0]/25.0);" // now rescale Y component
+	"clrYxy[0]=clrYxy [0]/100.0;" // now rescale Y component
 	"float ratio=clrYxy[0]/clrYxy [2];" // Y / y = X + Y + Z
 	"vec3 XYZ;"
 	"XYZ.x=clrYxy[1] * ratio;" // X = x * ratio
@@ -499,6 +499,82 @@ const char* const stars_shader_f=
 	"vec2 rv=gl_PointCoord-vec2(0.5,0.5);"
 	"float a=min(1.0,0.25-dot(rv,rv));"
 	"c_=vec4(fi,fi,fi,a);"
+"}";
+
+const char* const tonemapping_shader_v=
+"#version 330\n"
+"uniform sampler2D btex;"
+"uniform int bhn;" // current brightness history value
+"const vec2 coord[6]=vec2[6]"
+"("
+	"vec2(0.0,0.0),vec2(1.0,0.0),vec2(1.0,1.0),"
+	"vec2(0.0,0.0),vec2(0.0,1.0),vec2(1.0,1.0)"
+");"
+"noperspective out vec2 ftc;"
+"noperspective out float b;"
+"void main()"
+"{"
+	"b=-1.0/texelFetch(btex,ivec2(bhn%64,0),0).x;"
+	"ftc=coord[gl_VertexID];"
+	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
+"}";
+
+const char* const tonemapping_shader_f=
+"#version 330\n"
+"uniform sampler2D tex;"
+"uniform float ck;" // color k - coefficent for tonemapping. Must be negative
+"noperspective in vec2 ftc;"
+"noperspective in float b;"
+"out vec4 c_;"
+"void main()"
+"{"
+	"vec3 c= texture(tex,ftc).xyz;"
+	"c=vec3(1.0,1.0,1.0)-exp(c*b);"
+	//"c=vec3(1.0,1.0,1.0)-exp(-c);"
+	"c_=vec4(c,1.0);"
+"}";
+
+
+const char* const brightness_fetch_shader_v=
+"#version 330\n"
+"const vec2 coord[6]=vec2[6]"
+"("
+	"vec2(0.0,0.0),vec2(1.0,0.0),vec2(1.0,1.0),"
+	"vec2(0.0,0.0),vec2(0.0,1.0),vec2(1.0,1.0)"
+");"
+"out vec2 ftc;"
+"void main()"
+"{"
+	"ftc=coord[gl_VertexID];"
+	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
+"}";
+
+const char* const brightness_fetch_shader_f=
+"#version 330\n"
+"uniform sampler2D tex;"
+"in vec2 ftc;"
+"out vec4 c_;"
+"void main()"
+"{"
+	"vec3 c= texture(tex,ftc).xyz;"
+	"c_=vec4((c.x+c.y+c.z)*0.33333,0.0,0.0,1.0);"
+"}";
+
+const char* const brightness_history_write_shader_v=
+"#version 330\n"
+"uniform float p;" // position to write
+"void main()"
+"{"
+	"gl_Position=vec4(p,0.0,0.0,1.0);"
+"}";
+
+const char* const brightness_history_write_shader_f=
+"#version 330\n"
+"uniform sampler2D tex;" // input lowres texture with scene brightness
+"out vec4 c_;"
+"void main()"
+"{"
+	"c_=texelFetch(tex,ivec2(0,0),6);"
 "}";
 
 } // namespace mf_Shaders
