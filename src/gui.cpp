@@ -177,6 +177,9 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 	}
 
 	PrepareMenus();
+
+	current_menu_= &main_menu_;
+	OnPlayButton(); // hack for fast development
 }
 
 mf_Gui::~mf_Gui()
@@ -195,6 +198,8 @@ void mf_Gui::MouseClick( unsigned int x, unsigned int y )
 			{
 				if( button->callback != NULL )
 					(this->*(button->callback))();
+
+				break;
 			}
 	}
 }
@@ -251,10 +256,12 @@ void mf_Gui::PrepareMenus()
 	const char* const c_title_text= "Micro-F";
 	const char* const c_subtitle_text= "96k game";
 	const char* const c_play_button_text= " play ";
+	const char* const c_settings_button_text= " settings ";
 	const char* const c_quit_button_text= " quit ";
 
 	const char* const c_button_back= "back";
 	const char* const c_daytime_text= "daytime: ";
+	const char* const c_hdr_text= "hdr: ";
 
 	const unsigned int cell_size[2]= { MF_LETTER_WIDTH, MF_LETTER_HEIGHT };
 	const unsigned int border_size= 1;
@@ -276,7 +283,7 @@ void mf_Gui::PrepareMenus()
 	menu= &main_menu_;
 	menu->button_count=0;
 	menu->text_count= 0;
-	menu->has_backgound= false;
+	menu->has_backgound= true;
 
 	// title
 	text= &menu->texts[0];
@@ -296,7 +303,7 @@ void mf_Gui::PrepareMenus()
 	COLOR_CPY( text->color, text_color );
 	menu->text_count++;
 
-	unsigned int button_altitude= screen_size_cl[1]/2 - 6;
+	unsigned int button_altitude= screen_size_cl[1]/2 - 4;
 
 	// Play button
 	text= &menu->buttons[0].text;
@@ -316,15 +323,33 @@ void mf_Gui::PrepareMenus()
 
 	button_altitude+= text->size + 1;
 
-	// Quit button
+	// Settings button
 	text= &menu->buttons[1].text;
-	strcpy( text->text, c_quit_button_text );
+	strcpy( text->text, c_settings_button_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_quit_button_text) / 2;
-	text->row= screen_size_cl[1] - 3;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_settings_button_text) / 2;
+	text->row= button_altitude;
 	COLOR_CPY( text->color, text_color );
 
 	button= &menu->buttons[1];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * strlen(c_settings_button_text) - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnSettingsButton;
+	menu->button_count++;
+
+	button_altitude+= text->size + 1;
+
+	// Quit button
+	text= &menu->buttons[2].text;
+	strcpy( text->text, c_quit_button_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_quit_button_text) / 2;
+	text->row= button_altitude;
+	COLOR_CPY( text->color, text_color );
+
+	button= &menu->buttons[2];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
 	button->width=  text->size * cell_size[0] * strlen(c_quit_button_text) - border_size;
@@ -339,7 +364,9 @@ void mf_Gui::PrepareMenus()
 	menu= &settings_menu_;
 	menu->button_count=0;
 	menu->text_count= 0;
-	menu->has_backgound= false;
+	menu->has_backgound= true;
+
+	const unsigned int c_settings_button_width= 9;
 
 	// daytime
 	text= &menu->texts[0];
@@ -362,22 +389,50 @@ void mf_Gui::PrepareMenus()
 	button= &menu->buttons[0];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * 8 - border_size;
+	button->width=  text->size * cell_size[0] * c_settings_button_width - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnChangeDayTimeButton;
 	button->user_data= 0;
 	menu->button_count++;
 
-	// back button text
+	// hdr
+	text= &menu->texts[1];
+	strcpy( text->text, c_hdr_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 -text->size * strlen(c_hdr_text);
+	text->row= 7;
+	COLOR_CPY( text->color, text_color );
+	menu->text_count++;
+
+	// hdr button text
 	text= &menu->buttons[1].text;
+	strcpy( text->text, on_off[0] );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2;
+	text->row= 7;
+	COLOR_CPY( text->color, text_color );
+
+	// hdr button
+	button= &menu->buttons[1];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * c_settings_button_width - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnHdrButton;
+	button->user_data= 0;
+	menu->button_count++;
+
+	// back button text
+	text= &menu->buttons[2].text;
 	strcpy( text->text, c_button_back );
 	text->size= 2;
 	text->colomn= 2;
 	text->row= screen_size_cl[1] - 3;
 	COLOR_CPY( text->color, text_color );
 
+
 	// back button
-	button= &menu->buttons[1];
+	button= &menu->buttons[2];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
 	button->width=  text->size * cell_size[0] * strlen(c_button_back) - border_size;
@@ -385,8 +440,6 @@ void mf_Gui::PrepareMenus()
 	button->callback= &mf_Gui::OnSettingsBackButton;
 	button->user_data= 0;
 	menu->button_count++;
-
-	//current_menu_= &settings_menu_;
 }
 
 void mf_Gui::DrawControlPanel()
@@ -698,6 +751,35 @@ void mf_Gui::DrawMenu( const GuiMenu* menu )
 	mf_GuiVertex vertices[256];
 	mf_GuiVertex* v= vertices;
 
+	if ( menu->has_backgound )
+	{
+		float kx= -2.0f * inv_viewport_height2 / inv_viewport_width2;
+		float ky= 2.0f;
+		v[0].pos[0]= -1.0f; v[0].tex_coord[0]= 0.0f;
+		v[0].pos[1]= -1.0f; v[0].tex_coord[1]= 0.0f;
+		v[1].pos[0]= +1.0f; v[1].tex_coord[0]= kx;
+		v[1].pos[1]= -1.0f; v[1].tex_coord[1]= 0.0f;
+		v[2].pos[0]= +1.0f; v[2].tex_coord[0]= kx;
+		v[2].pos[1]= +1.0f; v[2].tex_coord[1]= ky;
+		v[3].pos[0]= -1.0f; v[3].tex_coord[0]= 0.0f;
+		v[3].pos[1]= +1.0f; v[3].tex_coord[1]= ky;
+		v[0].tex_coord[2]= v[1].tex_coord[2]= v[2].tex_coord[2]= v[3].tex_coord[2]= 1;
+
+		float time= float(clock()) / float(CLOCKS_PER_SEC );
+		float d_tc[2];
+		d_tc[0]= 1.6f * mf_Math::sin( time * 0.125f );
+		d_tc[1]= 2.0f * mf_Math::sin( time * 0.1f );
+		for( unsigned int t= 0; t< 4; t++ )
+		{
+			v[t].tex_coord[0]+= d_tc[0];
+			v[t].tex_coord[1]+= d_tc[1];
+		}
+
+		v[4]= v[0];
+		v[5]= v[2];
+		v+= 6;
+	}
+
 	const GuiButton* buttons= menu->buttons;
 	for( unsigned int i= 0; i < menu->button_count; i++ )
 	{
@@ -712,25 +794,6 @@ void mf_Gui::DrawMenu( const GuiMenu* menu )
 		v[3].pos[0]= v[0].pos[0];
 		v[3].pos[1]= v[2].pos[1];
 		GenGuiQuadTextureCoords( v, mf_GuiTexture(0) );
-
-		v[4]= v[0];
-		v[5]= v[2];
-		v+= 6;
-	}
-
-	if ( menu->has_backgound )
-	{
-		float kx= -2.0f * inv_viewport_height2 / inv_viewport_width2;
-		float ky= 2.0f;
-		v[0].pos[0]= -1.0f; v[0].tex_coord[0]= 0.0f;
-		v[0].pos[1]= -1.0f; v[0].tex_coord[1]= 0.0f;
-		v[1].pos[0]= +1.0f; v[1].tex_coord[0]= kx;
-		v[1].pos[1]= -1.0f; v[1].tex_coord[1]= 0.0f;
-		v[2].pos[0]= +1.0f; v[2].tex_coord[0]= kx;
-		v[2].pos[1]= +1.0f; v[2].tex_coord[1]= ky;
-		v[3].pos[0]= -1.0f; v[3].tex_coord[0]= 0.0f;
-		v[3].pos[1]= +1.0f; v[3].tex_coord[1]= ky;
-		v[0].tex_coord[2]= v[1].tex_coord[2]= v[2].tex_coord[2]= v[3].tex_coord[2]= 1;
 
 		v[4]= v[0];
 		v[5]= v[2];
@@ -775,6 +838,21 @@ void mf_Gui::DrawCursor()
 
 void mf_Gui::OnPlayButton()
 {
+	current_menu_= NULL;
+	main_loop_->Play();
+}
+
+void mf_Gui::OnSettingsButton()
+{
+	current_menu_= &settings_menu_;
+}
+
+void mf_Gui::OnHdrButton()
+{
+	GuiButton* button= &settings_menu_.buttons[1];
+	button->user_data^= 1;
+	strcpy( button->text.text, on_off[ button->user_data ] );
+
 }
 
 void mf_Gui::OnQuitButton()
@@ -793,4 +871,5 @@ void mf_Gui::OnChangeDayTimeButton()
 
 void mf_Gui::OnSettingsBackButton()
 {
+	current_menu_= &main_menu_;
 }

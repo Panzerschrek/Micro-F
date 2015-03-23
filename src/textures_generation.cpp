@@ -213,9 +213,21 @@ void GenGuiButtonTexture( mf_Texture* tex )
 
 void GenMenuBackgroundTexture( mf_Texture* tex )
 {
-	tex->Noise();
-	static const float mul_color[]= { 0.1f, 0.6f, 0.1f, 1.0f };
+	tex->PoissonDiskPoints( 34 );
+	static const float save_green[4]= { 0.0f, 2.0f, 0.0f, 0.0f };
+	tex->Mul( save_green );
+	tex->Grayscale();
+
+	static const float invert_color[4]= { 1.0f, 1.0f, 1.0f, 1.0f };
+	tex->Invert( invert_color );
+
+	static const float mul_color[4]= { 0.5f, 0.6f, 1.0f, 4.0f };
 	tex->Mul( mul_color );
+
+	tex->SinWaveDeformX( 16.0f, 1.0f / 128.0f, 0.0f );
+	tex->SinWaveDeformY( 16.0f, 1.0f / 128.0f, 0.0f );
+
+	SetAlphaToOne( tex );
 }
 
 void GenNaviballGlassTexture( mf_Texture* tex )
@@ -536,6 +548,8 @@ void GenOakTexture( mf_Texture* tex )
 void GenOakLeafsTexture( mf_Texture* tex )
 {
 	tex->PoissonDiskPoints( 19 );
+	tex->SinWaveDeformX( 8.0f, 1.0f/64.0f, 0.0f );
+	tex->SinWaveDeformY( 8.0f, 1.0f/64.0f, 0.0f );
 
 	static const float extend_green[]= { 0.0f, 4.0f, 0.0f, 0.f };
 	tex->Mul( extend_green );

@@ -66,42 +66,46 @@ void mf_MainLoop::Loop()
 			DispatchMessage(&msg);
 		}
 
-		unsigned int tick= clock();
-		if( prev_game_tick_ == 0 ) prev_game_tick_= tick;
-		prev_tick_dt_= float( tick - prev_game_tick_ ) / float(CLOCKS_PER_SEC );
-		if( prev_tick_dt_ > 0.001f )
-		{
-			prev_game_tick_= tick;
-
-			if( mouse_captured_ )
-			{
-				POINT new_cursor_pos;
-				GetCursorPos(&new_cursor_pos);
-				player_.RotateZ( float( prev_cursor_pos_.x - new_cursor_pos.x ) * mouse_speed_x_ );
-				player_.RotateX( float( prev_cursor_pos_.y - new_cursor_pos.y ) * mouse_speed_y_ );
-				SetCursorPos( prev_cursor_pos_.x, prev_cursor_pos_.y );
-			}
-			player_.Tick(prev_tick_dt_);
-			game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
-		}// if normal dt
-
-		{ // sound setup
-			const mf_Aircraft* aircraft= player_.GetAircraft();
-
-			sound_engine_->SetListenerOrinetation( player_.Pos(), player_.Angle(), aircraft->Velocity() );
-			if (test_sound_ != NULL )
-			{
-				extern float ThrottleToEngineSoundPitch( float throttle );
-				extern float ThrottleToEngineSoundVolumeScaler( float throttle );
-
-				test_sound_->SetOrientation( aircraft->Pos(), aircraft->Velocity() );
-				test_sound_->SetVolume( 40.0f * ThrottleToEngineSoundVolumeScaler( aircraft->Throttle() ) );
-				test_sound_->SetPitch( ThrottleToEngineSoundPitch( aircraft->Throttle() ) );
-			}
-		}
-
 		text_->SetViewport( viewport_width_, viewport_height_ );
-		renderer_->DrawFrame();
+
+		if( mode_ == ModeGame || mode_ == ModeIngameMenu )
+		{
+			unsigned int tick= clock();
+			if( prev_game_tick_ == 0 ) prev_game_tick_= tick;
+			prev_tick_dt_= float( tick - prev_game_tick_ ) / float(CLOCKS_PER_SEC );
+			if( prev_tick_dt_ > 0.001f )
+			{
+				prev_game_tick_= tick;
+
+				if( mouse_captured_ )
+				{
+					POINT new_cursor_pos;
+					GetCursorPos(&new_cursor_pos);
+					player_.RotateZ( float( prev_cursor_pos_.x - new_cursor_pos.x ) * mouse_speed_x_ );
+					player_.RotateX( float( prev_cursor_pos_.y - new_cursor_pos.y ) * mouse_speed_y_ );
+					SetCursorPos( prev_cursor_pos_.x, prev_cursor_pos_.y );
+				}
+				player_.Tick(prev_tick_dt_);
+				game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
+			}// if normal dt
+
+			{ // sound setup
+				const mf_Aircraft* aircraft= player_.GetAircraft();
+
+				sound_engine_->SetListenerOrinetation( player_.Pos(), player_.Angle(), aircraft->Velocity() );
+				if (test_sound_ != NULL )
+				{
+					extern float ThrottleToEngineSoundPitch( float throttle );
+					extern float ThrottleToEngineSoundVolumeScaler( float throttle );
+
+					test_sound_->SetOrientation( aircraft->Pos(), aircraft->Velocity() );
+					test_sound_->SetVolume( 40.0f * ThrottleToEngineSoundVolumeScaler( aircraft->Throttle() ) );
+					test_sound_->SetPitch( ThrottleToEngineSoundPitch( aircraft->Throttle() ) );
+				}
+			}
+
+			renderer_->DrawFrame();
+		} // if in game or ingame menu
 
 		{
 			char fps_str[32];
@@ -115,6 +119,20 @@ void mf_MainLoop::Loop()
 		SwapBuffers( hdc_ );
 		CalculateFPS();
 	} // while !quit
+}
+
+void mf_MainLoop::Play()
+{
+	mode_= ModeGame;
+
+	mf_Settings settings;
+	settings.use_hdr= false;
+	settings.shadows_quality= mf_Settings::QualityMedium;
+	settings.terrain_quality= mf_Settings::QualityHeight;
+
+	renderer_= new mf_Renderer( &player_, &level_, text_, &settings );
+
+	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
 }
 
 mf_MainLoop::mf_MainLoop(
@@ -131,6 +149,7 @@ mf_MainLoop::mf_MainLoop(
 	, quit_(false)
 	, prev_cursor_pos_(), mouse_captured_(false)
 	, renderer_(NULL), sound_engine_(NULL), music_engine_(NULL), gui_(NULL)
+	, mode_(ModeMainMenu)
 {
 	int border_size, top_border_size, bottom_border_size;
 
@@ -212,24 +231,13 @@ mf_MainLoop::mf_MainLoop(
 
 	GetGLFunctions( mfGetGLFuncAddress );
 
+	sound_engine_= new mf_SoundEngine(hwnd_);
+	music_engine_= new mf_MusicEngine();
+	//music_engine_->Play( mf_MusicEngine::MelodyAviatorsMarch );
+
 	text_= new mf_Text();
-
-	mf_Settings settings;
-	settings.use_hdr= false;
-	settings.shadows_quality= mf_Settings::QualityMedium;
-	settings.terrain_quality= mf_Settings::QualityHeight;
-
-	renderer_= new mf_Renderer( &player_, &level_, text_, &settings );
 	gui_ = new mf_Gui( text_, &player_ );
 
-	/*player_.SetPos(
-		float(level_.TerrainSizeX()/2) * level_.TerrainCellSize(),
-		float(level_.TerrainSizeY()/2) * level_.TerrainCellSize(),
-		level_.TerrainAmplitude() * 0.5f );*/
-	/*player_.SetPos(
-		384.0f,
-		384.0f,
-		level_.TerrainAmplitude() * 0.5f );*/
 
 	// Intial GL state
 	glEnable( GL_DEPTH_TEST );
@@ -259,12 +267,6 @@ mf_MainLoop::mf_MainLoop(
 	fps_calc_.prev_calc_time= clock();
 	fps_calc_.frame_count_to_show= 0;
 	fps_calc_.current_calc_frame_count= 0;
-
-	sound_engine_= new mf_SoundEngine(hwnd_);
-	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
-
-	music_engine_= new mf_MusicEngine();
-	//music_engine_->Play( mf_MusicEngine::MelodyAviatorsMarch );
 }
 
 mf_MainLoop::~mf_MainLoop()

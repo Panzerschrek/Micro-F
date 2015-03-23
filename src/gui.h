@@ -70,9 +70,11 @@ private:
 	void DrawCursor();
 
 	void OnPlayButton();
+	void OnSettingsButton();
 	void OnQuitButton();
 
 	void OnChangeDayTimeButton();
+	void OnHdrButton();
 	void OnSettingsBackButton();
 
 private:

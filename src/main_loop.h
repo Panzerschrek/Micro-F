@@ -29,6 +29,7 @@ public:
 	unsigned int ViewportWidth();
 	unsigned int ViewportHeight();
 
+	void Play();
 	void Quit();
 
 private:
@@ -85,6 +86,19 @@ private:
 	}fps_calc_;
 
 	mf_SoundSource* test_sound_;
+
+	enum
+	{
+		ModeMainMenu,
+		ModeSettingsMenu,
+		ModeGame,
+		ModeIngameMenu,
+		ModeGameOver,
+		ModeGameEnd,
+		ModeCredits
+
+	} mode_;
+
 };
 
 inline unsigned int mf_MainLoop::ViewportWidth()
