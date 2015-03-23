@@ -43,9 +43,10 @@ static const float g_stars_distance_scaler= 1.7f;
 static const float g_sky_radius_scaler= 2.0f;
 static const float g_zfar_scaler= 2.5f;
 
-mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Text* text )
+mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Text* text, const mf_Settings* settings )
 	: player_(player), level_(level)
 	, text_(text)
+	, settings_(*settings)
 {
 
 	// tonemapping shader
@@ -133,10 +134,18 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 	sun_shader_.FindUniforms( sun_shader_uniforms, sizeof(sun_shader_uniforms) / sizeof(char*) );
 
 	// sky shader
-	sky_shader_.SetAttribLocation( "p", 0 );
-	sky_shader_.Create( mf_Shaders::sky_shader_v, mf_Shaders::sky_shader_f );
-	static const char* const sky_shader_unifroms[]= { "mat", "sun", "sky_k", "tu" };
-	sky_shader_.FindUniforms( sky_shader_unifroms, sizeof(sky_shader_unifroms) / sizeof(char*) );
+	{
+		char frag_shader[512];
+		// select different color konvertion k for hdr and ldr
+		sprintf( frag_shader, mf_Shaders::sky_shader_f, settings_.use_hdr
+			? "clrYxy[0]=clrYxy [0]/100.0;"
+			: "clrYxy[0]=1.0-exp(-clrYxy[0]/25.0);" );
+
+		sky_shader_.SetAttribLocation( "p", 0 );
+		sky_shader_.Create( mf_Shaders::sky_shader_v, frag_shader );
+		static const char* const sky_shader_unifroms[]= { "mat", "sun", "sky_k", "tu" };
+		sky_shader_.FindUniforms( sky_shader_unifroms, sizeof(sky_shader_unifroms) / sizeof(char*) );
+	}
 
 	// stars shader
 	stars_shader_.SetAttribLocation( "p", 0 );
@@ -370,8 +379,12 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 
 	CreateWaterReflectionFramebuffer();
 	CreateShadowmapFramebuffer();
-	CreateHDRFramebuffer();
-	CreateBrightnessFetchFramebuffer();
+
+	if( settings_.use_hdr )
+	{
+		CreateHDRFramebuffer();
+		CreateBrightnessFetchFramebuffer();
+	}
 
 	/*{
 		mf_Texture tex[6]=
@@ -410,13 +423,15 @@ void mf_Renderer::Resize()
 	glDeleteFramebuffers( 1, &water_reflection_fbo_.fbo_id );
 	glDeleteTextures( 1, &water_reflection_fbo_.tex_id );
 	glDeleteTextures( 1, &water_reflection_fbo_.depth_tex_id );
-
-	glDeleteFramebuffers( 1, &hdr_data_.main_framebuffer_id );
-	glDeleteTextures( 1, &hdr_data_.main_framebuffer_color_tex_id );
-	glDeleteTextures( 1, &hdr_data_.main_framebuffer_depth_tex_id );
-
 	CreateWaterReflectionFramebuffer();
-	CreateHDRFramebuffer();
+
+	if( settings_.use_hdr )
+	{
+		glDeleteFramebuffers( 1, &hdr_data_.main_framebuffer_id );
+		glDeleteTextures( 1, &hdr_data_.main_framebuffer_color_tex_id );
+		glDeleteTextures( 1, &hdr_data_.main_framebuffer_depth_tex_id );
+		CreateHDRFramebuffer();
+	}
 }
 
 void mf_Renderer::DrawFrame()
@@ -445,7 +460,7 @@ void mf_Renderer::DrawFrame()
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
 
-	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.main_framebuffer_id );
+	glBindFramebuffer( GL_FRAMEBUFFER, settings_.use_hdr ? hdr_data_.main_framebuffer_id : 0 );
 	glViewport( 0, 0, main_loop->ViewportWidth(), main_loop->ViewportHeight() );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
@@ -462,60 +477,63 @@ void mf_Renderer::DrawFrame()
 	DrawSun( false );
 	DrawWater();
 
-	// make brightness fetch
-	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_fetch_framebuffer_id );
-	glViewport( 0, 0, 1 << hdr_data_.brightness_fetch_texture_size_log2, 1 << hdr_data_.brightness_fetch_texture_size_log2 );
+	if( settings_.use_hdr )
+	{
+		// make brightness fetch
+		glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_fetch_framebuffer_id );
+		glViewport( 0, 0, 1 << hdr_data_.brightness_fetch_texture_size_log2, 1 << hdr_data_.brightness_fetch_texture_size_log2 );
 
-	hdr_data_.brightness_fetch_shader.Bind();
+		hdr_data_.brightness_fetch_shader.Bind();
 
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_color_tex_id );
-	hdr_data_.brightness_fetch_shader.UniformInt( "tex", 0 );
+		glActiveTexture( GL_TEXTURE0 );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_color_tex_id );
+		hdr_data_.brightness_fetch_shader.UniformInt( "tex", 0 );
 
-	glDisable( GL_DEPTH_TEST );
-	glDrawArrays( GL_TRIANGLES, 0, 3*2 );
-	glEnable( GL_DEPTH_TEST );
+		glDisable( GL_DEPTH_TEST );
+		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
+		glEnable( GL_DEPTH_TEST );
 
-	// write brightness to history
-	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_history_framebiffer_id );
-	glViewport( 0, 0, hdr_data_.brightness_history_tex_width, 1 );
+		// write brightness to history
+		glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_history_framebiffer_id );
+		glViewport( 0, 0, hdr_data_.brightness_history_tex_width, 1 );
 
-	hdr_data_.brightness_history_shader.Bind();
-	hdr_data_.brightness_history_shader.UniformFloat( "p",
-		(float(hdr_data_.current_brightness_history_pixel)+0.5f) / float(hdr_data_.brightness_history_tex_width) * 2.0f - 1.0f );
+		hdr_data_.brightness_history_shader.Bind();
+		hdr_data_.brightness_history_shader.UniformFloat( "p",
+			(float(hdr_data_.current_brightness_history_pixel)+0.5f) / float(hdr_data_.brightness_history_tex_width) * 2.0f - 1.0f );
 
-	glActiveTexture( GL_TEXTURE1 );
-	glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_fetch_color_tex_id );
-	glGenerateMipmap( GL_TEXTURE_2D );
-	hdr_data_.brightness_history_shader.UniformInt( "tex", 1 );
+		glActiveTexture( GL_TEXTURE1 );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_fetch_color_tex_id );
+		glGenerateMipmap( GL_TEXTURE_2D );
+		hdr_data_.brightness_history_shader.UniformInt( "tex", 1 );
 
-	glDisable( GL_DEPTH_TEST );
-	glDrawArrays( GL_POINTS, 0, 1 );
-	glEnable( GL_DEPTH_TEST );
+		glDisable( GL_DEPTH_TEST );
+		glDrawArrays( GL_POINTS, 0, 1 );
+		glEnable( GL_DEPTH_TEST );
 
-	// make tonemapping
-	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-	glViewport( 0, 0, main_loop->ViewportWidth(), main_loop->ViewportHeight() );
+		// make tonemapping
+		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+		glViewport( 0, 0, main_loop->ViewportWidth(), main_loop->ViewportHeight() );
 
-	hdr_data_.tonemapping_shader.Bind();
+		hdr_data_.tonemapping_shader.Bind();
 
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_color_tex_id );
-	hdr_data_.tonemapping_shader.UniformInt( "tex", 0 );
+		glActiveTexture( GL_TEXTURE0 );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_color_tex_id );
+		hdr_data_.tonemapping_shader.UniformInt( "tex", 0 );
 
-	hdr_data_.tonemapping_shader.UniformInt( "bhn", hdr_data_.current_brightness_history_pixel + 4 * hdr_data_.brightness_history_tex_width );
-	hdr_data_.current_brightness_history_pixel++;
-	hdr_data_.current_brightness_history_pixel%= hdr_data_.brightness_history_tex_width;
+		hdr_data_.tonemapping_shader.UniformInt( "bhn", hdr_data_.current_brightness_history_pixel + 4 * hdr_data_.brightness_history_tex_width );
+		hdr_data_.current_brightness_history_pixel++;
+		hdr_data_.current_brightness_history_pixel%= hdr_data_.brightness_history_tex_width;
 
-	hdr_data_.tonemapping_shader.UniformFloat( "ck", -2.0f );
+		hdr_data_.tonemapping_shader.UniformFloat( "ck", -2.0f );
 
-	glActiveTexture( GL_TEXTURE1 );
-	glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_history_color_tex_id );
-	hdr_data_.tonemapping_shader.UniformInt( "btex", 1 );
+		glActiveTexture( GL_TEXTURE1 );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_history_color_tex_id );
+		hdr_data_.tonemapping_shader.UniformInt( "btex", 1 );
 
-	glDisable( GL_DEPTH_TEST );
-	glDrawArrays( GL_TRIANGLES, 0, 3*2 );
-	glEnable( GL_DEPTH_TEST );
+		glDisable( GL_DEPTH_TEST );
+		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
+		glEnable( GL_DEPTH_TEST );
+	}
 
 #ifdef MF_DEBUG
 	{
@@ -579,10 +597,15 @@ void mf_Renderer::CreateShadowmapFramebuffer()
 	shadowmap_fbo_.ambient_sky_light_intensity[0]= 0.2f;
 	shadowmap_fbo_.ambient_sky_light_intensity[1]= 0.23f;
 	shadowmap_fbo_.ambient_sky_light_intensity[2]= 0.29f;
-	Vec3Mul( shadowmap_fbo_.ambient_sky_light_intensity, 0.5f );
+	if( settings_.use_hdr )
+		Vec3Mul( shadowmap_fbo_.ambient_sky_light_intensity, 0.5f );
 
-	shadowmap_fbo_.size[0]= 4096;
-	shadowmap_fbo_.size[1]= 4096;
+	static const unsigned int shadowmap_quality_depend_size[mf_Settings::LastQuality]=
+	{
+		1024, 2048, 4096
+	};
+	shadowmap_fbo_.size[0]= shadowmap_quality_depend_size[ settings_.shadows_quality ];
+	shadowmap_fbo_.size[1]= shadowmap_quality_depend_size[ settings_.shadows_quality ];
 
 	glGenTextures( 1, &shadowmap_fbo_.depth_tex_id );
 	glBindTexture( GL_TEXTURE_2D, shadowmap_fbo_.depth_tex_id );
@@ -700,7 +723,14 @@ void mf_Renderer::GenTerrainMesh()
 {
 	unsigned int traingle_count= 0;
 	unsigned char chunk_lod_table[ MF_TERRAIN_MESH_SIZE_X_CHUNKS * MF_TERRAIN_MESH_SIZE_Y_CHUNKS ];
-	static const int lod_dst[]= { 64*64, 160*160, 352*352, 448*448, 1024*1024, 0x7FFFFFFF };
+
+	static const int quality_lod_dst[mf_Settings::LastQuality][6]=
+	{
+		{ 48*48, 128*128, 256*256, 384*384, 768* 768,  0x7FFFFFFF },
+		{ 64*64, 160*160, 352*352, 448*448, 1024*1024, 0x7FFFFFFF },
+		{ 72*72, 180*180, 400*400, 500*500, 1024*1024, 0x7FFFFFFF },
+	};
+	const int* lod_dst= quality_lod_dst[ settings_.terrain_quality ];
 
 	// calculate chunks lods
 	unsigned int center_x= MF_TERRAIN_CHUNK_SIZE_CL * MF_TERRAIN_MESH_SIZE_X_CHUNKS / 2;
@@ -1323,27 +1353,54 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	sky_shader_.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
 
 	{ // setup Perez sky model parameters
-		static const float tu= 1.8f; // now ( while we not use HDR ) it is optimal paremeter
-		static const float sky_k[]=
+		static const float hdr_turbidity= 1.9f;
+		static const float hdr_sky_k[]=
 		{
-			 0.17872f * tu - 1.46303f,
-			-0.35540f * tu + 0.42749f,
-			-0.02266f * tu + 5.32505f,
-			 0.12064f * tu - 2.57705f,
-			-0.06696f * tu + 0.37027f,
-			-0.01925f * tu - 0.25922f,
-			-0.06651f * tu + 0.00081f,
-			-0.00041f * tu + 0.21247f,
-			-0.06409f * tu - 0.89887f,
-			-0.00325f * tu + 0.04517f,
-			-0.01669f * tu - 0.26078f,
-			-0.09495f * tu + 0.00921f,
-			-0.00792f * tu + 0.21023f,
-			-0.04405f * tu - 1.65369f,
-			-0.01092f * tu + 0.05291f,
+			 0.17872f * hdr_turbidity - 1.46303f,
+			-0.35540f * hdr_turbidity + 0.42749f,
+			-0.02266f * hdr_turbidity + 5.32505f,
+			 0.12064f * hdr_turbidity - 2.57705f,
+			-0.06696f * hdr_turbidity + 0.37027f,
+			-0.01925f * hdr_turbidity - 0.25922f,
+			-0.06651f * hdr_turbidity + 0.00081f,
+			-0.00041f * hdr_turbidity + 0.21247f,
+			-0.06409f * hdr_turbidity - 0.89887f,
+			-0.00325f * hdr_turbidity + 0.04517f,
+			-0.01669f * hdr_turbidity - 0.26078f,
+			-0.09495f * hdr_turbidity + 0.00921f,
+			-0.00792f * hdr_turbidity + 0.21023f,
+			-0.04405f * hdr_turbidity - 1.65369f,
+			-0.01092f * hdr_turbidity + 0.05291f,
 		};
-		sky_shader_.UniformFloatArray( "sky_k", 15, sky_k );
-		sky_shader_.UniformFloat( "tu", tu );
+		static const float ldr_turbidity= 1.8f;
+		static const float ldr_sky_k[]=
+		{
+			 0.17872f * ldr_turbidity - 1.46303f,
+			-0.35540f * ldr_turbidity + 0.42749f,
+			-0.02266f * ldr_turbidity + 5.32505f,
+			 0.12064f * ldr_turbidity - 2.57705f,
+			-0.06696f * ldr_turbidity + 0.37027f,
+			-0.01925f * ldr_turbidity - 0.25922f,
+			-0.06651f * ldr_turbidity + 0.00081f,
+			-0.00041f * ldr_turbidity + 0.21247f,
+			-0.06409f * ldr_turbidity - 0.89887f,
+			-0.00325f * ldr_turbidity + 0.04517f,
+			-0.01669f * ldr_turbidity - 0.26078f,
+			-0.09495f * ldr_turbidity + 0.00921f,
+			-0.00792f * ldr_turbidity + 0.21023f,
+			-0.04405f * ldr_turbidity - 1.65369f,
+			-0.01092f * ldr_turbidity + 0.05291f,
+		};
+		if(settings_.use_hdr)
+		{
+			sky_shader_.UniformFloatArray( "sky_k", 15, hdr_sky_k );
+			sky_shader_.UniformFloat( "tu", hdr_turbidity );
+		}
+		else
+		{
+			sky_shader_.UniformFloatArray( "sky_k", 15, ldr_sky_k );
+			sky_shader_.UniformFloat( "tu", ldr_turbidity );
+		}
 	}
 
 	sky_vbo_.Bind();

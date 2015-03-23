@@ -5,6 +5,7 @@
 #include "sound_engine.h"
 #include "music_engine.h"
 #include "gui.h"
+#include "settings.h"
 
 #include "mf_math.h"
 
@@ -212,7 +213,13 @@ mf_MainLoop::mf_MainLoop(
 	GetGLFunctions( mfGetGLFuncAddress );
 
 	text_= new mf_Text();
-	renderer_= new mf_Renderer( &player_, &level_, text_ );
+
+	mf_Settings settings;
+	settings.use_hdr= false;
+	settings.shadows_quality= mf_Settings::QualityMedium;
+	settings.terrain_quality= mf_Settings::QualityHeight;
+
+	renderer_= new mf_Renderer( &player_, &level_, text_, &settings );
 	gui_ = new mf_Gui( text_, &player_ );
 
 	/*player_.SetPos(

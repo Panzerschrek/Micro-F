@@ -493,7 +493,7 @@ const char* const sky_shader_f=
 "void main()"
 "{"
 	"vec3 clrYxy=fc;"
-	"clrYxy[0]=clrYxy [0]/100.0;" // now rescale Y component
+	"%s" // here was luminance correction function, defined in outer code
 	"float ratio=clrYxy[0]/clrYxy [2];" // Y / y = X + Y + Z
 	"vec3 XYZ;"
 	"XYZ.x=clrYxy[1] * ratio;" // X = x * ratio
@@ -547,9 +547,9 @@ const char* const tonemapping_shader_v=
 	"float bsum=0.0;"
 	"int ts=textureSize(btex,0).x;"
 	"for(int i=0; i< ts; i++)"
-	"bsum+=float(ts-i)/texelFetch(btex,ivec2((bhn-i)%ts,0),0).x;"
+	"bsum+=float(ts-i)*texelFetch(btex,ivec2((bhn-i)%ts,0),0).x;"
 	"bsum=bsum/float(ts*ts/2);"
-	"b=log(0.5)*clamp(bsum,0.0005,20.0);"
+	"b=log(0.5)*clamp(1.0/bsum,0.0005,20.0);"
 	"ftc=coord[gl_VertexID];"
 	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
 "}";

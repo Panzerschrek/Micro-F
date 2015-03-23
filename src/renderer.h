@@ -4,6 +4,7 @@
 #include "player.h"
 #include "level.h"
 #include "text.h"
+#include "settings.h"
 
 #include "mf_model.h"
 
@@ -12,7 +13,7 @@
 class mf_Renderer
 {
 public:
-	mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Text* text );
+	mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Text* text, const mf_Settings* settings );
 	~mf_Renderer();
 
 	void Resize();
@@ -58,6 +59,8 @@ private:
 	const mf_Player* player_;
 	const mf_Level* level_;
 	mf_Text* text_;
+
+	mf_Settings settings_;
 
 	float view_matrix_[16];
 	float terrain_shadow_matrix_[16];
