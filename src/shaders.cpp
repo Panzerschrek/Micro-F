@@ -325,7 +325,7 @@ const char* const static_models_shader_v=
 "#version 330\n"
 "layout(std140)uniform mat_block"
 "{"
-	"mat4 mat[128+128];" // first 128 - view matrix, second 128 - shadow matrix
+	"mat4 mat[256];" // 128 pairs of matrices. First matrix in pair - view matrix, second - shadow matrix.
 "};"
 "in vec3 p;" // position
 "in vec3 n;" // normal
@@ -339,9 +339,9 @@ const char* const static_models_shader_v=
 	"fn=n;"
 	"fiid=float(gl_InstanceID)+0.1;"
 	"ftc=vec3(tc,tc.x/16.0);"
-	"vec3 sp=(mat[gl_InstanceID+128]*vec4(p,1.0)).xyz;"
+	"vec3 sp=(mat[gl_InstanceID*2+1]*vec4(p,1.0)).xyz;"
 	"fstc=sp*0.5+vec3(0.5,0.5,0.5);"
-	"gl_Position=mat[gl_InstanceID]*vec4(p,1.0);"
+	"gl_Position=mat[gl_InstanceID*2]*vec4(p,1.0);"
 "}";
 
 const char* const static_models_shader_f=

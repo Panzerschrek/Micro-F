@@ -1564,7 +1564,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 		const mf_StaticLevelObject* objects= level_->GetStaticObjectsRows()[row].objects;
 		unsigned int objects_count= level_->GetStaticObjectsRows()[row].objects_count;
 
-		float mat[2][ MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL ][16];
+		float mat[ MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL ][2][16];
 		unsigned int objects_count_to_draw= 0;
 		mf_StaticLevelObject::Type current_object_type= mf_StaticLevelObject::Palm;
 		if( objects_count !=0 ) current_object_type= objects[0].type;
@@ -1577,7 +1577,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 				obj->type != current_object_type
 				|| i == objects_count )
 			{
-				glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, sizeof(mat), mat );
+				glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.matrices_data_offset, 2 * sizeof(float) * 16 * objects_count_to_draw, mat );
 				glBufferSubData( GL_UNIFORM_BUFFER, level_static_objects_data_.sun_vectors_data_offset, sizeof(float) * 4 * objects_count_to_draw, transformed_sun );
 
 				glDrawElementsInstanced(
@@ -1606,8 +1606,8 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 			rot_z_scale_translate_mat[12]= obj->pos[0];
 			rot_z_scale_translate_mat[13]= obj->pos[1];
 			rot_z_scale_translate_mat[14]= obj->pos[2];
-			Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[0][objects_count_to_draw] );
-			Mat4Mul( rot_z_scale_translate_mat, common_shadow_matrix_, mat[1][objects_count_to_draw] );
+			Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[objects_count_to_draw][0] );
+			Mat4Mul( rot_z_scale_translate_mat, common_shadow_matrix_, mat[objects_count_to_draw][1] );
 
 			// transform sun to model spasce, instead transform normals in vertex shader
 			transformed_sun[objects_count_to_draw][0]= shadowmap_fbo_.sun_vector[0] * cos_z + shadowmap_fbo_.sun_vector[1] * sin_z;
