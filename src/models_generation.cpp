@@ -12,6 +12,12 @@
 #define MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER 16
 #define MF_TEX_COORD_SHIFT_EPS 0.001953125f
 
+void ApplyTexture( mf_DrawingModel* model, mf_StaticLevelObjectTexture texture )
+{
+	float shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * texture) + MF_TEX_COORD_SHIFT_EPS, 00.f };
+	model->ShiftTexCoord( shift_vec );
+};
+
 struct mf_BezierCurve
 {
 	float control_points[3][3];
@@ -287,9 +293,7 @@ void GenPalm( mf_DrawingModel* model )
 		v[i].pos[0]+= x_delta * x_delta * ( c_palm_height * 0.25f );
 		//TODO: deform normal
 	}
-
-	static const float shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * TexturePalmBark) + MF_TEX_COORD_SHIFT_EPS, 0.f };
-	model->ShiftTexCoord( shift_vec );
+	ApplyTexture( model, TexturePalmBark );
 }
 
 void GenOak( mf_DrawingModel* model )
@@ -326,8 +330,7 @@ void GenOak( mf_DrawingModel* model )
 		}
 	}
 
-	static const float trunk_shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * TextureOakBark) + MF_TEX_COORD_SHIFT_EPS, 0.f };
-	model->ShiftTexCoord( trunk_shift_vec );
+	ApplyTexture( model, TextureOakBark );
 
 	// genearate leafs
 	const unsigned int c_leaf_segments_count= 9;
@@ -387,16 +390,15 @@ void GenOak( mf_DrawingModel* model )
 	leafs_model.SetVertexData( leafs_vertices, c_vertices_per_leaf * c_leaf_segments_count );
 	leafs_model.SetIndexData( leafs_indeces, c_indeces_per_leaf * c_leaf_segments_count );
 
-	static const float leafs_shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * TextureOakLeafs) + MF_TEX_COORD_SHIFT_EPS, 0.f };
-	leafs_model.ShiftTexCoord( leafs_shift_vec );
+	ApplyTexture( &leafs_model, TextureOakLeafs );
 
 	model->Add( &leafs_model );
 }
 
 void GenSpruce( mf_DrawingModel* model )
 {
-	const float c_spruce_height= 15.0f;
-	const float c_spruce_trunk_diameter= 1.5f;
+	const float c_spruce_height= 20.0f;
+	const float c_spruce_trunk_diameter= 1.1f;
 
 	static const float spruce_scale[]= { c_spruce_trunk_diameter * 0.5f, c_spruce_trunk_diameter * 0.5f, c_spruce_height * 0.5f };
 	static const float spruce_shift[]= { 0.0f, 0.0f, c_spruce_height * 0.5f };
@@ -418,10 +420,11 @@ void GenSpruce( mf_DrawingModel* model )
 		{
 			v[j].pos[0]*= diameter_multipler;
 			v[j].pos[1]*= diameter_multipler;
+			v[j].normal[2]= 0.5f * c_spruce_trunk_diameter / c_spruce_height;
+			Vec3Normalize( v[j].normal );
 		}
 	}
-	static const float shift_vec[]= { float(MF_TEX_COORD_SHIFT_FOR_TEXTURE_LAYER * TextureSpruceBark) + MF_TEX_COORD_SHIFT_EPS, 0.f };
-	model->ShiftTexCoord( shift_vec );
+	ApplyTexture( model, TextureSpruceBark );
 }
 
 void (* const level_static_models_gen_func[mf_StaticLevelObject::LastType])(mf_DrawingModel* model)=

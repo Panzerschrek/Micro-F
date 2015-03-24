@@ -547,25 +547,33 @@ void GenOakTexture( mf_Texture* tex )
 
 void GenOakLeafsTexture( mf_Texture* tex )
 {
+	mf_Rand randomizer;
+
 	tex->PoissonDiskPoints( 19 );
 	tex->SinWaveDeformX( 8.0f, 1.0f/64.0f, 0.0f );
 	tex->SinWaveDeformY( 8.0f, 1.0f/64.0f, 0.0f );
 
-	static const float extend_green[]= { 0.0f, 4.0f, 0.0f, 0.f };
+	static const float extend_green[]= { 0.0f, 4.0f, 0.0f, 1.0f };
 	tex->Mul( extend_green );
 
-	static const float clamp_green[]= { 0.0f, 1.0f, 0.0f, 0.0f };
+	static const float clamp_green[]= { 0.0f, 1.0f, 0.0f, 100500.0f };
 	tex->Min(clamp_green);
 
+	static const float leaf_color[]= { 0.13f, 0.54f, 0.12f, 1.0f };
+	const unsigned int c_random_leaf_colors_count= 64;
+	float random_colors[c_random_leaf_colors_count][4];
+	for( unsigned int i= 0; i< c_random_leaf_colors_count; i++ )
+		for( unsigned int j= 0; j< 3; j++ )
+			random_colors[i][j]= leaf_color[j] + randomizer.RandF(0.15f);
+	
 	float* data= tex->GetData();
-
-	static const float leaf_color[]= { 0.2f, 0.6f, 0.2f, 1.0f };
 	for( unsigned int i= 0; i< tex->SizeX() * tex->SizeY(); i++, data+= 4 )
 	{
 		float c= data[1];
-		data[0]= leaf_color[0];
-		data[1]= leaf_color[1];
-		data[2]= leaf_color[2];
+		unsigned int color_ind= ((unsigned int)data[3]) % c_random_leaf_colors_count;
+		data[0]= random_colors[color_ind][0];
+		data[1]= random_colors[color_ind][1];
+		data[2]= random_colors[color_ind][2];
 		data[3]= c;
 	}
 

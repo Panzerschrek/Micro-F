@@ -148,6 +148,7 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2, unsigne
 			grid_pos[0]= x / min_distanse_div_sqrt2;
 
 			int nearest_point_dst2[2]= { 0xfffffff, 0xfffffff };
+			int* nearest_point_cell;
 
 			for( int v= grid_pos[1] - 3; v<= grid_pos[1] + 3; v++ )
 			{
@@ -173,6 +174,7 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2, unsigne
 						{
 							nearest_point_dst2[1]= nearest_point_dst2[0];
 							nearest_point_dst2[0]= dst2;
+							nearest_point_cell= cell;
 						}
 						else if( dst2 < nearest_point_dst2[1] )
 							nearest_point_dst2[1]= dst2;
@@ -184,11 +186,7 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2, unsigne
 			d[1]= ( mf_Math::sqrt(float(nearest_point_dst2[1])) - mf_Math::sqrt(float(nearest_point_dst2[0])) )
 				* intencity_multipler;
 			d[2]= mf_Math::sqrt(float(nearest_point_dst2[1])) * intencity_multipler;
-			d[3]= 1.0f;
-			{
-				int* cell= &grid[ (grid_pos[0] + grid_pos[1] * grid_size[0]) * 2 ];
-				if( cell[0] == x && cell[1] == y ) d[3]= 0.0f;
-			}
+			d[3]= float((nearest_point_cell - grid)/2);
 		} // for x
 	} // for y
 

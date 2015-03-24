@@ -25,7 +25,7 @@ public:
 	// R - distance to neraest point
 	// G - distance to nearest cell border
 	// B - distance to second nearest point
-	// A - zero, but one in output points
+	// A - number of nearest point
 	// param min_distanse_div_sqrt2 - minimal distance between points / sqrt(2)
 	void PoissonDiskPoints( unsigned int min_distanse_div_sqrt2, unsigned int rand_seed= 0 );
 
