@@ -1551,6 +1551,9 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	for( unsigned int i= 0; i< MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL; i++ )
 		transformed_sun[i][2]=  shadowmap_fbo_.sun_vector[2];
 
+	float shadow_offset_vec[3];
+	Vec3Mul( shadowmap_fbo_.sun_vector, 0.5f, shadow_offset_vec );
+
 	unsigned int row_begin, row_end;
 	CalculateStaticLevelObjectsVisiblyRows( &row_begin, &row_end );
 
@@ -1607,6 +1610,8 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 			rot_z_scale_translate_mat[13]= obj->pos[1];
 			rot_z_scale_translate_mat[14]= obj->pos[2];
 			Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[objects_count_to_draw][0] );
+
+			Vec3Add( rot_z_scale_translate_mat + 12, shadow_offset_vec );
 			Mat4Mul( rot_z_scale_translate_mat, common_shadow_matrix_, mat[objects_count_to_draw][1] );
 
 			// transform sun to model spasce, instead transform normals in vertex shader
