@@ -397,8 +397,8 @@ void GenOak( mf_DrawingModel* model )
 
 void GenSpruce( mf_DrawingModel* model )
 {
-	const float c_spruce_height= 20.0f;
-	const float c_spruce_trunk_diameter= 1.1f;
+	static const float c_spruce_height= 25.0f;
+	static const float c_spruce_trunk_diameter= 1.1f;
 
 	static const float spruce_scale[]= { c_spruce_trunk_diameter * 0.5f, c_spruce_trunk_diameter * 0.5f, c_spruce_height * 0.5f };
 	static const float spruce_shift[]= { 0.0f, 0.0f, c_spruce_height * 0.5f };
@@ -425,6 +425,53 @@ void GenSpruce( mf_DrawingModel* model )
 		}
 	}
 	ApplyTexture( model, TextureSpruceBark );
+
+	{
+		static const float spruce_side_mesh_vertices[4*3]=
+		{
+			0.0f, 0.0f, 0.0f,  1.1f * c_spruce_height * 0.45f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.1f * c_spruce_height,  -1.1f * c_spruce_height * 0.45f, 0.0f, 0.0f
+		};
+		static const float spruce_side_mesh_tc[4*2]=
+		{
+			0.5f, 0.0f,  1.0f, 0.2f,
+			0.5f, 1.0f,  0.0f, 0.2f
+		};
+		static const unsigned short spruce_side_mesh_indeces[]= { 0,2,1, 0,3,2 };
+		static const float side_normal[3]= { 0.0f, 1.0f, 0.0f };
+		const unsigned int c_sides_count= 4;
+
+		mf_DrawingModelVertex* side_vertices= new mf_DrawingModelVertex[ 4 * 2 * c_sides_count ];
+		unsigned short* side_indeces= new unsigned short[ c_sides_count * 2 * 6 ];
+		for( unsigned int i= 0; i< c_sides_count*2; i++ )
+		{
+			float angle= MF_PI * float(i/2) / float(c_sides_count) + MF_PI * float(i&1);
+			float rot_mat[16];
+			Mat4RotateZ( rot_mat, angle );
+
+			float transformed_normal[3];
+			Vec3Mat4Mul( side_normal, rot_mat, transformed_normal );
+			for( unsigned int j= 0; j< 4; j++ )
+			{
+				mf_DrawingModelVertex* v= &side_vertices[i*4+j];
+				Vec3Mat4Mul( spruce_side_mesh_vertices +j*3, rot_mat, v->pos );
+				VEC3_CPY( v->normal, transformed_normal );
+				v->tex_coord[0]= spruce_side_mesh_tc[j*2  ];
+				v->tex_coord[1]= spruce_side_mesh_tc[j*2+1];
+			}
+			unsigned int vert_shift= i * 4;
+			unsigned short* ind= side_indeces + i * 6;
+			for( unsigned int j= 0; j< 6; j++ )
+				ind[j]= (unsigned short)( vert_shift + spruce_side_mesh_indeces[j] );
+		} // for sides
+
+		mf_DrawingModel sides_model;
+		sides_model.SetVertexData( side_vertices, 4 * 2 * c_sides_count );
+		sides_model.SetIndexData( side_indeces, c_sides_count * 2 * 6 );
+		ApplyTexture( &sides_model, TextureSpruceBranch );
+
+		model->Add( &sides_model );
+	} // generate side triangles
 }
 
 void (* const level_static_models_gen_func[mf_StaticLevelObject::LastType])(mf_DrawingModel* model)=
