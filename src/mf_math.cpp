@@ -381,6 +381,20 @@ void Mat4RotateAroundVector( float* m, const float* vec, float angle )
 	m[10]= cos_a + one_minus_cos_a * normalized_vec[2] * normalized_vec[2];
 }
 
+void MatToRotation( const float* m, float* out_vec, float* out_angle )
+{
+	float cos_a= ( m[0] + m[5] + m[10] - 1.0f ) * 0.5f;
+	float sin_a= mf_Math::sqrt( mf_Math::clamp( 0.0f, 1.0f, 1.0f - cos_a * cos_a ) );
+
+	float inv_two_sin_a= 0.5f / sin_a;
+
+	out_vec[0]= ( m[6] - m[9] ) * inv_two_sin_a;
+	out_vec[1]= ( m[8] - m[2] ) * inv_two_sin_a;
+	out_vec[2]= ( m[1] - m[4] ) * inv_two_sin_a;
+
+	*out_angle= mf_Math::asin( sin_a );
+}
+
 float Mat3Det( const float* m )
 {
 return

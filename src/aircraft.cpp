@@ -135,6 +135,10 @@ void mf_Aircraft::Tick( float dt )
 			float rotate_mat[16];
 			Mat4RotateAroundVector( rotate_mat, rotate_vec, rot_angle );
 
+			float test_rot_vec[3];
+			float test_rot_angle;
+			MatToRotation( rotate_mat, test_rot_vec, &test_rot_angle );
+
 			// make final rotation
 			Vec3Mat4Mul( axis_[0], rotate_mat );
 			Vec3Mat4Mul( axis_[1], rotate_mat );
@@ -260,7 +264,7 @@ void mf_Aircraft::Tick( float dt )
 			angular_speed_drag_k= -angular_speed_[2] * mf_Math::fabs(angular_speed_[2]) *12.5f;
 			angular_acceleration_[2]+= angular_speed_drag_k;
 
-			angular_speed_drag_k= -angular_speed_[1] * mf_Math::fabs(angular_speed_[1]) *10.5f;
+			angular_speed_drag_k= -angular_speed_[1] * mf_Math::fabs(angular_speed_[1]) *15.5f;
 			angular_acceleration_[1]+= angular_speed_drag_k;
 		}
 

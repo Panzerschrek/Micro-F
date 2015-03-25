@@ -50,6 +50,7 @@ void Mat4RotateZ( float* m, float a );
 void Mat4Translate( float* m, const float* v );
 void Mat4Perspective( float* m, float aspect, float fov, float z_near, float z_far );
 void Mat4RotateAroundVector( float* m, const float* vec, float angle );
+void MatToRotation( const float* m, float* out_vec, float* out_angle );
 
 float Mat3Det( const float* m );
 void Mat4ToMat3( float* m );

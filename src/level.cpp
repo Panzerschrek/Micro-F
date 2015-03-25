@@ -51,9 +51,9 @@ static unsigned short FinalNoise(unsigned int x, unsigned int y)
 
 mf_Level::mf_Level()
 {
-	terrain_size_[0]= 768;
+	terrain_size_[0]= 768 * 3/2;
 	terrain_size_[1]= 2048;
-	terrain_amplitude_= 144.0f;
+	terrain_amplitude_= 144.0f * 1.3f;
 	terrain_cell_size_= 2.0f;
 	terrain_water_level_= terrain_amplitude_ / 9.0f;
 
@@ -215,7 +215,7 @@ void mf_Level::GenValleyWayPoints()
 {
 	mf_Rand randomizer;
 
-	const float y_range[]= {96.0f, 128.0f };
+	const float y_range[]= {96.0f * 2.0f, 128.0f * 2.5f };
 	const float x_amplitude= 144.0f;
 
 	unsigned int y= 16;
@@ -302,7 +302,7 @@ void mf_Level::GenValleyWayPoints()
 			int x_center= int(x_center_d);
 			valley_y_params_[y].x_center= (unsigned short) x_center;
 
-			static const double init_width2= 48.0;
+			static const double init_width2= 48.0 * 2.0f;
 			double der= 3.0 * y_d * y_d * abcd[0] + 2.0 * y_d * abcd[1] + abcd[2];
 			double inv_cos_a= mf_Math::sqrt( 1.0f + float(der * der) );
 			double width_d= init_width2 * inv_cos_a ;
