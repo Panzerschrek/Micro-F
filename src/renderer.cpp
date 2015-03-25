@@ -1498,7 +1498,7 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 			float mat[16];
 			float cam_relative_mat[16];
 
-			CreateAircraftMatrix( aircraft, mat, NULL, cam_relative_mat );
+			CreateAircraftMatrix( aircraft, mat, normal_mat, cam_relative_mat );
 			aircraft_shader_.UniformMat4( "mat", mat );
 			aircraft_shader_.UniformMat3( "nmat", normal_mat );
 			aircraft_shader_.UniformMat4( "mmat", cam_relative_mat );
