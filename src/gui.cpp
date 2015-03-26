@@ -235,7 +235,9 @@ void mf_Gui::Draw()
 	text_->AddText( 1, 9, 1, mf_Text::default_color, str );
 
 #ifdef MF_DEBUG
-	sprintf( str, "angle of attack: %+2.3f\nlift force k: %+2.3f", aircraft->debug_angle_of_attack_deg_, aircraft->debug_cyk_ );
+	sprintf( str, "angle of attack: %+2.3f\nlift force k: %+2.3f\npitch/yaw/roll factors: %+1.2f %+1.2f %+1.2f",
+		aircraft->debug_angle_of_attack_deg_, aircraft->debug_cyk_,
+		aircraft->debug_pitch_control_factor_, aircraft->debug_yaw_control_factor_, aircraft->debug_roll_control_factor_ );
 	text_->AddText( 1, 15, 1, mf_Text::default_color, str );
 #endif
 

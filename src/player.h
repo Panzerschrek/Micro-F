@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "micro-f.h"
 #include "aircraft.h"
+#include "autopilot.h"
 
 class mf_Player
 {
@@ -66,6 +67,7 @@ private:
 private:
 	ControlMode control_mode_;
 	mf_Aircraft aircraft_;
+	mf_Autopilot autopilot_;
 
 	float pos_[3];
 

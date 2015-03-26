@@ -15,6 +15,7 @@
 mf_Player::mf_Player()
 	: control_mode_(ModeAircraftControl)
 	, aircraft_(mf_Aircraft::V1)
+	, autopilot_(&aircraft_)
 	, cam_radius_(10.0f)
 	, aspect_(1.0f), fov_(MF_INITIAL_FOV), target_fov_(MF_INITIAL_FOV)
 	, forward_pressed_(false), backward_pressed_(false), left_pressed_(false), right_pressed_(false)
@@ -28,6 +29,8 @@ mf_Player::mf_Player()
 	aircraft_.SetPos( pos_ );
 
 	CalculateCamRadius();
+
+	autopilot_.SetMode( mf_Autopilot::ModeDirectionControl );
 }
 
 mf_Player::~mf_Player()
@@ -101,6 +104,7 @@ void mf_Player::Tick( float dt )
 		if(up_pressed_) aircraft_.ThrottleUp( dt );
 		if(down_pressed_) aircraft_.ThrottleDown( dt );
 		
+		autopilot_.GetControlResult( &pitch_factor, &yaw_factor, &yaw_factor );
 
 		aircraft_.SetPitchFactor( pitch_factor );
 		aircraft_.SetRollFactor ( roll_factor  );

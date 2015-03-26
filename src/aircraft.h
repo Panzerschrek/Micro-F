@@ -79,6 +79,9 @@ public:
 	float debug_angle_of_attack_deg_;
 	float debug_cxk_;
 	float debug_cyk_;
+	float debug_pitch_control_factor_;
+	float debug_yaw_control_factor_;
+	float debug_roll_control_factor_;
 #endif
 };
 

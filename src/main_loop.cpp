@@ -99,7 +99,7 @@ void mf_MainLoop::Loop()
 					extern float ThrottleToEngineSoundVolumeScaler( float throttle );
 
 					test_sound_->SetOrientation( aircraft->Pos(), aircraft->Velocity() );
-					test_sound_->SetVolume( 40.0f * ThrottleToEngineSoundVolumeScaler( aircraft->Throttle() ) );
+					test_sound_->SetVolume( 0.0f * 40.0f * ThrottleToEngineSoundVolumeScaler( aircraft->Throttle() ) );
 					test_sound_->SetPitch( ThrottleToEngineSoundPitch( aircraft->Throttle() ) );
 				}
 			}

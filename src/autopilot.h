@@ -5,6 +5,7 @@ class mf_Aircraft;
 
 class mf_Autopilot
 {
+public:
 	enum Mode
 	{
 		ModeDisabled,
@@ -12,25 +13,21 @@ class mf_Autopilot
 		ModeHorizontalFlight,
 		ModeAzimuthChange // turn to target
 	};
-public:
+
 	mf_Autopilot( const mf_Aircraft* aircraft );
 	~mf_Autopilot();
 
 	void SetMode( Mode mode );
 	void SetTargetAzimuth( float azimuth ); // for ModeAzimuthChange
 
-	void GetControlResult( float* out_pitch_factor, float* out_yaw_factor, float* out_roll_factor );
+	void GetControlResult( float* in_out_pitch_factor, float* in_out_yaw_factor, float* in_out_roll_factor );
 private:
 
 	Mode mode_;
 	const mf_Aircraft* aircraft_;
 	float azimuth_;
+	float terget_axis_[3][3];
 };
-
-inline void mf_Autopilot::SetMode( Mode mode )
-{
-	mode_= mode;
-}
 
 inline void mf_Autopilot::SetTargetAzimuth( float azimuth )
 {

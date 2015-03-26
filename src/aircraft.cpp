@@ -271,6 +271,9 @@ void mf_Aircraft::Tick( float dt )
 #ifdef MF_DEBUG
 		debug_angle_of_attack_deg_= angle_of_attack * MF_RAD2DEG;
 		debug_cyk_= lift_force_k_cy;
+		debug_pitch_control_factor_= pitch_factor_;
+		debug_yaw_control_factor_= yaw_factor_;
+		debug_roll_control_factor_= roll_factor_;
 #endif
 	}
 }
