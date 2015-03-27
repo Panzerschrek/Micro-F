@@ -2,8 +2,8 @@
 
 #include "music_engine.h"
 
-static const unsigned char aviatros_march[]=
-#include "../sounds/aviatros_march.h"
+static const unsigned char aviators_march[]=
+#include "../sounds/aviators_march.h"
 ;
 
 static const unsigned char valkyries_flight[]=
@@ -12,13 +12,13 @@ static const unsigned char valkyries_flight[]=
 
 static const unsigned char* melodies_data[ mf_MusicEngine::LastMelody ]=
 {
-	aviatros_march,
+	aviators_march,
 	valkyries_flight
 };
 
 static const unsigned int melodies_size[ mf_MusicEngine::LastMelody ]=
 {
-	sizeof(aviatros_march),
+	sizeof(aviators_march),
 	sizeof(valkyries_flight)
 };
 
