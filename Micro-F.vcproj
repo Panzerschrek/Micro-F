@@ -212,6 +212,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\game_logic.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\glsl_program.cpp"
 				>
 			</File>
@@ -303,6 +307,10 @@
 			</File>
 			<File
 				RelativePath=".\src\gl\func_declarations.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\game_logic.h"
 				>
 			</File>
 			<File

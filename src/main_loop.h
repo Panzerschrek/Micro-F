@@ -1,13 +1,12 @@
 #pragma once
 #include "micro-f.h"
 
-#include "player.h"
-#include "level.h"
 #include "renderer.h"
 
-#include "glsl_program.h"
 #include "text.h"
-#include "vertex_buffer.h"
+
+class mf_Player;
+class mf_GameLogic;
 
 class mf_SoundEngine;
 class mf_SoundSource;
@@ -68,7 +67,7 @@ private:
 	mf_Text* text_;
 
 	mf_Player player_;
-	mf_Level level_;
+	mf_GameLogic* game_logic_;
 	mf_Renderer* renderer_;
 	mf_SoundEngine* sound_engine_;
 	mf_MusicEngine* music_engine_;

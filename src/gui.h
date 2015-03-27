@@ -19,6 +19,7 @@ public:
 	mf_Gui( mf_Text* text, const mf_Player* player );
 	~mf_Gui();
 
+	void SetCursor( unsigned int x, unsigned int y );
 	void MouseClick( unsigned int x, unsigned int y );
 	void MouseHover( unsigned int x, unsigned int y );
 	void Draw();
@@ -81,6 +82,8 @@ private:
 	mf_MainLoop* main_loop_;
 	mf_Text* text_;
 	const mf_Player* player_;
+
+	unsigned int cursor_pos_[2];
 
 	mf_GLSLProgram naviball_shader_;
 	mf_VertexBuffer naviball_vbo_;

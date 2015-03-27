@@ -4,6 +4,7 @@
 #include "main_loop.h"
 #include "sound_engine.h"
 #include "music_engine.h"
+#include "game_logic.h"
 #include "gui.h"
 #include "settings.h"
 
@@ -123,6 +124,8 @@ void mf_MainLoop::Loop()
 
 void mf_MainLoop::Play()
 {
+	game_logic_= new mf_GameLogic( &player_ );
+
 	mode_= ModeGame;
 
 	mf_Settings settings;
@@ -130,7 +133,7 @@ void mf_MainLoop::Play()
 	settings.shadows_quality= mf_Settings::QualityHeight;
 	settings.terrain_quality= mf_Settings::QualityMedium;
 
-	renderer_= new mf_Renderer( &player_, &level_, text_, &settings );
+	renderer_= new mf_Renderer( &player_, game_logic_->GetLevel(), text_, &settings );
 
 	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
 }
@@ -300,6 +303,7 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 		instance->gui_->MouseClick( lParam&65535, lParam>>16 );
 	case WM_MOUSEMOVE:
 		instance->gui_->MouseHover( lParam&65535, lParam>>16 );
+		instance->gui_->SetCursor( lParam&65535, lParam>>16 );
 		break;
 	case WM_MOUSEWHEEL:
 		{

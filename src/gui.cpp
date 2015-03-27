@@ -83,6 +83,8 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 	, player_(player)
 	, current_menu_(NULL)
 {
+	cursor_pos_[0]= cursor_pos_[1]= 0;
+
 	naviball_shader_.SetAttribLocation( "p", 0 );
 	naviball_shader_.SetAttribLocation( "tc", 2 );
 	naviball_shader_.Create( mf_Shaders::naviball_shader_v, mf_Shaders::naviball_shader_f );
@@ -165,12 +167,22 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 	}
 	{ // cursor texture
 		unsigned char decompressed_data[ MF_CURSOR_SIZE * MF_CURSOR_SIZE ];
+		unsigned char decompressed_data_rgba[ MF_CURSOR_SIZE * MF_CURSOR_SIZE * 4 ];
 		mfMonochromeImageTo8Bit( (unsigned char*)cursor_data, decompressed_data, sizeof(decompressed_data) );
+		mf8BitImageToWhiteWithAlpha( decompressed_data, decompressed_data_rgba, sizeof(decompressed_data_rgba) );
+
+		static const unsigned char cursor_color[4]= { 32, 196, 32, 0 };
+		for( unsigned int i= 0; i< MF_CURSOR_SIZE * MF_CURSOR_SIZE * 4; i+=4 )
+		{
+			decompressed_data_rgba[i+0]= cursor_color[0];
+			decompressed_data_rgba[i+1]= cursor_color[1];
+			decompressed_data_rgba[i+2]= cursor_color[2];
+		}
 
 		glGenTextures( 1, &cursor_texture_ );
 		glBindTexture( GL_TEXTURE_2D, cursor_texture_ );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_R8,
-			MF_CURSOR_SIZE, MF_CURSOR_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, decompressed_data );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
+			MF_CURSOR_SIZE, MF_CURSOR_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, decompressed_data_rgba );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap( GL_TEXTURE_2D );
@@ -179,11 +191,17 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 	PrepareMenus();
 
 	current_menu_= &main_menu_;
-	OnPlayButton(); // hack for fast development
+	//OnPlayButton(); // hack for fast development
 }
 
 mf_Gui::~mf_Gui()
 {
+}
+
+void mf_Gui::SetCursor( unsigned int x, unsigned int y )
+{
+	cursor_pos_[0]= x;
+	cursor_pos_[1]= y;
 }
 
 void mf_Gui::MouseClick( unsigned int x, unsigned int y )
@@ -246,6 +264,7 @@ void mf_Gui::Draw()
 	DrawNaviballGlass();
 	if( current_menu_ != NULL )
 		DrawMenu( current_menu_ );
+	DrawCursor();
 }
 
 void mf_Gui::Resize()
@@ -836,6 +855,45 @@ void mf_Gui::DrawMenu( const GuiMenu* menu )
 
 void mf_Gui::DrawCursor()
 {
+	mf_GuiVertex vertices[6];
+	
+	float f_pos[2];
+	float f_size[2];
+	f_pos[0]= 2.0f * float(cursor_pos_[0]) / main_loop_->ViewportWidth () - 1.0f;
+	f_pos[1]= -2.0f * float(cursor_pos_[1]) / main_loop_->ViewportHeight() + 1.0f;
+
+	f_size[0]= 2.0f * float(MF_CURSOR_SIZE) / main_loop_->ViewportWidth ();
+	f_size[1]= 2.0f * float(MF_CURSOR_SIZE) / main_loop_->ViewportHeight();
+
+	vertices[0].pos[0]= f_pos[0] - f_size[0] * 0.5f;
+	vertices[0].pos[1]= f_pos[1] - f_size[1] * 0.5f;
+	vertices[1].pos[0]= f_pos[0] + f_size[0] * 0.5f;
+	vertices[1].pos[1]= f_pos[1] - f_size[1] * 0.5f;
+	vertices[2].pos[0]= f_pos[0] + f_size[0] * 0.5f;
+	vertices[2].pos[1]= f_pos[1] + f_size[1] * 0.5f;
+	vertices[3].pos[0]= f_pos[0] - f_size[0] * 0.5f;
+	vertices[3].pos[1]= f_pos[1] + f_size[1] * 0.5f;
+	GenGuiQuadTextureCoords( vertices, mf_GuiTexture(0) );
+	vertices[4]= vertices[0];
+	vertices[5]= vertices[2];
+
+	gui_shader_.Bind();
+
+	glActiveTexture( GL_TEXTURE0 + 0 );
+	glBindTexture( GL_TEXTURE_2D, cursor_texture_ );
+	gui_shader_.UniformInt( "tex", 0 );
+
+	common_vbo_.Bind();
+	common_vbo_.VertexSubData( vertices, 6 * sizeof(mf_GuiVertex), 0 );
+
+	glDisable( GL_DEPTH_TEST );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+	glDrawArrays( GL_TRIANGLES, 0, 6 );
+
+	glDisable( GL_BLEND );
+	glEnable( GL_DEPTH_TEST );
 }
 
 void mf_Gui::OnPlayButton()

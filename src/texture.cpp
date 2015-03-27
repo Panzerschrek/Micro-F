@@ -12,6 +12,15 @@ void mfMonochromeImageTo8Bit( const unsigned char* in_data, unsigned char* out_d
 			out_data[ (i<<3) + (7-j) ]= ( (in_data[i] & (1<<j)) >> j ) * 255;
 }
 
+void mf8BitImageToWhiteWithAlpha( const unsigned char* in_data, unsigned char* out_data, unsigned int out_data_size )
+{
+	for( unsigned int i= 0, j= 0; i< out_data_size/4; i++, j+=4 )
+	{
+		out_data[j]= out_data[j+1]= out_data[j+2]= 255;
+		out_data[j+3]= in_data[i];
+	}
+}
+
 mf_Texture::mf_Texture( unsigned int size_x_log2, unsigned int size_y_log2 )
 	: data_( new float[ 1<<(size_x_log2 + size_y_log2 + 2) ] )
 	, normalized_data_( NULL )
