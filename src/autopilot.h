@@ -9,7 +9,7 @@ public:
 	enum Mode
 	{
 		ModeDisabled,
-		ModeDirectionControl, // save yaw/pitch/rall
+		ModeKillRotation,
 		ModeHorizontalFlight,
 		ModeAzimuthChange // turn to target
 	};
@@ -26,7 +26,6 @@ private:
 	Mode mode_;
 	const mf_Aircraft* aircraft_;
 	float azimuth_;
-	float terget_axis_[3][3];
 };
 
 inline void mf_Autopilot::SetTargetAzimuth( float azimuth )

@@ -30,7 +30,7 @@ mf_Player::mf_Player()
 
 	CalculateCamRadius();
 
-	autopilot_.SetMode( mf_Autopilot::ModeDirectionControl );
+	autopilot_.SetMode( mf_Autopilot::ModeKillRotation );
 }
 
 mf_Player::~mf_Player()
@@ -104,7 +104,7 @@ void mf_Player::Tick( float dt )
 		if(up_pressed_) aircraft_.ThrottleUp( dt );
 		if(down_pressed_) aircraft_.ThrottleDown( dt );
 		
-		autopilot_.GetControlResult( &pitch_factor, &yaw_factor, &yaw_factor );
+		autopilot_.GetControlResult( &pitch_factor, &yaw_factor, &roll_factor );
 
 		aircraft_.SetPitchFactor( pitch_factor );
 		aircraft_.SetRollFactor ( roll_factor  );
