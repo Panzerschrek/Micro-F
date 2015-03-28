@@ -4,7 +4,9 @@
 
 #include "texture.h"
 
-#include "font_data.h"
+static const unsigned char font_data[]=
+#include "../textures/fixedsys8x18c.h"
+;
 
 const unsigned char mf_Text::default_color[4]= {255, 255, 255, 32 };
 const unsigned char* mf_Text::font_data_= NULL;
@@ -29,8 +31,6 @@ void mf_Text::CreateTexture()
 
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-
-	text_texture_data_= decompressed_font;
 }
 
 void mf_Text::AddText( unsigned int colomn, unsigned int row, unsigned int size, const unsigned char* color, const char* text )

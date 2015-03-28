@@ -46,8 +46,6 @@ private:
 	unsigned int vertex_buffer_pos_;
 	float viewport_width_, viewport_height_;
 
-	unsigned char* text_texture_data_;
-
 	GLuint font_texture_id_;
 
 public:

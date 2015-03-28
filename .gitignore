@@ -10,6 +10,6 @@
 *.pdb
 *.user
 *.blend1
-
+*.blend2
 Debug/*
 Release/*
