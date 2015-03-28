@@ -43,6 +43,11 @@ public:
 	const mf_StaticLevelObjectsRow* GetStaticObjectsRows() const;
 	unsigned int GetStaticObjectsRowCount() const;
 
+	// All inputs - in world space
+	float GetTerrainHeight( float x, float y ) const;
+	float GetValleyCenterX( float y ) const;
+	bool SphereIntersectTerrain( const float* pos, float radius ) const;
+
 private:
 	void GenTarrain();
 	void GenValleyWayPoints();

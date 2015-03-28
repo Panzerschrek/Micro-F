@@ -8,12 +8,14 @@
 
 #include "mf_model.h"
 
+class mf_GameLogic;
+
 #define MF_MAX_AIRCRAFT_MODELS 32
 
 class mf_Renderer
 {
 public:
-	mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Text* text, const mf_Settings* settings );
+	mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logic, mf_Text* text, const mf_Settings* settings );
 	~mf_Renderer();
 
 	void Resize();
@@ -45,6 +47,7 @@ private:
 	void DrawStars( bool draw_to_water_framebuffer );
 	void DrawSky(  bool draw_to_water_framebuffer );
 	void DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count );
+	void DrawPowerups();
 	void DrawLevelStaticObjects( bool draw_to_water_framebuffer );
 	void DrawWater();
 	void DrawShadows();
@@ -58,6 +61,7 @@ private:
 
 	const mf_Player* player_;
 	const mf_Level* level_;
+	const mf_GameLogic* game_logic_;
 	mf_Text* text_;
 
 	mf_Settings settings_;

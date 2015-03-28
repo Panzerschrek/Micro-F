@@ -89,6 +89,75 @@ mf_Level::~mf_Level()
 	delete[] static_objects_rows_;
 }
 
+
+float mf_Level::GetTerrainHeight( float x, float y ) const
+{
+	x/= terrain_cell_size_;
+	y/= terrain_cell_size_;
+
+	int x_i= int(x);
+	int y_i= int(y);
+	if( x_i < 0 ) x_i= 0; else if( x_i >= int(terrain_size_[0]-1) ) x_i= terrain_size_[0]-2;
+	if( y_i < 0 ) y_i= 0; else if( y_i >= int(terrain_size_[1]-1) ) y_i= terrain_size_[1]-2;
+
+	float dx= x - float(x_i);
+	float dy= y - float(y_i);
+
+	float values[4]=
+	{
+		float(terrain_heightmap_data_[ x_i   +  y_i    * terrain_size_[0] ]) / 65535.0f,
+		float(terrain_heightmap_data_[ x_i+1 +  y_i    * terrain_size_[0] ]) / 65535.0f,
+		float(terrain_heightmap_data_[ x_i   + (y_i+1) * terrain_size_[0] ]) / 65535.0f,
+		float(terrain_heightmap_data_[ x_i+1 + (y_i+1) * terrain_size_[0] ]) / 65535.0f
+	};
+	float y_interp[2];
+	y_interp[0]= values[0] * (1.0f-dy) + dy * values[2];
+	y_interp[1]= values[1] * (1.0f-dy) + dy * values[3];
+
+	return terrain_amplitude_ *
+		( y_interp[0] * (1.0f-dx) + y_interp[1] * dx );
+}
+
+float mf_Level::GetValleyCenterX( float y ) const
+{
+	y/= terrain_cell_size_;
+	return float(valley_y_params_[ int(y) ].x_center ) * terrain_cell_size_;
+}
+
+bool mf_Level::SphereIntersectTerrain( const float* pos, float radius ) const
+{
+	int pos_i[3];
+	for( unsigned int i= 0; i< 3; i++ )
+		pos_i[i]= int( pos[i] / terrain_cell_size_ );
+	int i_radius= int( mf_Math::ceil( radius / terrain_cell_size_ ) );
+	float radius2= radius * radius;
+	
+	int xy_begin[2], xy_end[2];
+	for( unsigned int i= 0; i< 2; i++ )
+	{
+		xy_begin[i]= pos_i[i] - i_radius;
+		if( xy_begin[i] < 0 ) xy_begin[i]= 0;
+		xy_end[i]= pos_i[i] + i_radius;
+		if( xy_end[i] >= int(terrain_size_[i]) ) xy_end[i]= terrain_size_[i] - 1;
+	}
+	for( int y= xy_begin[1]; y<= xy_end[1]; y++ )
+	{
+		float dy2= float(y) * terrain_cell_size_ - pos[1];
+		dy2= dy2 * dy2;
+		for( int x= xy_begin[0]; x<= xy_end[0]; x++ )
+		{
+			float dx= float(x) * terrain_cell_size_ - pos[0];
+			float dz2= radius2 - dx*dx - dy2;
+			if( dz2 <= 0.0f ) continue;
+			float terrain_height= float( terrain_heightmap_data_[ x + y * terrain_size_[0] ] ) * terrain_amplitude_ / 65535.0f;
+			float sphere_low_pos= pos[2] - mf_Math::sqrt(dz2);
+			if( sphere_low_pos < terrain_height ) return true;
+		}
+	}
+
+	return false;
+}
+
 void mf_Level::GenTarrain()
 {
 	unsigned short* primary_terrain_data= new unsigned short[ terrain_size_[0] * terrain_size_[1] ];
@@ -521,24 +590,17 @@ void mf_Level::PlaceStaticObjects()
 		obj->pos[0]= terrain_space_xy[0] * terrain_cell_size_;
 		obj->pos[1]= terrain_space_xy[1] * terrain_cell_size_;
 
-		unsigned short h= terrain_heightmap_data_[ int(terrain_space_xy[0]) + int(terrain_space_xy[1]) * terrain_size_[0] ];
-		obj->pos[2] = float(h) * terrain_amplitude_ / 65535.0f;
+		obj->pos[2]= GetTerrainHeight( obj->pos[0], obj->pos[1] ) - 0.3f;
 
 		obj->type= mf_StaticLevelObject::Type( randomizer.Rand() % mf_StaticLevelObject::LastType );
-		obj->scale= 0.25f * (
-			randomizer.RandF( 0.8f, 1.2f ) +
-			randomizer.RandF( 0.8f, 1.2f ) +
-			randomizer.RandF( 0.8f, 1.2f ) +
-			randomizer.RandF( 0.8f, 1.2f ) );
-		obj->z_angle= randomizer.RandF( 0.0f, MF_2PI );
+		obj->scale= randomizer.RandF( 0.8f, 1.2f );
+		obj->z_angle= randomizer.RandF( MF_2PI );
 
 		row->last_object_index++;
 	}
 
 	for( unsigned int i= 0; i< static_objects_row_count_; i++ )
-	{
 		SortStaticObjectsRow( &static_objects_rows_[i] );
-	}
 	
 	delete[] grid;
 	delete[] processing_stack;

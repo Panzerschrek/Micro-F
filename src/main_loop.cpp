@@ -88,6 +88,8 @@ void mf_MainLoop::Loop()
 				}
 				player_.Tick(prev_tick_dt_);
 				game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
+
+				game_logic_->Tick( prev_tick_dt_ );
 			}// if normal dt
 
 			{ // sound setup
@@ -133,7 +135,7 @@ void mf_MainLoop::Play()
 	settings.shadows_quality= mf_Settings::QualityHeight;
 	settings.terrain_quality= mf_Settings::QualityMedium;
 
-	renderer_= new mf_Renderer( &player_, game_logic_->GetLevel(), text_, &settings );
+	renderer_= new mf_Renderer( &player_, game_logic_, text_, &settings );
 
 	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
 }

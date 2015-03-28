@@ -2,6 +2,7 @@
 #include "renderer.h"
 
 #include "main_loop.h"
+#include "game_logic.h"
 #include "shaders.h"
 #include "mf_math.h"
 #include "texture.h"
@@ -43,8 +44,8 @@ static const float g_stars_distance_scaler= 1.7f;
 static const float g_sky_radius_scaler= 2.0f;
 static const float g_zfar_scaler= 2.5f;
 
-mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Text* text, const mf_Settings* settings )
-	: player_(player), level_(level)
+mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logic, mf_Text* text, const mf_Settings* settings )
+	: player_(player), level_(game_logic->GetLevel()), game_logic_(game_logic)
 	, text_(text)
 	, settings_(*settings)
 {
@@ -276,8 +277,8 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_Level* level, mf_Tex
 		glGenTextures( 1, &terrain_normal_map_texture_ );
 		glBindTexture( GL_TEXTURE_2D, terrain_normal_map_texture_ );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8_SNORM,
-			level->TerrainSizeX(), level->TerrainSizeY(), 0,
-			GL_RGBA, GL_BYTE, level->GetTerrainNormalTextureMap() );
+			level_->TerrainSizeX(), level_->TerrainSizeY(), 0,
+			GL_RGBA, GL_BYTE, level_->GetTerrainNormalTextureMap() );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 	}
@@ -454,6 +455,7 @@ void mf_Renderer::DrawFrame()
 		DrawAircrafts( aircrafts, 1 );
 	}
 	DrawLevelStaticObjects( true );
+	DrawPowerups();
 	DrawSky( true );
 	//DrawStars( true );
 	DrawSun( true );
@@ -473,6 +475,7 @@ void mf_Renderer::DrawFrame()
 	}
 	DrawLevelStaticObjects( false );
 	DrawSky( false );
+	DrawPowerups();
 	//DrawStars( false );
 	DrawSun( false );
 	DrawWater();
@@ -1512,6 +1515,49 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 		}
 		glDisable( GL_STENCIL_TEST );
 	} // directional light pass
+}
+
+void mf_Renderer::DrawPowerups()
+{
+	aircrafts_data_.vbo.Bind();
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D_ARRAY, aircrafts_data_.textures_array );
+
+	aircraft_shader_.Bind();
+
+	static const float c_powerup_light[3]= { 1.0f, 1.0f, 1.0f };
+	static const float c_sun_zero[3]= { 0.0f, 0.0f, 0.0f };
+	aircraft_shader_.UniformVec3( "sl", c_sun_zero );
+	aircraft_shader_.UniformVec3( "al", c_powerup_light );
+
+	const mf_Powerup* powerups= game_logic_->GetPowerups();
+	for( unsigned int i= 0; i< game_logic_->GetPowerupCount(); i++ )
+	{
+		float mat[16];
+		float translate_mat[16];
+		float cam_mat[16];
+		float vec_to_cam[3];
+		float nmat[16];
+		Mat4Translate( translate_mat, powerups[i].pos );
+		Mat4Mul( translate_mat, view_matrix_, mat );
+
+		Mat4Identity(nmat);
+		Mat4ToMat3(nmat);
+
+		Vec3Sub( powerups[i].pos, player_->Pos(), vec_to_cam );
+		Mat4Translate( cam_mat, vec_to_cam );
+
+		aircraft_shader_.UniformMat4( "mat", mat );
+		aircraft_shader_.UniformMat3( "nmat", nmat );
+		aircraft_shader_.UniformMat4( "mmat", cam_mat );
+
+		aircraft_shader_.UniformFloat( "texn", 0.1f );
+
+		glDrawElements( GL_TRIANGLES,
+			aircrafts_data_.models[ 0 ].index_count,
+			GL_UNSIGNED_SHORT,
+			(void*) ( aircrafts_data_.models[ 0 ].first_index * sizeof(unsigned short) ) );
+	}
 }
 
 void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
