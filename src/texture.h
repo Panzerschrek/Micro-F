@@ -45,6 +45,8 @@ public:
 	void DeformY( float dy_dx );
 	void DownscaleX();
 	void DownscaleY();
+	void FlipX();
+	void FlipY();
 
 	void FillTriangle( const float* xy_coords, const float* color );
 
@@ -65,6 +67,7 @@ public:
 	void Max( const float* color );
 	void Min( const float* color );
 	void Pow( float p );
+	void Mod( const float* mod_color );
 
 	void Mix( const float* color0, const float* color1, const float* sub_color );
 

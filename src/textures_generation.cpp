@@ -431,46 +431,101 @@ void GenDirtTexture( mf_Texture* tex )
 
 void GenDirtWithGrassTexture( mf_Texture* tex )
 {
-	tex->Noise( 8 );
-	mf_Texture noise_sub_tex( tex->SizeXLog2(), tex->SizeYLog2() );
-	noise_sub_tex.Noise( 2 );
-	tex->Sub( &noise_sub_tex );
-	static const float after_second_tex_sub_mul_value[]= { 2.0f, 2.0f, 2.0f, 2.0f };
-	tex->Mul( after_second_tex_sub_mul_value );
+	tex->PoissonDiskPoints( 32 );
+	tex->SinWaveDeformX( 32.0f, 1.0f/128.0f, 0.0f );
+	tex->SinWaveDeformY( 32.0f, 1.0f/128.0f, 0.0f );
 
-	static const float befor_noise_add_value[]= { 0.45f, 0.45f, 0.45f, 0.45f };
-	static const float after_noise_mul_value[]= { 1.0f / 1.5f, 1.0f / 1.5f, 1.0f / 1.5f, 1.0f / 1.5f };
-	tex->Add(befor_noise_add_value);
-	tex->Pow(32.0f);
-	tex->Mul(after_noise_mul_value);
+	static const float extend_green[]= { 0.0f, 4.0f, 0.0f, 1.0f };
+	tex->Mul( extend_green );
+	static const float clamp_green[]= { 0.0f, 1.0f, 0.0f, 100500.0f };
+	tex->Min( clamp_green );
 
-	tex->SinWaveDeformX( 7.0f, 1.0f / 64.0f, MF_PI3 );
-	tex->SinWaveDeformY( 9.0f, 1.0f / 64.0f, MF_PI4 );
+	tex->Grayscale();
 
-	static const float grass_color[]= { 0.325f*0.6f, 0.65f*0.6f, 0.2f*0.6f, 0.0f*0.6f };
-	static const float one[]= { 1.0f, 1.0f, 1.0f, 1.0f };
-	tex->Mix( grass_color, g_dirt_color, one );
+	{ // get alpha mask for blending with dirt
+		float* tex_data= tex->GetData();
+		for( unsigned int i= 0; i< tex->SizeX() * tex->SizeY() * 4; i+=4 )
+		{
+			if( tex_data[i] > 0.2f ) tex_data[i+3]= 1.0f;
+			else tex_data[i+3]= 0.0f;
+		}
+	}
+	{ // make grass
+		mf_Texture noise( tex->SizeXLog2(), tex->SizeYLog2() );
+		noise.Noise( 8 );
+		static const float grass_color0[4]= { 0.325f*1.5f, 0.65f*1.4f, 0.2f*1.3f, 1.0f };
+		static const float grass_color1[4]= { 0.325f*2.6f, 0.65f*2.5f, 0.2f*2.4f, 1.0f };
+		static const float sub_color[4]= { 1.0f, 1.0f, 1.0f, 1.0f };
+		noise.Mix( grass_color0, grass_color1, sub_color );
+		tex->Mul( &noise );
+	}
+	{ // blend two grass passes with dirt
+		mf_Texture dirt( tex->SizeXLog2(), tex->SizeYLog2() );
+		GenDirtTexture( &dirt );
+		static const float dirt_dark_color[]= { 0.6f, 0.6f, 0.6f, 0.6f };
+		dirt.Mul( dirt_dark_color );
 
-	noise_sub_tex.Noise();
-	static const float second_noise_mul[]= { 2.0f, 2.0f, 2.0f, 2.0f };
-	noise_sub_tex.Mul( second_noise_mul );
-	tex->Mul( &noise_sub_tex );
+		mf_Texture shifted_tex( tex->SizeXLog2(), tex->SizeYLog2() );
+		shifted_tex.Copy( tex );
+		shifted_tex.Shift( 131, 117 );
+		shifted_tex.Rotate( 90.0f );
+
+		float* tex_data= tex->GetData();
+		float* shifted_data= shifted_tex.GetData();
+		float* dirt_data= dirt.GetData();
+
+		for( unsigned int i= 0; i< tex->SizeX() * tex->SizeY() * 4; i+=4 )
+		{
+			for( unsigned int j= 0 ; j< 3; j++ )
+			{
+				tex_data[i+j]= tex_data[i+j] * tex_data[i+3] + (1.0f - tex_data[i+3]) * dirt_data[i+j];
+				tex_data[i+j]= shifted_data[i+j] * shifted_data[i+3] + (1.0f - shifted_data[i+3]) * tex_data[i+j];
+			}
+		}
+	}
 }
 
 void GenSandTexture( mf_Texture* tex )
 {
-	tex->Noise( 8 );
-	mf_Texture tex2( tex->SizeXLog2(), tex->SizeYLog2() );
-	tex2.Noise( 5 );
+	mf_Rand randomizer;
 
-	tex->Sub( &tex2 );
-	static const float mul_color[]= { 6.0f, 6.0f, 6.0f, 6.0f };
-	tex->Mul( mul_color );
-	static const float add_color[]= { 0.4f, 0.4f, 0.4f, 0.4f };
-	tex->Add( add_color );
+	static const unsigned char sand_colors[]=
+	{
+		188, 166, 129,  131, 111, 74,   167, 143, 107,
+		176, 153, 119,  152, 133, 93,   125, 105, 64 ,
+		139, 119, 86,   180, 155, 124,  189, 171, 125,
+		139, 121, 85,   158, 144, 83,   175, 155, 122,
+		145, 163, 106,  175, 157, 111,  72,  57,  28,
+	};
+	float* tex_data= tex->GetData();
+	for( unsigned int i= 0; i< tex->SizeX() * tex->SizeY() * 4; i+=4 )
+	{
+		unsigned int color_num= randomizer.Rand() % (sizeof(sand_colors)/3);
+		color_num*=3;
+		for( unsigned int j= 0; j< 3; j++ )
+			tex_data[i+j]= float(sand_colors[color_num+j]) * (1.0f/255.0f);
+	}
 
-	static const float sand_color[]= { 0.88f, 0.81f, 0.32f, 0.0f };
-	tex->Mul( sand_color );
+	{ // make waves on sand
+		mf_Texture wave( tex->SizeXLog2()-3, tex->SizeYLog2() );
+		static const float gray0[4]= { 0.95f, 0.95f, 0.95f, 0.95f };
+		static const float gray1[4]= { 1.05f, 1.05f, 1.05f, 1.05f };
+		wave.Gradient( 0, 0, wave.SizeX(), 0, gray0, gray1 );
+		
+		mf_Texture wave_flip( tex->SizeXLog2()-3, tex->SizeYLog2() );
+		wave_flip.Copy( &wave );
+		wave_flip.FlipX();
+
+		mf_Texture waves( tex->SizeXLog2(), tex->SizeYLog2() );
+		for( unsigned int i= 0; i< 4; i++ )
+		{
+			waves.CopyRect( &wave_flip, wave.SizeX(), wave.SizeY(), i*tex->SizeX()/4, 0, 0, 0 );
+			waves.CopyRect( &wave     , wave.SizeX(), wave.SizeY(), i*tex->SizeX()/4 + tex->SizeX()/8, 0, 0, 0 );
+		}
+		waves.SinWaveDeformY( 12.0f, 1.0f/256.0f, 0.0f );
+		waves.SinWaveDeformX( 24.0f, 1.0f/512.0f, 0.0f );
+		tex->Mul( &waves );
+	}
 }
 
 void GenRockTexture( mf_Texture* tex )

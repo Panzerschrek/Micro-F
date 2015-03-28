@@ -531,6 +531,38 @@ void mf_Texture::DownscaleY()
 	data_= new_data;
 }
 
+void mf_Texture::FlipX()
+{
+	for( unsigned int y= 0; y< size_[1]; y++ )
+	{
+		float* data0= data_ + (y<<size_log2_[0]) * 4;
+		float* data1= data0 + (size_[0] - 1 ) * 4;
+		for( unsigned int x= 0; x< size_[0]/2; x++, data0+= 4, data1-= 4 )
+			for( unsigned int j= 0; j< 4; j++ )
+			{
+				float tmp= data0[j];
+				data0[j]= data1[j];
+				data1[j]= tmp;
+			}
+	}
+}
+
+void mf_Texture::FlipY()
+{
+	for( unsigned int y= 0; y< size_[1]/2; y++ )
+	{
+		float* data0= data_ + (y<<size_log2_[0]) * 4;
+		float* data1= data_ + ((size_[1] - y - 1)<<size_log2_[0]) * 4;
+		for( unsigned int x= 0; x< size_[0]; x++, data0+= 4, data1+= 4 )
+			for( unsigned int j= 0; j< 4; j++ )
+			{
+				float tmp= data0[j];
+				data0[j]= data1[j];
+				data1[j]= tmp;
+			}
+	}
+}
+
 void mf_Texture::FillTriangle( const float* xy_coords, const float* color )
 {
 	unsigned int upper_vertex, bottom_vertex, middle_vertex;
@@ -786,6 +818,22 @@ void mf_Texture::Pow( float p )
 		d[1]= mf_Math::pow( d[1], p );
 		d[2]= mf_Math::pow( d[2], p );
 		d[3]= mf_Math::pow( d[3], p );
+	}
+}
+
+void mf_Texture::Mod( const float* mod_color )
+{
+	float* d= data_;
+	float* d_end= data_ + (1<<( size_log2_[0] + size_log2_[1] + 2));
+
+	float mod_inv_color[4]= { 1.0f / mod_color[0], 1.0f / mod_color[1],  1.0f / mod_color[2],  1.0f / mod_color[3] };
+	for( ; d< d_end; d+=4 )
+	{
+		for( unsigned int j= 0; j< 4; j++ )
+		{
+			float tmp= d[j] * mod_inv_color[j];
+			d[j]= (tmp - mf_Math::floor(tmp)) * mod_color[j];
+		}
 	}
 }
 
