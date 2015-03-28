@@ -252,6 +252,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\particles_manager.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\player.cpp"
 				>
 			</File>
@@ -351,6 +355,10 @@
 			</File>
 			<File
 				RelativePath=".\src\music_engine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\particles_manager.h"
 				>
 			</File>
 			<File

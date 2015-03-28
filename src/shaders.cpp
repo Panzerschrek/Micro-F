@@ -531,6 +531,36 @@ const char* const stars_shader_f=
 	"c_=vec4(fi,fi,fi,a);"
 "}";
 
+const char* const particles_shader_v=
+"#version 330\n"
+"uniform mat4 mat;"
+"uniform float s;" // point size
+"in vec4 p;" // position + size
+"in float i;" // intensity
+"in vec4 c;" // transparency_multipler__backgound_multipler__texture_id__reserved
+"out float fi;" // frag intensity
+"out float fbm;" // backgound_multipler
+"void main()"
+"{"
+	"fi=i;"
+	"fbm= c[1];"
+	"vec4 p4=mat*vec4(p.xyz,1.0);"
+	"gl_Position=p4;"
+	"gl_PointSize=p.w*s/p4.w;"
+"}";
+
+const char* const particles_shader_f=
+"#version 330\n"
+"out vec4 c_;"
+"in float fi;"
+"in float fbm;" // backgound_multipler
+"void main()"
+"{"
+	"vec2 rv=gl_PointCoord-vec2(0.5,0.5);"
+	"float a=fi*clamp(0.25-dot(rv,rv),0.0,1.0);"
+	"c_=vec4(a,a,a,a*fbm);"
+"}";
+
 const char* const tonemapping_shader_v=
 "#version 330\n"
 "uniform sampler2D btex;"

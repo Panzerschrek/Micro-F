@@ -48,6 +48,9 @@ extern const char* const sky_shader_f;
 extern const char* const stars_shader_v;
 extern const char* const stars_shader_f;
 
+extern const char* const particles_shader_v;
+extern const char* const particles_shader_f;
+
 extern const char* const tonemapping_shader_v;
 extern const char* const tonemapping_shader_f;
 extern const char* const brightness_fetch_shader_v;

@@ -3,6 +3,7 @@
 
 #include "player.h"
 #include "level.h"
+#include "particles_manager.h"
 #include "text.h"
 #include "settings.h"
 
@@ -38,6 +39,7 @@ private:
 	// eturns shift in terrain cells
 	void GetTerrainMeshShift( float* out_shift );
 	float GetSceneRadius(); // returns half of iagonal of scene bounding box
+	void PrepareParticles();
 
 	void CalculateWaterMeshVisiblyPart( unsigned int* first_quad, unsigned int* quad_count );
 	void CalculateStaticLevelObjectsVisiblyRows( unsigned int* out_first_row, unsigned int* out_last_row );
@@ -45,6 +47,7 @@ private:
 	void DrawTerrain( bool draw_to_water_framebuffer );
 	void DrawSun( bool draw_to_water_framebuffer );
 	void DrawStars( bool draw_to_water_framebuffer );
+	void DrawParticles( bool draw_to_water_framebuffer );
 	void DrawSky(  bool draw_to_water_framebuffer );
 	void DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count );
 	void DrawPowerups();
@@ -172,4 +175,11 @@ private:
 	mf_VertexBuffer level_static_objects_vbo_;
 	mf_GLSLProgram level_static_objects_shader_;
 	mf_GLSLProgram level_static_objects_shadowmap_shader_;
+
+	struct 
+	{
+		mf_ParticleVertex vertices[ MF_MAX_PARTICLES ];
+		mf_VertexBuffer particles_vbo;
+		mf_GLSLProgram particles_shader;
+	} particles_data_;
 };

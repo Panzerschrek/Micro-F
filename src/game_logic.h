@@ -1,6 +1,6 @@
 #pragma once
 #include "level.h"
-
+#include "particles_manager.h"
 class mf_Player;
 
 
@@ -26,6 +26,7 @@ public:
 	void Tick( float dt );
 
 	const mf_Level* GetLevel() const;
+	const mf_ParticlesManager* GetParticlesManager() const;
 	const mf_Powerup* GetPowerups() const;
 	unsigned int GetPowerupCount() const;
 
@@ -34,6 +35,7 @@ private:
 
 private:
 	mf_Level level_;
+	mf_ParticlesManager particles_manager_;
 	mf_Player* player_;
 
 	mf_Powerup* powerups_;
@@ -43,6 +45,11 @@ private:
 inline const mf_Level* mf_GameLogic::GetLevel() const
 {
 	return &level_;
+}
+
+inline const mf_ParticlesManager* mf_GameLogic::GetParticlesManager() const
+{
+	return &particles_manager_;
 }
 
 inline const mf_Powerup* mf_GameLogic::GetPowerups() const

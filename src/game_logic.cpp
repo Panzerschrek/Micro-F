@@ -8,6 +8,7 @@
 
 mf_GameLogic::mf_GameLogic(mf_Player* player)
 	: level_()
+	, particles_manager_()
 	, player_(player)
 	, powerups_(NULL), powerup_count_(0)
 {
@@ -45,6 +46,9 @@ void mf_GameLogic::Tick( float dt )
 		pos[2]+= 4.0f;
 		player_aircraft->SetPos(pos);
 	}
+
+	particles_manager_.Tick( dt );
+	particles_manager_.AddEnginesTrail( player_->GetAircraft() );
 }
 
 void mf_GameLogic::PlaceStars()

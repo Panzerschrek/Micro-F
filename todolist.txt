@@ -4,7 +4,11 @@
 	* [sdelano] risovanije modelej iz vidimoj casti mira
 	* [sdelano] otbrasyvanije tenej modelämi
 	* [sdelano] risovanije modelej s naloženijem tenej
+* boljše tekstur
+* boljše modelej
+* bolee složnaja generaçoja landšafta
 * stolknovenije s landšaftom
+	* [sdelano] rascöt stolknovenije tocki, sfery
 * [sdelano] samozatenenije samolötov cerez stencil buffer
 * HDR
 	* [sdelano] risovanije v rgba16f teksturu, prostejšij tone-mapping
@@ -17,6 +21,7 @@
 	* [sdelano] V-1
 * AI
 	* avtopilot
+		* [sdelano] režim prekrascenija vrascenija
 * castiçy dlä risovanija dyma, vyhlopa reaktivnuh dvigatelej ot samolötov
 * naviball
 	* [sdelano] tekstura

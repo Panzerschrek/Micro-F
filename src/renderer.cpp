@@ -155,6 +155,14 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	static const char* const stars_shader_uniforms[]= { "mat", "s" };
 	stars_shader_.FindUniforms( stars_shader_uniforms, sizeof(stars_shader_uniforms) / sizeof(char*) );
 
+	// stars shader
+	particles_data_.particles_shader.SetAttribLocation( "p", 0 );
+	particles_data_.particles_shader.SetAttribLocation( "i", 1 );
+	particles_data_.particles_shader.SetAttribLocation( "c", 2 );
+	particles_data_.particles_shader.Create( mf_Shaders::particles_shader_v, mf_Shaders::particles_shader_f );
+	static const char* const particles_shader_uniforms[]= { "mat", "s" };
+	particles_data_.particles_shader.FindUniforms( particles_shader_uniforms, sizeof(particles_shader_uniforms) / sizeof(char*) );
+
 	GenTerrainMesh();
 	GenWaterMesh();
 	PrepareAircraftModels();
@@ -210,6 +218,20 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		shift= ((char*)&v.intencity) - ((char*)&v);
 		stars_vbo_.VertexAttrib( 1, 1, GL_UNSIGNED_BYTE, true, shift );
 	} // stars
+	{ // particles
+		particles_data_.particles_vbo.VertexData( NULL, MF_MAX_PARTICLES * sizeof(mf_ParticleVertex), sizeof(mf_ParticleVertex) );
+
+		mf_ParticleVertex v;
+		unsigned int shift;
+
+		shift= ((char*)v.pos_size) - ((char*)&v);
+		particles_data_.particles_vbo.VertexAttrib( 0, 4, GL_FLOAT, false, shift );
+		shift= ((char*)&v.luminance) - ((char*)&v);
+		particles_data_.particles_vbo.VertexAttrib( 1, 1, GL_FLOAT, false, shift );
+		shift= ((char*)v.transparency_multipler__backgound_multipler__texture_id__reserved) - ((char*)&v);
+		particles_data_.particles_vbo.VertexAttrib( 2, 4, GL_UNSIGNED_BYTE, true, shift );
+
+	} // particles
 	{ // static level meshes
 		// setup ubo for matrices and sun vectors
 		int alignment;
@@ -441,6 +463,8 @@ void mf_Renderer::Resize()
 
 void mf_Renderer::DrawFrame()
 {
+	PrepareParticles();
+
 	glClearStencil( MF_ZERO_STENCIL_VALUE );
 
 	glBindFramebuffer( GL_FRAMEBUFFER, shadowmap_fbo_.fbo_id );
@@ -462,6 +486,7 @@ void mf_Renderer::DrawFrame()
 	DrawPowerups();
 	DrawSky( true );
 	//DrawStars( true );
+	DrawParticles( true );
 	DrawSun( true );
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
@@ -481,6 +506,7 @@ void mf_Renderer::DrawFrame()
 	DrawSky( false );
 	DrawPowerups();
 	//DrawStars( false );
+	DrawParticles( false );
 	DrawSun( false );
 	DrawWater();
 
@@ -1167,6 +1193,15 @@ float mf_Renderer::GetSceneRadius()
 	return Vec3Len(d) * 0.5f;
 }
 
+void mf_Renderer::PrepareParticles()
+{
+	game_logic_->GetParticlesManager()->PrepareParticlesVertices( particles_data_.vertices );
+	particles_data_.particles_vbo.VertexSubData(
+		particles_data_.vertices,
+		sizeof(mf_ParticleVertex) * game_logic_->GetParticlesManager()->GetParticlesCount(),
+		0 );
+}
+
 void mf_Renderer::CalculateWaterMeshVisiblyPart( unsigned int* first_quad, unsigned int* quad_count )
 {
 	const unsigned int water_raw_distance_y= ( MF_TERRAIN_MESH_SIZE_Y_CHUNKS * MF_TERRAIN_CHUNK_SIZE_CL / 2 ) / MF_WATER_QUAD_SIZE_CL + 2;
@@ -1333,6 +1368,33 @@ void mf_Renderer::DrawStars( bool draw_to_water_framebuffer )
 
 	glDisable( GL_BLEND );
 	glDisable( GL_PROGRAM_POINT_SIZE );
+}
+
+void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
+{
+	particles_data_.particles_shader.Bind();
+
+	particles_data_.particles_shader.UniformMat4( "mat", view_matrix_ );
+
+	float sprite_size;
+	const float init_sprite_size= 1.0f / mf_Math::tan(player_->Fov() * 0.5f );
+	if( draw_to_water_framebuffer )
+		sprite_size= float(water_reflection_fbo_.size[1]) * init_sprite_size;
+	else
+		sprite_size= float(mf_MainLoop::Instance()->ViewportHeight()) * init_sprite_size;
+	particles_data_.particles_shader.UniformFloat( "s", sprite_size );
+
+	glDepthMask(0);
+	glEnable( GL_PROGRAM_POINT_SIZE );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+
+	particles_data_.particles_vbo.Bind();
+	glDrawArrays( GL_POINTS, 0, game_logic_->GetParticlesManager()->GetParticlesCount() );
+
+	glDisable( GL_BLEND );
+	glDisable( GL_PROGRAM_POINT_SIZE );
+	glDepthMask(1);
 }
 
 void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
