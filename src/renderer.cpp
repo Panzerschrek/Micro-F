@@ -162,7 +162,11 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 
 	{ // sky mesh
 		mf_DrawingModel model;
-		GenSkySphere( &model );
+		static const unsigned int quality_partitions[ mf_Settings::LastQuality ]= { 16, 20, 24 };
+		GenSkySphere( &model, quality_partitions[settings_.sky_quality] );
+		MF_DEBUG_INFO_STR_I( "sky triangles: ", model.IndexCount() / 3 );
+		MF_DEBUG_INFO_STR_I( "sky vertices: ", model.VertexCount() );
+
 		sky_vbo_.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
 		sky_vbo_.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
 
@@ -590,7 +594,7 @@ void mf_Renderer::CreateWaterReflectionFramebuffer()
 void mf_Renderer::CreateShadowmapFramebuffer()
 {
 	shadowmap_fbo_.sun_azimuth= -MF_PI3;
-	shadowmap_fbo_.sun_elevation= MF_PI6;
+	shadowmap_fbo_.sun_elevation= MF_PI4;
 
 	SphericalCoordinatesToVec( shadowmap_fbo_.sun_azimuth, shadowmap_fbo_.sun_elevation, shadowmap_fbo_.sun_vector );
 

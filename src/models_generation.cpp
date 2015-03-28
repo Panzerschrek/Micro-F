@@ -175,10 +175,8 @@ void GenCylinder( mf_DrawingModel* model, unsigned int segments, unsigned int pa
 }
 
 
-void GenSkySphere( mf_DrawingModel* model )
+void GenSkySphere( mf_DrawingModel* model, unsigned int partitiion )
 {
-	const unsigned int partitiion= 18;
-
 	mf_DrawingModel icosahderon;
 	icosahderon.LoadFromMFMD( mf_Models::icosahedron );
 

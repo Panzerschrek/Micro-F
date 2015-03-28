@@ -134,6 +134,7 @@ void mf_MainLoop::Play()
 	settings.use_hdr= false;
 	settings.shadows_quality= mf_Settings::QualityHeight;
 	settings.terrain_quality= mf_Settings::QualityMedium;
+	settings.sky_quality= mf_Settings::QualityMedium;
 
 	renderer_= new mf_Renderer( &player_, game_logic_, text_, &settings );
 

@@ -13,5 +13,6 @@ struct mf_Settings
 
 	Quality shadows_quality;
 	Quality terrain_quality;
+	Quality sky_quality;
 	bool use_hdr;
 };
