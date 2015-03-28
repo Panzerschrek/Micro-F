@@ -52,9 +52,9 @@ static const char* low_normal_height[]=
 	"low", "normal", "height"
 };
 
-static const char* on_off[]=
+static const char* off_on[]=
 {
-	"on", "off"
+	"off", "on",
 };
 
 struct mf_GuiVertex
@@ -427,7 +427,7 @@ void mf_Gui::PrepareMenus()
 
 	// hdr button text
 	text= &menu->buttons[1].text;
-	strcpy( text->text, on_off[0] );
+	strcpy( text->text, off_on[0] );
 	text->size= 2;
 	text->colomn= screen_size_cl[0]/2;
 	text->row= 7;
@@ -899,7 +899,14 @@ void mf_Gui::DrawCursor()
 void mf_Gui::OnPlayButton()
 {
 	current_menu_= NULL;
-	main_loop_->Play();
+
+	mf_Settings settings;
+	settings.use_hdr= settings_menu_.buttons[1].user_data == 1;
+	settings.shadows_quality= mf_Settings::QualityHeight;
+	settings.terrain_quality= mf_Settings::QualityMedium;
+	settings.sky_quality= mf_Settings::QualityMedium;
+
+	main_loop_->Play( &settings );
 }
 
 void mf_Gui::OnSettingsButton()
@@ -911,7 +918,7 @@ void mf_Gui::OnHdrButton()
 {
 	GuiButton* button= &settings_menu_.buttons[1];
 	button->user_data^= 1;
-	strcpy( button->text.text, on_off[ button->user_data ] );
+	strcpy( button->text.text, off_on[ button->user_data ] );
 
 }
 

@@ -124,19 +124,13 @@ void mf_MainLoop::Loop()
 	} // while !quit
 }
 
-void mf_MainLoop::Play()
+void mf_MainLoop::Play(  const mf_Settings* settings )
 {
 	game_logic_= new mf_GameLogic( &player_ );
 
 	mode_= ModeGame;
 
-	mf_Settings settings;
-	settings.use_hdr= false;
-	settings.shadows_quality= mf_Settings::QualityHeight;
-	settings.terrain_quality= mf_Settings::QualityMedium;
-	settings.sky_quality= mf_Settings::QualityMedium;
-
-	renderer_= new mf_Renderer( &player_, game_logic_, text_, &settings );
+	renderer_= new mf_Renderer( &player_, game_logic_, text_, settings );
 
 	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
 }

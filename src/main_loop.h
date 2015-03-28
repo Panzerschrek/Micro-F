@@ -28,7 +28,7 @@ public:
 	unsigned int ViewportWidth();
 	unsigned int ViewportHeight();
 
-	void Play();
+	void Play( const mf_Settings* settings );
 	void Quit();
 
 private:
