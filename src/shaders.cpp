@@ -557,8 +557,8 @@ const char* const particles_shader_f=
 "void main()"
 "{"
 	"vec2 rv=gl_PointCoord-vec2(0.5,0.5);"
-	"float a=fi*clamp(0.25-dot(rv,rv),0.0,1.0);"
-	"c_=vec4(a,a,a,a*fbm);"
+	"float a=clamp(0.25-dot(rv,rv),0.0,1.0);"
+	"c_=vec4(fi,fi,fi,a*fbm);"
 "}";
 
 const char* const tonemapping_shader_v=

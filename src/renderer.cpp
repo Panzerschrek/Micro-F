@@ -44,6 +44,67 @@ static const float g_stars_distance_scaler= 1.7f;
 static const float g_sky_radius_scaler= 2.0f;
 static const float g_zfar_scaler= 2.5f;
 
+struct mf_PerticleSortInfo
+{
+	const mf_ParticleVertex* particle_vertex;
+	float z;
+};
+
+// Sort articles from far to near
+static void SortParticles_r( mf_PerticleSortInfo* in_data, mf_PerticleSortInfo* tmp_data, unsigned int count )
+{
+	if( count <= 1 )
+	{
+		return;
+	}
+	else if( count == 2 )
+	{
+		if( in_data[0].z < in_data[1].z )
+		{
+			mf_PerticleSortInfo tmp= in_data[0];
+			in_data[0]= in_data[1];
+			in_data[1]= tmp;
+		}
+	}
+	else
+	{
+		unsigned int half_count= count >> 1;
+		SortParticles_r( in_data, tmp_data, half_count );
+		SortParticles_r( in_data + half_count, tmp_data + half_count, count - half_count );
+
+		unsigned int p[2]= { 0, half_count };
+		unsigned int p_end[2]= { half_count, count };
+		unsigned int out_p= 0;
+		while( out_p < count )
+		{
+			if( p[0] == p_end[0] )
+			{
+				tmp_data[out_p]= in_data[p[1]]; p[1]++;
+			}
+			else if( p[1] == p_end[1] )
+			{
+				tmp_data[out_p]= in_data[p[0]]; p[0]++;
+			}
+			else
+			{
+				if( in_data[p[0]].z > in_data[p[1]].z )
+				{
+					tmp_data[out_p]= in_data[p[0]];
+					p[0]++;
+				}
+				else
+				{
+					tmp_data[out_p]= in_data[p[1]];
+					p[1]++;
+				}
+			}
+			out_p++;
+		}
+		for( unsigned int i= 0; i< count; i++ )
+			in_data[i]= tmp_data[i];
+	} // if need recursy
+}
+
 mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logic, mf_Text* text, const mf_Settings* settings )
 	: player_(player), level_(game_logic->GetLevel()), game_logic_(game_logic)
 	, text_(text)
@@ -506,9 +567,9 @@ void mf_Renderer::DrawFrame()
 	DrawSky( false );
 	DrawPowerups();
 	//DrawStars( false );
-	DrawParticles( false );
 	DrawSun( false );
 	DrawWater();
+	DrawParticles( false );
 
 	if( settings_.use_hdr )
 	{
@@ -1196,10 +1257,10 @@ float mf_Renderer::GetSceneRadius()
 void mf_Renderer::PrepareParticles()
 {
 	game_logic_->GetParticlesManager()->PrepareParticlesVertices( particles_data_.vertices );
-	particles_data_.particles_vbo.VertexSubData(
-		particles_data_.vertices,
-		sizeof(mf_ParticleVertex) * game_logic_->GetParticlesManager()->GetParticlesCount(),
-		0 );
+	//particles_data_.particles_vbo.VertexSubData(
+	//	particles_data_.vertices,
+	//	sizeof(mf_ParticleVertex) * game_logic_->GetParticlesManager()->GetParticlesCount(),
+	//	0 );
 }
 
 void mf_Renderer::CalculateWaterMeshVisiblyPart( unsigned int* first_quad, unsigned int* quad_count )
@@ -1372,6 +1433,32 @@ void mf_Renderer::DrawStars( bool draw_to_water_framebuffer )
 
 void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
 {
+	{
+		mf_PerticleSortInfo particles_sort[ MF_MAX_PARTICLES ];
+		mf_PerticleSortInfo particles_sort_tmp[ MF_MAX_PARTICLES ];
+		unsigned int count= game_logic_->GetParticlesManager()->GetParticlesCount();
+		for( unsigned int i= 0; i< count; i++ )
+		{
+			particles_sort[i].particle_vertex= particles_data_.vertices + i;
+			particles_sort[i].z=
+				view_matrix_[ 2] * particles_data_.vertices[i].pos_size[0] +
+				view_matrix_[ 6] * particles_data_.vertices[i].pos_size[1] +
+				view_matrix_[10] * particles_data_.vertices[i].pos_size[2] +
+				view_matrix_[14];
+		}
+		SortParticles_r( particles_sort, particles_sort_tmp, count );
+		for( unsigned int i= 0; i< count; i++ )
+			particles_data_.sorted_vertices[i]= *particles_sort[i].particle_vertex;
+		
+		particles_data_.particles_vbo.Bind();
+		particles_data_.particles_vbo.VertexSubData( particles_data_.sorted_vertices, sizeof(mf_ParticleVertex) * count, 0 );
+#ifdef MF_DEBUG
+		char str[128];
+		sprintf( str, "particles: %d", count );
+		text_->AddText( 1, 5, 1, mf_Text::default_color, str );
+#endif
+	}
+
 	particles_data_.particles_shader.Bind();
 
 	particles_data_.particles_shader.UniformMat4( "mat", view_matrix_ );
@@ -1384,17 +1471,14 @@ void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
 		sprite_size= float(mf_MainLoop::Instance()->ViewportHeight()) * init_sprite_size;
 	particles_data_.particles_shader.UniformFloat( "s", sprite_size );
 
-	glDepthMask(0);
 	glEnable( GL_PROGRAM_POINT_SIZE );
 	glEnable( GL_BLEND );
-	glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-	particles_data_.particles_vbo.Bind();
 	glDrawArrays( GL_POINTS, 0, game_logic_->GetParticlesManager()->GetParticlesCount() );
 
 	glDisable( GL_BLEND );
 	glDisable( GL_PROGRAM_POINT_SIZE );
-	glDepthMask(1);
 }
 
 void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )

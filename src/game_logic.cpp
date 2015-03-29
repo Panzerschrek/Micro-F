@@ -49,6 +49,7 @@ void mf_GameLogic::Tick( float dt )
 
 	particles_manager_.Tick( dt );
 	particles_manager_.AddEnginesTrail( player_->GetAircraft() );
+	particles_manager_.AddEnginesFire( player_->GetAircraft() );
 }
 
 void mf_GameLogic::PlaceStars()

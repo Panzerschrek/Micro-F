@@ -179,6 +179,7 @@ private:
 	struct 
 	{
 		mf_ParticleVertex vertices[ MF_MAX_PARTICLES ];
+		mf_ParticleVertex sorted_vertices[ MF_MAX_PARTICLES ];
 		mf_VertexBuffer particles_vbo;
 		mf_GLSLProgram particles_shader;
 	} particles_data_;
