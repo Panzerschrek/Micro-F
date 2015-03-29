@@ -147,4 +147,5 @@ void mf_Player::CalculateCamRadius()
 	}
 
 	cam_radius_= 1.2f * Vec3Len( radius_vecor );
+	cam_radius_= 40.0f;
 }

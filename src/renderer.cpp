@@ -1487,7 +1487,7 @@ void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
 
 	glEnable( GL_PROGRAM_POINT_SIZE );
 	glEnable( GL_BLEND );
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	glBlendFunc( GL_ONE, GL_SRC_ALPHA );
 
 	glDrawArrays( GL_POINTS, 0, game_logic_->GetParticlesManager()->GetParticlesCount() );
 
