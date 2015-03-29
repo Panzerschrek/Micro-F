@@ -384,7 +384,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
-
+goto gen_clouds;
 	{ // aircraft textures
 		mf_Texture tex( 10, 10 );
 
@@ -465,7 +465,8 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 	}
-
+gen_clouds:
+	GenClouds();
 	CreateWaterReflectionFramebuffer();
 	CreateShadowmapFramebuffer();
 
@@ -812,6 +813,11 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 	glDrawBuffers( 1, &color_attachment );
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+}
+
+void mf_Renderer::GenClouds()
+{
+	sky_clouds_data_.clouds_gen_shader.Create( mf_Shaders::clouds_gen_shader_v, mf_Shaders::clouds_gen_shader_f );
 }
 
 void mf_Renderer::GenTerrainMesh()

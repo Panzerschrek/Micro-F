@@ -28,6 +28,7 @@ private:
 	void CreateHDRFramebuffer();
 	void CreateBrightnessFetchFramebuffer();
 
+	void GenClouds();
 	void GenTerrainMesh();
 	void GenWaterMesh();
 	void PrepareAircraftModels();
@@ -185,4 +186,12 @@ private:
 
 		GLuint smoke_texture;
 	} particles_data_;
+
+	struct
+	{
+		unsigned int texture_size;
+		GLuint textures[6];
+		GLuint fbo_id;
+		mf_GLSLProgram clouds_gen_shader;
+	} sky_clouds_data_;
 };

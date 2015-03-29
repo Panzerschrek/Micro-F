@@ -25,6 +25,8 @@ common input/output names
 "c_" - output color of fragment shader
 */
 
+#define MULTILINE_STING(__VA_ARGS__) #__VA_ARGS__
+
 namespace mf_Shaders
 {
 
@@ -650,5 +652,88 @@ const char* const brightness_history_write_shader_f=
 "{"
 	"c_=texelFetch(tex,ivec2(0,0),6);"
 "}";
+
+const char* const clouds_gen_shader_v=
+"#version 330\n"
+"out vec2 fp;" // frag position
+"const vec2 coord[6]=vec2[6]"
+"("
+	"vec2(0.0,0.0),vec2(1.0,0.0),vec2(1.0,1.0),"
+	"vec2(0.0,0.0),vec2(0.0,1.0),vec2(1.0,1.0)"
+");"
+"void main()"
+"{"
+	"fp=coord[gl_VertexID]*vec2(1.0,1.0)-vec2(1.0,1.0);"
+	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
+"}";
+
+const char* const clouds_gen_shader_f=
+"#version 330\n"
+"in vec2 fp;"
+"out vec4 c_;"
+
+"const int seed= 0;"
+"int Noise3(int x, int y, int z)"
+"{"
+	"const int X_NOISE_GEN = 1;"
+	"const int Y_NOISE_GEN = 31337;"
+	"const int Z_NOISE_GEN = 263;"
+	"const int SEED_NOISE_GEN = 1013;"
+	"int n = ("
+		"X_NOISE_GEN    * x +"
+		"Y_NOISE_GEN    * y +"
+		"Z_NOISE_GEN    * z +"
+		"SEED_NOISE_GEN * seed )"
+		"& 0x7fffffff;"
+		"n = (n >> 13) ^ n;"
+	"return ( n * ( n * n * 60493 + 19990303 ) + 1376312589 ) & 0x7fffffff;"
+"}"
+
+"float Noise3Interpolated(vec3 xyz, int k)"
+"{"
+	"ivec3 kvec= ivec3(k,k,k);"
+	"vec3 kpow_vec= vec3(ivec3(1,1,1) << k);"
+	"ivec3 i_xyz= ivec3(xyz);"
+	"vec3 delta= (xyz - vec3(i_xyz))/kpow_vec;"
+	"i_xyz>>=k;"
+	"int noise[8]=int[8]"
+	"("
+		"Noise3( i_xyz[0]  , i_xyz[1]  , i_xyz[2]   )>>16,"
+		"Noise3( i_xyz[0]+1, i_xyz[1]  , i_xyz[2]   )>>16,"
+		"Noise3( i_xyz[0]  , i_xyz[1]+1, i_xyz[2]   )>>16,"
+		"Noise3( i_xyz[0]+1, i_xyz[1]+1, i_xyz[2]   )>>16,"
+		"Noise3( i_xyz[0]  , i_xyz[1]  , i_xyz[2]+1 )>>16,"
+		"Noise3( i_xyz[0]+1, i_xyz[1]  , i_xyz[2]+1 )>>16,"
+		"Noise3( i_xyz[0]  , i_xyz[1]+1, i_xyz[2]+1 )>>16,"
+		"Noise3( i_xyz[0]+1, i_xyz[1]+1, i_xyz[2]+1 )>>16"
+	");"
+	"vec4 interp_z=vec4"
+	"("
+		"mix(float(noise[0]), float(noise[4]), delta.z),"
+		"mix(float(noise[1]), float(noise[5]), delta.z),"
+		"mix(float(noise[2]), float(noise[6]), delta.z),"
+		"mix(float(noise[3]), float(noise[7]), delta.z)"
+	");"
+	"vec2 interp_y=vec2"
+	"("
+		"mix(interp_z.x, interp_z.z, delta.y),"
+		"mix(interp_z.y, interp_z.w, delta.y)"
+	");"
+	"return mix(interp_y.x, interp_y.y, delta.z)/32768.0;"
+"}"
+
+"float OcatveNoise(vec3 xyz, int octaves)"
+"{"
+	"float f=0.0;"
+	"float m= 0.5;"
+	"for( int i= 0; i< octaves; i++, m*= 0.5 )"
+		"f+= Noise3Interpolated(xyz,i) * m;"
+	"return f;"
+"}"
+"void main()"
+"{"
+	"float a= OcatveNoise(gl_FragCoord,7);"
+	"c_=vec4(a,a,a,0.5);"
+"}"; // multiline string
 
 } // namespace mf_Shaders
