@@ -25,6 +25,18 @@ public:
 	void Draw();
 	void Resize();
 
+	enum MenuMode
+	{
+		MainMenu,
+		SettingsMenu,
+		LoadingMenu,
+		InGame,
+		InGameMenu,
+		CreditsMenu,
+		WinMenu,
+		GameOverMenu,
+		LastMenuMode
+	};
 	enum NaviBallIcons
 	{
 		IconSpeed,
@@ -98,7 +110,8 @@ private:
 	GLuint textures[LastGuiTexture];
 	GLuint cursor_texture_;
 
-	GuiMenu main_menu_;
-	GuiMenu settings_menu_;
+	//GuiMenu main_menu_;
+	//GuiMenu settings_menu_;
+	GuiMenu menus_[ LastMenuMode ];
 	GuiMenu* current_menu_;
 };

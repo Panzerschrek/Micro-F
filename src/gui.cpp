@@ -190,7 +190,7 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 
 	PrepareMenus();
 
-	current_menu_= &main_menu_;
+	current_menu_= &menus_[ MainMenu ];
 	//OnPlayButton(); // hack for fast development
 }
 
@@ -301,7 +301,7 @@ void mf_Gui::PrepareMenus()
 	MAIN MENU
 	*/
 
-	menu= &main_menu_;
+	menu= &menus_[ MainMenu ];
 	menu->button_count=0;
 	menu->text_count= 0;
 	menu->has_backgound= true;
@@ -316,7 +316,7 @@ void mf_Gui::PrepareMenus()
 	menu->text_count++;
 
 	// subtitle
-	text= &main_menu_.texts[1];
+	text= &menu->texts[1];
 	strcpy( text->text, c_subtitle_text );
 	text->size= 1;
 	text->colomn= screen_size_cl[0]/2 + 4;
@@ -382,7 +382,7 @@ void mf_Gui::PrepareMenus()
 	SETTING MENU
 	*/
 
-	menu= &settings_menu_;
+	menu= &menus_[ SettingsMenu ];
 	menu->button_count=0;
 	menu->text_count= 0;
 	menu->has_backgound= true;
@@ -901,7 +901,7 @@ void mf_Gui::OnPlayButton()
 	current_menu_= NULL;
 
 	mf_Settings settings;
-	settings.use_hdr= settings_menu_.buttons[1].user_data == 1;
+	settings.use_hdr= menus_[ SettingsMenu ].buttons[1].user_data == 1;
 	settings.shadows_quality= mf_Settings::QualityHeight;
 	settings.terrain_quality= mf_Settings::QualityMedium;
 	settings.sky_quality= mf_Settings::QualityMedium;
@@ -911,12 +911,12 @@ void mf_Gui::OnPlayButton()
 
 void mf_Gui::OnSettingsButton()
 {
-	current_menu_= &settings_menu_;
+	current_menu_= &menus_[ SettingsMenu ];
 }
 
 void mf_Gui::OnHdrButton()
 {
-	GuiButton* button= &settings_menu_.buttons[1];
+	GuiButton* button= &menus_[ SettingsMenu ].buttons[1];
 	button->user_data^= 1;
 	strcpy( button->text.text, off_on[ button->user_data ] );
 
@@ -929,7 +929,7 @@ void mf_Gui::OnQuitButton()
 
 void mf_Gui::OnChangeDayTimeButton()
 {
-	GuiButton* button= &settings_menu_.buttons[0];
+	GuiButton* button= &menus_[ SettingsMenu ].buttons[0];
 	button->user_data++;
 	if( button->user_data >= sizeof(day_times) / sizeof(char*) )
 		button->user_data= 0;
@@ -938,5 +938,5 @@ void mf_Gui::OnChangeDayTimeButton()
 
 void mf_Gui::OnSettingsBackButton()
 {
-	current_menu_= &main_menu_;
+	current_menu_= &menus_[ MainMenu ];
 }
