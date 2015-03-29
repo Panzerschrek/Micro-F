@@ -70,6 +70,10 @@ public:
 	void Mod( const float* mod_color );
 
 	void Mix( const float* color0, const float* color1, const float* sub_color );
+	void AlphaBlendSrc( const mf_Texture* t );
+	void AlphaBlendDst( const mf_Texture* t );
+	void AlphaBlendOneMinusSrc( const mf_Texture* t );
+	void AlphaBlendOneMinusDst( const mf_Texture* t );
 
 	void DrawText( unsigned int x, unsigned int y, unsigned int size, const float* color, const char* text );
 

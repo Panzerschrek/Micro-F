@@ -848,6 +848,54 @@ void mf_Texture::Mix( const float* color0, const float* color1, const float* sub
 	}
 }
 
+void mf_Texture::AlphaBlendSrc( const mf_Texture* t )
+{
+	float* d= data_;
+	const float* src_d_= t->data_;
+	float* d_end= data_ + (1<<( size_log2_[0] + size_log2_[1] + 2));
+	for( ; d< d_end; d+= 4, src_d_+= 4 )
+	{
+		for( unsigned int j= 0; j< 4; j++ )
+			d[j]= d[j] * d[3] + src_d_[j] * (1.0f - d[3]);
+	}
+}
+
+void mf_Texture::AlphaBlendDst( const mf_Texture* t )
+{
+	float* d= data_;
+	const float* src_d_= t->data_;
+	float* d_end= data_ + (1<<( size_log2_[0] + size_log2_[1] + 2));
+	for( ; d< d_end; d+= 4, src_d_+= 4 )
+	{
+		for( unsigned int j= 0; j< 4; j++ )
+			d[j]= d[j] * src_d_[3] + src_d_[j] * (1.0f - src_d_[3]);
+	}
+}
+
+void mf_Texture::AlphaBlendOneMinusSrc( const mf_Texture* t )
+{
+	float* d= data_;
+	const float* src_d_= t->data_;
+	float* d_end= data_ + (1<<( size_log2_[0] + size_log2_[1] + 2));
+	for( ; d< d_end; d+= 4, src_d_+= 4 )
+	{
+		for( unsigned int j= 0; j< 4; j++ )
+			d[j]= src_d_[j] * d[3] + d[j] * (1.0f - d[3]);
+	}
+}
+
+void mf_Texture::AlphaBlendOneMinusDst( const mf_Texture* t )
+{
+	float* d= data_;
+	const float* src_d_= t->data_;
+	float* d_end= data_ + (1<<( size_log2_[0] + size_log2_[1] + 2));
+	for( ; d< d_end; d+= 4, src_d_+= 4 )
+	{
+		for( unsigned int j= 0; j< 4; j++ )
+			d[j]= src_d_[j] * src_d_[3] + d[j] * (1.0f - src_d_[3]);
+	}
+}
+
 void mf_Texture::DrawText( unsigned int x, unsigned int y, unsigned int size, const float* color, const char* text )
 {
 	unsigned int size_x1= size_[0] - 1;

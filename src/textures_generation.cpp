@@ -803,6 +803,57 @@ void GenSpruceBranch( mf_Texture* tex )
 	}
 }
 
+void GenBirchBarkTexture( mf_Texture* tex )
+{
+	tex->Noise();
+	static const float mul_color[]= { 0.2f, 0.2f, 0.2f, 0.2f };
+	static const float add_color[]= { 0.6f, 0.6f, 0.6f, 0.6f };
+	tex->Mul( mul_color );
+	tex->Add( add_color );
+
+	{ // gen black stripes on bark
+		mf_Texture stripes_tex( tex->SizeXLog2()+1, tex->SizeYLog2() +2 );
+		stripes_tex.PoissonDiskPoints( 96 );
+
+		float* tex_data= stripes_tex.GetData();
+		for( unsigned int i= 0; i< stripes_tex.SizeX() * stripes_tex.SizeY() * 4; i+= 4 )
+		{
+			static const float c_middle= 0.6f;
+			float l= 1.0f - tex_data[i+1];
+			l= (l - c_middle) * 4.0f + c_middle;
+			l= mf_Math::clamp( 0.0f, 1.0f, l );
+			tex_data[i]= tex_data[i+1]= tex_data[i+2]= l;
+			tex_data[i+3]= l > c_middle ? 0.0f : 1.0f;
+		}
+		stripes_tex.DownscaleX();
+		stripes_tex.DownscaleY();
+		stripes_tex.DownscaleY();
+		stripes_tex.DownscaleY();
+		stripes_tex.DownscaleY();
+
+		mf_Texture stripes_tex_downscaled( tex->SizeXLog2(), tex->SizeYLog2() );
+		stripes_tex_downscaled.CopyRect( &stripes_tex, tex->SizeX(), tex->SizeY(), 0, 0, 0, 0 );
+
+		tex->AlphaBlendOneMinusDst( &stripes_tex_downscaled );
+	}
+	/*{ // gen low bark part
+
+		mf_Texture noise( tex->SizeXLog2(), tex->SizeYLog2() );
+		mf_Texture gradient( tex->SizeXLog2(), tex->SizeYLog2() );
+		noise.Noise();
+
+		static const float grad_color0[4]= { 0.0f, 0.0f, 0.0f, 0.0f };
+		static const float grad_color1[4]= { 3.0f, 3.0f, 3.0f, 3.0f };
+		gradient.Gradient( 0, 0, 0, tex->SizeY()/3, grad_color1, grad_color0 );
+		gradient.Mul( &noise );
+		gradient.Pow( 2.0f );
+
+		tex->Min( &gradient );
+	}*/
+
+	SetAlphaToOne( tex );
+}
+
 void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 {
 	GenNaviballTexture,
@@ -821,5 +872,6 @@ void (* const static_level_object_texture_gen_func[LastStaticLevelObjectTexture]
 	GenOakTexture,
 	GenOakLeafsTexture,
 	GenSpruceTexture,
-	GenSpruceBranch
+	GenSpruceBranch,
+	GenBirchBarkTexture
 };
