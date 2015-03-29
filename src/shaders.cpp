@@ -691,10 +691,9 @@ const char* const clouds_gen_shader_f=
 
 "float Noise3Interpolated(vec3 xyz, int k)"
 "{"
-	"ivec3 kvec= ivec3(k,k,k);"
-	"vec3 kpow_vec= vec3(ivec3(1,1,1) << k);"
+	"float k_val= float(1<<k);"
 	"ivec3 i_xyz= ivec3(xyz);"
-	"vec3 delta= (xyz - vec3(i_xyz))/kpow_vec;"
+	"vec3 delta= mod( xyz, k_val) / k_val;"
 	"i_xyz>>=k;"
 	"int noise[8]=int[8]"
 	"("
@@ -719,7 +718,7 @@ const char* const clouds_gen_shader_f=
 		"mix(interp_z.x, interp_z.z, delta.y),"
 		"mix(interp_z.y, interp_z.w, delta.y)"
 	");"
-	"return mix(interp_y.x, interp_y.y, delta.z)/32768.0;"
+	"return mix(interp_y.x, interp_y.y, delta.x)/32768.0;"
 "}"
 
 "float OcatveNoise(vec3 xyz, int octaves)"
@@ -727,12 +726,12 @@ const char* const clouds_gen_shader_f=
 	"float f=0.0;"
 	"float m= 0.5;"
 	"for( int i= 0; i< octaves; i++, m*= 0.5 )"
-		"f+= Noise3Interpolated(xyz,i) * m;"
+		"f+= Noise3Interpolated(xyz,octaves-i-1) * m;"
 	"return f;"
 "}"
 "void main()"
 "{"
-	"float a= OcatveNoise(gl_FragCoord,7);"
+	"float a= OcatveNoise(vec3(gl_FragCoord.xy*0.25,0.0),5);"
 	"c_=vec4(a,a,a,0.5);"
 "}"; // multiline string
 

@@ -817,7 +817,28 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 
 void mf_Renderer::GenClouds()
 {
+	sky_clouds_data_.texture_size= 512;
 	sky_clouds_data_.clouds_gen_shader.Create( mf_Shaders::clouds_gen_shader_v, mf_Shaders::clouds_gen_shader_f );
+
+	glGenTextures( 1, &sky_clouds_data_.textures[0] );
+	glBindTexture( GL_TEXTURE_2D, sky_clouds_data_.textures[0] );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
+		sky_clouds_data_.texture_size, sky_clouds_data_.texture_size,
+		0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+
+	glGenFramebuffers( 1, &sky_clouds_data_.fbo_id );
+	glBindFramebuffer( GL_FRAMEBUFFER, sky_clouds_data_.fbo_id );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, sky_clouds_data_.textures[0], 0 );
+	GLuint color_attachment= GL_COLOR_ATTACHMENT0;
+	glDrawBuffers( 1, &color_attachment );
+
+	{ // sraw sky
+		sky_clouds_data_.clouds_gen_shader.Bind();
+		glDisable( GL_DEPTH_TEST );
+		glDrawArrays( GL_TRIANGLES, 0, 6 );
+	}
+
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 }
 
 void mf_Renderer::GenTerrainMesh()
