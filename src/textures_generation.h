@@ -59,3 +59,5 @@ void GenDirtTexture( mf_Texture* tex );
 void GenDirtWithGrassTexture( mf_Texture* tex );
 void GenSandTexture( mf_Texture* tex );
 void GenRockTexture( mf_Texture* tex );
+
+void GenSmokeParticle( mf_Texture* tex );

@@ -216,12 +216,12 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	static const char* const stars_shader_uniforms[]= { "mat", "s" };
 	stars_shader_.FindUniforms( stars_shader_uniforms, sizeof(stars_shader_uniforms) / sizeof(char*) );
 
-	// stars shader
+	// particles shader
 	particles_data_.particles_shader.SetAttribLocation( "p", 0 );
 	particles_data_.particles_shader.SetAttribLocation( "i", 1 );
 	particles_data_.particles_shader.SetAttribLocation( "c", 2 );
 	particles_data_.particles_shader.Create( mf_Shaders::particles_shader_v, mf_Shaders::particles_shader_f );
-	static const char* const particles_shader_uniforms[]= { "mat", "s" };
+	static const char* const particles_shader_uniforms[]= { /*vert*/"mat", "smat", "stex", "s", /*frag*/ "tex", "sl", "al" };
 	particles_data_.particles_shader.FindUniforms( particles_shader_uniforms, sizeof(particles_shader_uniforms) / sizeof(char*) );
 
 	GenTerrainMesh();
@@ -371,17 +371,18 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	}
 
 	{ // test texture
-		/*mf_Texture tex( 4, 4 );
+		mf_Texture tex( 7, 7 );
+		GenSmokeParticle( &tex );
 		tex.LinearNormalization(1.0f);
 
-		glGenTextures( 1, &test_texture_ );
-		glBindTexture( GL_TEXTURE_2D, test_texture_ );
+		glGenTextures( 1, &particles_data_.smoke_texture );
+		glBindTexture( GL_TEXTURE_2D, particles_data_.smoke_texture );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
 			1 << tex.SizeXLog2(), 1 << tex.SizeYLog2(), 0,
 			GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-		glGenerateMipmap(GL_TEXTURE_2D);*/
+		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
 	{ // aircraft textures
@@ -681,7 +682,7 @@ void mf_Renderer::CreateWaterReflectionFramebuffer()
 void mf_Renderer::CreateShadowmapFramebuffer()
 {
 	shadowmap_fbo_.sun_azimuth= -MF_PI3;
-	shadowmap_fbo_.sun_elevation= MF_PI4;
+	shadowmap_fbo_.sun_elevation= MF_PI6*0.5f;
 
 	SphericalCoordinatesToVec( shadowmap_fbo_.sun_azimuth, shadowmap_fbo_.sun_elevation, shadowmap_fbo_.sun_vector );
 
@@ -1474,8 +1475,22 @@ void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
 	}
 
 	particles_data_.particles_shader.Bind();
-
 	particles_data_.particles_shader.UniformMat4( "mat", view_matrix_ );
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, particles_data_.smoke_texture );
+	particles_data_.particles_shader.UniformInt( "tex", 0 );
+
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_2D, shadowmap_fbo_.depth_tex_id );
+	particles_data_.particles_shader.UniformInt( "stex", 1 );
+
+	float half_sun_light[3];
+	Vec3Mul( shadowmap_fbo_.sun_light_intensity, 0.5f, half_sun_light );
+	particles_data_.particles_shader.UniformVec3( "sl", half_sun_light );
+	particles_data_.particles_shader.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
+
+	particles_data_.particles_shader.UniformMat4( "smat", common_shadow_matrix_ );
 
 	float sprite_size;
 	const float init_sprite_size= 1.0f / mf_Math::tan(player_->Fov() * 0.5f );

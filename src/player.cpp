@@ -14,7 +14,7 @@
 
 mf_Player::mf_Player()
 	: control_mode_(ModeAircraftControl)
-	, aircraft_(mf_Aircraft::V1)
+	, aircraft_(mf_Aircraft::F1949)
 	, autopilot_(&aircraft_)
 	, cam_radius_(10.0f)
 	, aspect_(1.0f), fov_(MF_INITIAL_FOV), target_fov_(MF_INITIAL_FOV)
@@ -147,5 +147,5 @@ void mf_Player::CalculateCamRadius()
 	}
 
 	cam_radius_= 1.2f * Vec3Len( radius_vecor );
-	cam_radius_= 40.0f;
+	//cam_radius_= 40.0f;
 }

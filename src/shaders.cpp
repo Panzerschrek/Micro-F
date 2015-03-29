@@ -522,8 +522,8 @@ const char* const stars_shader_v=
 
 const char* const stars_shader_f=
 "#version 330\n"
-"out vec4 c_;"
 "in float fi;"
+"out vec4 c_;"
 "void main()"
 "{"
 	"vec2 rv=gl_PointCoord-vec2(0.5,0.5);"
@@ -533,34 +533,43 @@ const char* const stars_shader_f=
 
 const char* const particles_shader_v=
 "#version 330\n"
-"uniform mat4 mat;"
+"uniform mat4 mat;" // view matrix
+"uniform mat4 smat;" // shadowmap
+"uniform sampler2DShadow stex;"
 "uniform float s;" // point size
 "in vec4 p;" // position + size
 "in float i;" // intensity
 "in vec4 c;" // transparency_multipler__backgound_multipler__texture_id__reserved
 "out float fi;" // frag intensity
 "out float fbm;" // backgound_multipler
+"out float fsl;" // sun light intencity
 "void main()"
 "{"
 	"fi=i;"
 	"fbm= c[1];"
 	"vec4 p4=mat*vec4(p.xyz,1.0);"
 	"gl_Position=p4;"
+	"vec3 sp=(smat*vec4(p.xyz,1.0)).xyz;"
+	"fsl=textureLod(stex,sp*0.5+vec3(0.5,0.5,0.5),0.0);"
 	"gl_PointSize=p.w*s/p4.w;"
 "}";
 
 const char* const particles_shader_f=
 "#version 330\n"
-"out vec4 c_;"
+"uniform sampler2D tex;"
+"uniform vec3 sl;" // sun light intencity
+"uniform vec3 al;" // ambient light intencity
 "in float fi;"
 "in float fbm;" // backgound_multipler
+"in float fsl;" // sun light
+"out vec4 c_;"
 "void main()"
 "{"
-	"vec2 rv=gl_PointCoord-vec2(0.5,0.5);"
-	"float a=1.0-clamp(length(rv)*2.0,0.0,1.0);" // 1 - center, 0 - border
-	"vec3 c= vec3(0.9,0.9,0.9) * 0.5 * a * fbm;" // diffuse color * light
-	"c+=vec3(1.0,0.9,0.5) * (fi*a);"
-	"c_=vec4(c,1.0-a * fbm);"
+	"vec4 texc=texture(tex,gl_PointCoord);"
+	"vec3 l=fsl*sl+al;"
+	"vec3 c=texc.xyz*l*(texc.a*fbm);" // diffuse color * light
+	"c+=vec3(1.0,0.9,0.5)*(fi*texc.a);" // self-luminanse
+	"c_=vec4(c,1.0-texc.a*fbm);"
 "}";
 
 const char* const tonemapping_shader_v=

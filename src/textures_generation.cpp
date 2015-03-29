@@ -544,6 +544,19 @@ void GenRockTexture( mf_Texture* tex )
 	tex->Shift( 111, 57 );
 }
 
+void GenSmokeParticle( mf_Texture* tex )
+{
+	MF_ASSERT( tex->SizeXLog2() == tex->SizeYLog2() );
+
+	tex->Noise();
+	mf_Texture circle( tex->SizeXLog2(), tex->SizeYLog2() );
+	static const float center_color[4]= { 1.2f, 1.2f, 1.2f, 4.0f };
+	static const float border_color[4]= { 1.2f, 1.2f, 1.2f, 0.0f };
+	circle.RadialGradient( tex->SizeX()/2, tex->SizeX()/2, tex->SizeX()/2 - 2, center_color, border_color );
+
+	tex->Mul( &circle );
+}
+
 void (* const terrain_texture_gen_func[])(mf_Texture* t)=
 {
 	GenDirtTexture,

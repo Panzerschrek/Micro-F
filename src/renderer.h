@@ -182,5 +182,7 @@ private:
 		mf_ParticleVertex sorted_vertices[ MF_MAX_PARTICLES ];
 		mf_VertexBuffer particles_vbo;
 		mf_GLSLProgram particles_shader;
+
+		GLuint smoke_texture;
 	} particles_data_;
 };
