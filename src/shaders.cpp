@@ -655,16 +655,13 @@ const char* const brightness_history_write_shader_f=
 
 const char* const clouds_gen_shader_v=
 "#version 330\n"
-"out vec2 fp;" // frag position
-"const vec2 coord[6]=vec2[6]"
-"("
-	"vec2(0.0,0.0),vec2(1.0,0.0),vec2(1.0,1.0),"
-	"vec2(0.0,0.0),vec2(0.0,1.0),vec2(1.0,1.0)"
-");"
+"in vec3 p;"
+"in vec2 tc;"
+"out vec3 fp;" // position
 "void main()"
 "{"
-	"fp=coord[gl_VertexID]*vec2(1.0,1.0)-vec2(1.0,1.0);"
-	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
+	"fp=p;"
+	"gl_Position=vec4(tc*2.0-vec2(1.0,1.0),1.0,1.0);"
 "}";
 
 const char* const clouds_gen_shader_f=
@@ -673,7 +670,7 @@ const char* const clouds_gen_shader_f=
 "uniform vec3 sl;"
 "uniform vec3 al;"
 "uniform vec3 inv_tex_size;"
-"in vec2 fp;"
+"in vec3 fp;" // frag position
 "out vec4 c_;"
 
 "const int seed= 0;"
@@ -748,12 +745,7 @@ const char* const clouds_gen_shader_f=
 
 "void main()"
 "{"
-	"vec3 pos=vec3"
-	"("
-		"2.0 * gl_FragCoord.xy * inv_tex_size.xy - vec2(1.0,1.0),"
-		"1.0"
-	");"
-	"pos*=c_clouds_height;"
+	"vec3 pos=fp * c_clouds_height;"
 	"vec3 step= normalize(pos);"
 	"float sky_k= 1.0;"
 	"while( pos.z < c_clouds_height + c_clouds_depth )"

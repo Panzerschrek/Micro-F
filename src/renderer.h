@@ -193,5 +193,6 @@ private:
 		GLuint textures[6];
 		GLuint fbo_id;
 		mf_GLSLProgram clouds_gen_shader;
+		mf_VertexBuffer vbo;
 	} sky_clouds_data_;
 };

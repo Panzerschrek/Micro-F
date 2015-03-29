@@ -817,24 +817,69 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 
 void mf_Renderer::GenClouds()
 {
+	static const float c_horizont_height= 0.2f;
+	static const float vert_pos[]=
+	{
+		// upper side z - constant
+		-1.0f,  1.0f, 1.0f,   1.0f,  1.0f, 1.0f,   1.0f, -1.0f, 1.0f,
+		-1.0f,  1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,   1.0f, -1.0f, 1.0f,
+		// fornt side y - constant
+		-1.0f,  1.0f, c_horizont_height,   1.0f,  1.0f, c_horizont_height,   1.0f, 1.0f, 1.0f,
+		-1.0f,  1.0f, c_horizont_height,  -1.0f,  1.0f, 1.0f,   1.0f, 1.0f, 1.0f,
+	};
+	static const float tc_pos[]=
+	{
+		// upper side
+		0.0f, 0.0f,  1.0f, 0.0f,  1.0f, 1.0f,
+		0.0f, 0.0f,  0.0f, 1.0f,  1.0f, 1.0f,
+		// front side
+		0.0f, 0.5f + 0.5f * c_horizont_height,  1.0f, 0.5f + 0.5f * c_horizont_height,  1.0f, 1.0f,
+		0.0f, 0.5f + 0.5f * c_horizont_height,  0.0f, 1.0f,  1.0f, 1.0f,
+	};
+
+	{
+		float vertices[ 5 * 12 ];
+		for( unsigned int i= 0; i< 12; i++ )
+		{
+			vertices[i*5  ]= vert_pos[i*3  ];
+			vertices[i*5+1]= vert_pos[i*3+1];
+			vertices[i*5+2]= vert_pos[i*3+2];
+			vertices[i*5+3]= tc_pos[i*2  ];
+			vertices[i*5+4]= tc_pos[i*2+1];
+		}
+
+		sky_clouds_data_.vbo.VertexData( vertices, sizeof(vertices), sizeof(float) * 5 );
+		sky_clouds_data_.vbo.VertexAttrib( 0, 3, GL_FLOAT, false, 0 );
+		sky_clouds_data_.vbo.VertexAttrib( 1, 2, GL_FLOAT, false, sizeof(float) * 3 );
+	}
+
 	sky_clouds_data_.texture_size= 1024;
+	sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "p", 0 );
+	sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "tc", 1 );
 	sky_clouds_data_.clouds_gen_shader.Create( mf_Shaders::clouds_gen_shader_v, mf_Shaders::clouds_gen_shader_f );
 	static const char* const uniforms_names[]= { "sl", "al", "sun", "inv_tex_size" };
 	sky_clouds_data_.clouds_gen_shader.FindUniforms( uniforms_names, sizeof(uniforms_names) / sizeof(char*) );
 
 	glGenTextures( 1, &sky_clouds_data_.textures[0] );
-	glBindTexture( GL_TEXTURE_2D, sky_clouds_data_.textures[0] );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-		sky_clouds_data_.texture_size, sky_clouds_data_.texture_size,
-		0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+	glBindTexture( GL_TEXTURE_CUBE_MAP, sky_clouds_data_.textures[0] );
+	for( unsigned int i= 0; i< 6; i++ )
+		glTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA8,
+			sky_clouds_data_.texture_size, sky_clouds_data_.texture_size,
+			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
 	glGenFramebuffers( 1, &sky_clouds_data_.fbo_id );
 	glBindFramebuffer( GL_FRAMEBUFFER, sky_clouds_data_.fbo_id );
-	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, sky_clouds_data_.textures[0], 0 );
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, sky_clouds_data_.textures[0], 0 );
 	GLuint color_attachment= GL_COLOR_ATTACHMENT0;
 	glDrawBuffers( 1, &color_attachment );
 
 	glViewport( 0, 0, sky_clouds_data_.texture_size, sky_clouds_data_.texture_size );
+	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
+	glClear( GL_COLOR_BUFFER_BIT );
 	{ // draw sky
 		sky_clouds_data_.clouds_gen_shader.Bind();
 		sky_clouds_data_.clouds_gen_shader.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
@@ -850,7 +895,10 @@ void mf_Renderer::GenClouds()
 		sky_clouds_data_.clouds_gen_shader.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
 
 		glDisable( GL_DEPTH_TEST );
-		glDrawArrays( GL_TRIANGLES, 0, 6 );
+
+		sky_clouds_data_.vbo.Bind();
+		glDrawArrays( GL_TRIANGLES, 6, 6 );
+
 		glEnable( GL_DEPTH_TEST );
 	}
 
