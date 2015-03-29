@@ -466,9 +466,9 @@ goto gen_clouds;
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 	}
 gen_clouds:
-	GenClouds();
 	CreateWaterReflectionFramebuffer();
 	CreateShadowmapFramebuffer();
+	GenClouds();
 
 	if( settings_.use_hdr )
 	{
@@ -817,8 +817,10 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 
 void mf_Renderer::GenClouds()
 {
-	sky_clouds_data_.texture_size= 512;
+	sky_clouds_data_.texture_size= 1024;
 	sky_clouds_data_.clouds_gen_shader.Create( mf_Shaders::clouds_gen_shader_v, mf_Shaders::clouds_gen_shader_f );
+	static const char* const uniforms_names[]= { "sl", "al", "sun", "inv_tex_size" };
+	sky_clouds_data_.clouds_gen_shader.FindUniforms( uniforms_names, sizeof(uniforms_names) / sizeof(char*) );
 
 	glGenTextures( 1, &sky_clouds_data_.textures[0] );
 	glBindTexture( GL_TEXTURE_2D, sky_clouds_data_.textures[0] );
@@ -832,10 +834,24 @@ void mf_Renderer::GenClouds()
 	GLuint color_attachment= GL_COLOR_ATTACHMENT0;
 	glDrawBuffers( 1, &color_attachment );
 
-	{ // sraw sky
+	glViewport( 0, 0, sky_clouds_data_.texture_size, sky_clouds_data_.texture_size );
+	{ // draw sky
 		sky_clouds_data_.clouds_gen_shader.Bind();
+		sky_clouds_data_.clouds_gen_shader.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
+
+		float inv_tex_size[3]=
+		{
+			1.0f / float(sky_clouds_data_.texture_size),
+			1.0f / float(sky_clouds_data_.texture_size),
+			0.0f
+		};
+		sky_clouds_data_.clouds_gen_shader.UniformVec3( "inv_tex_size", inv_tex_size );
+		sky_clouds_data_.clouds_gen_shader.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
+		sky_clouds_data_.clouds_gen_shader.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
+
 		glDisable( GL_DEPTH_TEST );
 		glDrawArrays( GL_TRIANGLES, 0, 6 );
+		glEnable( GL_DEPTH_TEST );
 	}
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
