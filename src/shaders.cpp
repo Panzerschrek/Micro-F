@@ -507,6 +507,26 @@ const char* const sky_shader_f=
 	"c_=vec4(dot(rCoeffs, XYZ), dot(gCoeffs, XYZ), dot(bCoeffs, XYZ), 1.0);"
 "}";
 
+const char* const clouds_shader_v=
+"#version 330\n"
+"uniform mat4 mat;"
+"in vec3 p;"
+"out vec3 fp;"
+"void main()"
+"{"
+	"fp=p;"
+	"gl_Position=mat*vec4(p,1.0);"
+"}";
+
+const char* const clouds_shader_f=
+"#version 330\n"
+"uniform samplerCube tex;"
+"in vec3 fp;"
+"out vec4 c_;"
+"void main()"
+"{"
+	"c_=texture(tex,fp);"
+"}";
 
 const char* const stars_shader_v=
 "#version 330\n"

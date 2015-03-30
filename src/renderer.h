@@ -49,7 +49,7 @@ private:
 	void DrawSun( bool draw_to_water_framebuffer );
 	void DrawStars( bool draw_to_water_framebuffer );
 	void DrawParticles( bool draw_to_water_framebuffer );
-	void DrawSky(  bool draw_to_water_framebuffer );
+	void DrawSky( bool draw_to_water_framebuffer );
 	void DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count );
 	void DrawPowerups();
 	void DrawLevelStaticObjects( bool draw_to_water_framebuffer );
@@ -190,9 +190,13 @@ private:
 	struct
 	{
 		unsigned int texture_size;
-		GLuint textures[6];
-		GLuint fbo_id;
-		mf_GLSLProgram clouds_gen_shader;
+		GLuint clouds_cubemap_tex_id;
+
 		mf_VertexBuffer vbo;
+		mf_VertexBuffer clouds_dome_vbo;
+
+		mf_GLSLProgram clouds_gen_shader;
+		mf_GLSLProgram clouds_shader;
+
 	} sky_clouds_data_;
 };
