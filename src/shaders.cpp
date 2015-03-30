@@ -675,13 +675,14 @@ const char* const brightness_history_write_shader_f=
 
 const char* const clouds_gen_shader_v=
 "#version 330\n"
+"uniform mat4 mat;"
 "in vec3 p;"
 "in vec2 tc;"
 "out vec3 fp;" // position
 "void main()"
 "{"
 	"fp=p;"
-	"gl_Position=vec4(tc*2.0-vec2(1.0,1.0),1.0,1.0);"
+	"gl_Position=mat*vec4(tc*2.0-vec2(1.0,1.0),1.0,1.0);"
 "}";
 
 const char* const clouds_gen_shader_f=
@@ -765,7 +766,7 @@ const char* const clouds_gen_shader_f=
 
 "void main()"
 "{"
-	"vec3 pos=fp * c_clouds_height;"
+	"vec3 pos=fp * c_clouds_height / fp.z;"
 	"vec3 step= normalize(pos);"
 	"float sky_k= 1.0;"
 	"while( pos.z < c_clouds_height + c_clouds_depth )"
@@ -786,9 +787,9 @@ const char* const clouds_gen_shader_f=
 	"{"
 		"vec3 normal= vec3"
 		"("
-			"CloudFunc( pos + vec3(2.0, 0.0, 0.0 ) ) - CloudFunc( pos - vec3(2.0, 0.0, 0.0 ) ),"
-			"CloudFunc( pos + vec3(0.0, 2.0, 0.0 ) ) - CloudFunc( pos - vec3(0.0, 2.0, 0.0 ) ),"
-			"CloudFunc( pos + vec3(0.0, 0.0, 2.0 ) ) - CloudFunc( pos - vec3(0.0, 0.0, 2.0 ) )"
+			"CloudFunc( pos - vec3(2.0, 0.0, 0.0 ) ) - CloudFunc( pos + vec3(2.0, 0.0, 0.0 ) ),"
+			"CloudFunc( pos - vec3(0.0, 2.0, 0.0 ) ) - CloudFunc( pos + vec3(0.0, 2.0, 0.0 ) ),"
+			"CloudFunc( pos - vec3(0.0, 0.0, 2.0 ) ) - CloudFunc( pos + vec3(0.0, 0.0, 2.0 ) )"
 		");"
 		"normal= normalize(normal);"
 		"c= vec4( al + sl * max(dot(normal, sun),0.0), 1.0f - sky_k);"

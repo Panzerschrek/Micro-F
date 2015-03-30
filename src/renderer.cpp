@@ -229,9 +229,10 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "p", 0 );
 	sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "tc", 1 );
 	sky_clouds_data_.clouds_gen_shader.Create( mf_Shaders::clouds_gen_shader_v, mf_Shaders::clouds_gen_shader_f );
-	static const char* const uniforms_names[]= { "sl", "al", "sun", "inv_tex_size" };
+	static const char* const uniforms_names[]= { "mat",  "sl", "al", "sun", "inv_tex_size" };
 	sky_clouds_data_.clouds_gen_shader.FindUniforms( uniforms_names, sizeof(uniforms_names) / sizeof(char*) );
 
+	// clousds shader
 	sky_clouds_data_.clouds_shader.SetAttribLocation( "p", 0 );
 	sky_clouds_data_.clouds_shader.Create( mf_Shaders::clouds_shader_v, mf_Shaders::clouds_shader_f );
 	sky_clouds_data_.clouds_shader.FindUniform( "tex" );
@@ -842,28 +843,46 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 void mf_Renderer::GenClouds()
 {
 	{ // gen skydome mesh
-		static const float c_horizont_height= 0.2f;
-		static const float vert_pos[]=
+		static const float c_horizont_height= 0.15f;
+		static const float vert_pos[5 * 6*3]=
 		{
-			// upper side z - constant
-			-1.0f,  1.0f, 1.0f,   1.0f,  1.0f, 1.0f,   1.0f, -1.0f, 1.0f,
-			-1.0f,  1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,   1.0f, -1.0f, 1.0f,
-			// fornt side y - constant
+			// x+
+			1.0f, 1.0f, c_horizont_height,   1.0f, -1.0f, c_horizont_height,   1.0f, -1.0f, 1.0f,
+			1.0f, 1.0f, c_horizont_height,   1.0f, 1.0f, 1.0f,   1.0f, -1.0f, 1.0f,
+			// x-
+			-1.0f, -1.0f, c_horizont_height,   -1.0f, 1.0f, c_horizont_height,  -1.0f, 1.0f, 1.0f,
+			-1.0f, -1.0f, c_horizont_height,   -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f, 1.0f,
+			// y+
 			-1.0f,  1.0f, c_horizont_height,   1.0f,  1.0f, c_horizont_height,   1.0f, 1.0f, 1.0f,
 			-1.0f,  1.0f, c_horizont_height,  -1.0f,  1.0f, 1.0f,   1.0f, 1.0f, 1.0f,
+			// y-
+			1.0f, -1.0f, c_horizont_height,   -1.0f, -1.0f, c_horizont_height,   -1.0f, -1.0f, 1.0f,
+			1.0f, -1.0f, c_horizont_height,   1.0f, -1.0f, 1.0f,   -1.0f, -1.0f, 1.0f,
+			// z+
+			-1.0f,  1.0f, 1.0f,   1.0f,  1.0f, 1.0f,   1.0f, -1.0f, 1.0f,
+			-1.0f,  1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,   1.0f, -1.0f, 1.0f,
 		};
-		static const float tc_pos[]=
+		static const float tc_pos[5 * 6*2]=
 		{
-			// upper side
-			0.0f, 0.0f,  1.0f, 0.0f,  1.0f, 1.0f,
-			0.0f, 0.0f,  0.0f, 1.0f,  1.0f, 1.0f,
-			// front side
+			// x+
 			0.0f, 0.5f + 0.5f * c_horizont_height,  1.0f, 0.5f + 0.5f * c_horizont_height,  1.0f, 1.0f,
 			0.0f, 0.5f + 0.5f * c_horizont_height,  0.0f, 1.0f,  1.0f, 1.0f,
+			// x-
+			0.0f, 0.5f + 0.5f * c_horizont_height,  1.0f, 0.5f + 0.5f * c_horizont_height,  1.0f, 1.0f,
+			0.0f, 0.5f + 0.5f * c_horizont_height,  0.0f, 1.0f,  1.0f, 1.0f,
+			// y+
+			0.0f, 0.5f + 0.5f * c_horizont_height,  1.0f, 0.5f + 0.5f * c_horizont_height,  1.0f, 1.0f,
+			0.0f, 0.5f + 0.5f * c_horizont_height,  0.0f, 1.0f,  1.0f, 1.0f,
+			// y-
+			0.0f, 0.5f + 0.5f * c_horizont_height,  1.0f, 0.5f + 0.5f * c_horizont_height,  1.0f, 1.0f,
+			0.0f, 0.5f + 0.5f * c_horizont_height,  0.0f, 1.0f,  1.0f, 1.0f,
+			// z+
+			0.0f, 0.0f,  1.0f, 0.0f,  1.0f, 1.0f,
+			0.0f, 0.0f,  0.0f, 1.0f,  1.0f, 1.0f,
 		};
 
-		float vertices[ 5 * 12 ];
-		for( unsigned int i= 0; i< 12; i++ )
+		float vertices[ 5 * 6*5 ];
+		for( unsigned int i= 0; i< 6 * 5; i++ )
 		{
 			vertices[i*5  ]= vert_pos[i*3  ];
 			vertices[i*5+1]= vert_pos[i*3+1];
@@ -914,12 +933,18 @@ void mf_Renderer::GenClouds()
 
 	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	glDisable( GL_DEPTH_TEST );
+	sky_clouds_data_.vbo.Bind();
 	for( unsigned int i= 0; i< 6; i++ )
 	{
 		glClear( GL_COLOR_BUFFER_BIT );
 
-		sky_clouds_data_.vbo.Bind();
-		glDrawArrays( GL_TRIANGLES, i/3 * 6, 6 );
+		float mat[16];
+		static const float rot_angle[]= { MF_PI2, -MF_PI2, 0.0f, MF_PI, 0.0f };
+		Mat4RotateZ( mat, rot_angle[i] );
+		sky_clouds_data_.clouds_gen_shader.UniformMat4( "mat", mat );
+
+		if( i != 5 ) // do not draw lower side
+			glDrawArrays( GL_TRIANGLES, i * 6, 6 );
 
 		glCopyTexSubImage2D(
 			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
@@ -1734,6 +1759,7 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	glBindTexture( GL_TEXTURE_CUBE_MAP, sky_clouds_data_.clouds_cubemap_tex_id );
 	sky_clouds_data_.clouds_shader.UniformInt( "tex", 0 );
 
+	glDepthMask(0);
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
@@ -1745,6 +1771,7 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 		0 );
 
 	glDisable( GL_BLEND );
+	glDepthMask(1);
 }
 
 void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count )
