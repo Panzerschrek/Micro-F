@@ -229,7 +229,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "p", 0 );
 	sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "tc", 1 );
 	sky_clouds_data_.clouds_gen_shader.Create( mf_Shaders::clouds_gen_shader_v, mf_Shaders::clouds_gen_shader_f );
-	static const char* const uniforms_names[]= { "mat",  "sl", "al", "sun", "inv_tex_size" };
+	static const char* const uniforms_names[]= { "mat",  "sl", "al", "sun", "inv_tex_size", "horizont" };
 	sky_clouds_data_.clouds_gen_shader.FindUniforms( uniforms_names, sizeof(uniforms_names) / sizeof(char*) );
 
 	// clousds shader
@@ -842,8 +842,8 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 
 void mf_Renderer::GenClouds()
 {
+	static const float c_horizont_height= 0.15f;
 	{ // gen skydome mesh
-		static const float c_horizont_height= 0.15f;
 		static const float vert_pos[5 * 6*3]=
 		{
 			// x+
@@ -930,6 +930,7 @@ void mf_Renderer::GenClouds()
 	sky_clouds_data_.clouds_gen_shader.UniformVec3( "inv_tex_size", inv_tex_size );
 	sky_clouds_data_.clouds_gen_shader.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
 	sky_clouds_data_.clouds_gen_shader.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
+	sky_clouds_data_.clouds_gen_shader.UniformFloat( "horizont", c_horizont_height );
 
 	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	glDisable( GL_DEPTH_TEST );
