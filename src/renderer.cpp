@@ -708,7 +708,7 @@ void mf_Renderer::CreateWaterReflectionFramebuffer()
 void mf_Renderer::CreateShadowmapFramebuffer()
 {
 	shadowmap_fbo_.sun_azimuth= -MF_PI3;
-	shadowmap_fbo_.sun_elevation= MF_PI6*0.5f;
+	shadowmap_fbo_.sun_elevation= MF_PI6;
 
 	SphericalCoordinatesToVec( shadowmap_fbo_.sun_azimuth, shadowmap_fbo_.sun_elevation, shadowmap_fbo_.sun_vector );
 
