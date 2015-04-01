@@ -575,7 +575,6 @@ void mf_Renderer::DrawFrame()
 	DrawSky( true );
 	//DrawStars( true );
 	DrawParticles( true );
-	DrawSun( true );
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
 
@@ -594,7 +593,6 @@ void mf_Renderer::DrawFrame()
 	DrawSky( false );
 	DrawPowerups();
 	//DrawStars( false );
-	DrawSun( false );
 	DrawWater();
 	DrawParticles( false );
 
@@ -896,8 +894,8 @@ void mf_Renderer::GenClouds()
 		sky_clouds_data_.vbo.VertexAttrib( 1, 2, GL_FLOAT, false, sizeof(float) * 3 );
 	}
 
-	unsigned int generation_texture_size= 1280;
-	sky_clouds_data_.texture_size= 1280;
+	unsigned int generation_texture_size= 512;
+	sky_clouds_data_.texture_size= 512;
 
 	GLuint cubemap_tex_id;
 	GLuint tex_id;
@@ -1508,43 +1506,6 @@ void mf_Renderer::DrawTerrain(bool draw_to_water_framebuffer )
 		glDisable( GL_CLIP_DISTANCE0 );
 }
 
-void mf_Renderer::DrawSun( bool draw_to_water_framebuffer )
-{
-	sun_shader_.Bind();
-
-	float mat[16];
-	float translate_mat[16];
-	float translate_vec[3];
-	Vec3Mul( shadowmap_fbo_.sun_vector, GetSceneRadius() * g_sun_distance_scaler, translate_vec );
-	Vec3Add( translate_vec, player_->Pos() );
-	Mat4Translate( translate_mat, translate_vec );
-	Mat4Mul( translate_mat, view_matrix_, mat );
-
-	sun_shader_.UniformMat4( "mat", mat );
-
-	float sprite_size= (64.0f/1024.0f) / mf_Math::tan(player_->Fov() * 0.5f);
-	if( draw_to_water_framebuffer )
-		sprite_size*= float(water_reflection_fbo_.size[1]);
-	else
-		sprite_size*= float(mf_MainLoop::Instance()->ViewportHeight());
-	sun_shader_.UniformFloat( "s", sprite_size );
-
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, sun_texture_ );
-	sun_shader_.UniformInt( "tex", 0 );
-
-	sun_shader_.UniformFloat( "i", 4.0f ); // sun light intencity
-
-	glEnable( GL_PROGRAM_POINT_SIZE );
-	glEnable( GL_BLEND );
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
-	glDrawArrays( GL_POINTS, 0, 1 );
-
-	glDisable( GL_BLEND );
-	glDisable( GL_PROGRAM_POINT_SIZE );
-}
-
 void mf_Renderer::DrawStars( bool draw_to_water_framebuffer )
 {
 	stars_shader_.Bind();
@@ -1666,6 +1627,9 @@ void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
 
 void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 {
+	/*
+	SKY
+	*/
 	sky_shader_.Bind();
 
 	float mat[16];
@@ -1739,7 +1703,6 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	}
 
 	sky_vbo_.Bind();
-
 	glDrawElements(
 		GL_TRIANGLES,
 		sky_vbo_.IndexDataSize() / sizeof(unsigned short),
@@ -1747,7 +1710,42 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 		0 );
 
 	/*
-		draw clouds now
+	SUN
+	*/
+	sun_shader_.Bind();
+
+	float sun_translate_mat[16];
+	Vec3Mul( shadowmap_fbo_.sun_vector, GetSceneRadius() * g_sun_distance_scaler, translate_vec );
+	Vec3Add( translate_vec, player_->Pos() );
+	Mat4Translate( sun_translate_mat, translate_vec );
+	Mat4Mul( sun_translate_mat, view_matrix_, mat );
+
+	sun_shader_.UniformMat4( "mat", mat );
+
+	float sprite_size= (64.0f/1024.0f) / mf_Math::tan(player_->Fov() * 0.5f);
+	if( draw_to_water_framebuffer )
+		sprite_size*= float(water_reflection_fbo_.size[1]);
+	else
+		sprite_size*= float(mf_MainLoop::Instance()->ViewportHeight());
+	sun_shader_.UniformFloat( "s", sprite_size );
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, sun_texture_ );
+	sun_shader_.UniformInt( "tex", 0 );
+
+	sun_shader_.UniformFloat( "i", 4.0f ); // sun light intencity
+
+	glEnable( GL_PROGRAM_POINT_SIZE );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+	glDrawArrays( GL_POINTS, 0, 1 );
+
+	glDisable( GL_BLEND );
+	glDisable( GL_PROGRAM_POINT_SIZE );
+
+	/*
+	CLOUDS
 	*/
 	sky_clouds_data_.clouds_shader.Bind();
 
@@ -1761,7 +1759,6 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	glBindTexture( GL_TEXTURE_CUBE_MAP, sky_clouds_data_.clouds_cubemap_tex_id );
 	sky_clouds_data_.clouds_shader.UniformInt( "tex", 0 );
 
-	glDepthMask(0);
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
@@ -1773,7 +1770,6 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 		0 );
 
 	glDisable( GL_BLEND );
-	glDepthMask(1);
 }
 
 void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count )

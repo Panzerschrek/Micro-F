@@ -46,7 +46,6 @@ private:
 	void CalculateStaticLevelObjectsVisiblyRows( unsigned int* out_first_row, unsigned int* out_last_row );
 
 	void DrawTerrain( bool draw_to_water_framebuffer );
-	void DrawSun( bool draw_to_water_framebuffer );
 	void DrawStars( bool draw_to_water_framebuffer );
 	void DrawParticles( bool draw_to_water_framebuffer );
 	void DrawSky( bool draw_to_water_framebuffer );

@@ -6,6 +6,10 @@
 	* [sdelano] risovanije modelej s naloženijem tenej
 * boljše tekstur
 * boljše modelej
+	* paljma
+	* dub
+	* beröza
+	* kamni i voluny
 * bolee složnaja generaçoja landšafta
 * stolknovenije s landšaftom
 	* [sdelano] rascöt stolknovenije tocki, sfery
@@ -23,6 +27,7 @@
 	* avtopilot
 		* [sdelano] režim prekrascenija vrascenija
 * castiçy dlä risovanija dyma, vyhlopa reaktivnuh dvigatelej ot samolötov
+	* [sdelano] vyhlop reaktivnogo dvigatelä
 * naviball
 	* [sdelano] tekstura
 	* [sdelano] sam šar
@@ -35,5 +40,5 @@
 	* [casticno sdelano] igrofoj interfejs
 * [sdelano] sozdanije nebesnoj sfery tesseläçije ikosaedra
 * [casticno sdelano] zvözdy
-* [jestj narabotki] oblaka
+* [sdelano] oblaka
 * luna ( modelj + tekstura, generirujemaja po algoritmu generaçii tekstur dlä planet )
