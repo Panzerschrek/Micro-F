@@ -41,4 +41,6 @@
 * [sdelano] sozdanije nebesnoj sfery tesseläçije ikosaedra
 * [casticno sdelano] zvözdy
 * [sdelano] oblaka
+	* nužno sdelatj generaçiju v vysokom razrešenii, a potom umenjšatj, ctoby sgladitj šumy
+	* nastrojka plotnosti
 * luna ( modelj + tekstura, generirujemaja po algoritmu generaçii tekstur dlä planet )

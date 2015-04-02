@@ -627,7 +627,7 @@ void GenOakLeafsTexture( mf_Texture* tex )
 	static const float clamp_green[]= { 0.0f, 1.0f, 0.0f, 100500.0f };
 	tex->Min(clamp_green);
 
-	static const float leaf_color[]= { 0.13f, 0.54f, 0.12f, 1.0f };
+	static const float leaf_color[]= { 0.08f, 0.45f, 0.09f, 1.0f };
 	const unsigned int c_random_leaf_colors_count= 64;
 	float random_colors[c_random_leaf_colors_count][4];
 	for( unsigned int i= 0; i< c_random_leaf_colors_count; i++ )

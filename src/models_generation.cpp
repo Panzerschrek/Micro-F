@@ -271,6 +271,12 @@ void GenSkySphere( mf_DrawingModel* model, unsigned int partitiion )
 	}
 }*/
 
+void GenLeafs( mf_DrawingModel* model)
+{
+	model->LoadFromMFMD( mf_Models::leafs );
+	ApplyTexture( model, TextureOakLeafs );
+}
+
 void GenPalm( mf_DrawingModel* model )
 {
 	const float c_palm_height= 10.0f;
@@ -402,7 +408,7 @@ void GenSpruce( mf_DrawingModel* model )
 	static const float spruce_shift[]= { 0.0f, 0.0f, c_spruce_height * 0.5f };
 
 	const int c_trunk_segments= 6;
-	const int c_trunk_partitions= 5;
+	const int c_trunk_partitions= 3;
 	GenCylinder( model, c_trunk_segments, c_trunk_partitions, false );
 	model->Scale( spruce_scale );
 	model->Shift( spruce_shift );
@@ -472,9 +478,79 @@ void GenSpruce( mf_DrawingModel* model )
 	} // generate side triangles
 }
 
+void GenBirch( mf_DrawingModel* model )
+{
+	static const unsigned int good_seeds[]= { 13 };
+	mf_Rand randomizer( good_seeds[0] );
+
+	static const float c_birch_height= 25.0f;
+	static const float c_birch_trunk_diameter= 0.8f;
+
+	static const float birch_scale[]= { c_birch_trunk_diameter * 0.5f, c_birch_trunk_diameter * 0.5f, c_birch_height * 0.5f };
+	static const float birch_shift[]= { 0.0f, 0.0f, c_birch_height * 0.5f };
+
+	const int c_trunk_segments= 6;
+	const int c_trunk_partitions= 3;
+	GenCylinder( model, c_trunk_segments, c_trunk_partitions, false );
+	model->Scale( birch_scale );
+	model->Shift( birch_shift );
+
+	mf_DrawingModelVertex* vertices= (mf_DrawingModelVertex*) model->GetVertexData();
+	for( unsigned int i= 0; i<= c_trunk_partitions; i++ )
+	{
+		mf_DrawingModelVertex* v= vertices + i * (c_trunk_segments+1);
+
+		float diameter_multipler= 1.0f - float(i) / float(c_trunk_partitions);
+		diameter_multipler= ( diameter_multipler + 1.0f ) / 2.0f;
+		for( unsigned int j= 0; j< c_trunk_segments+1; j++ )
+		{
+			v[j].pos[0]*= diameter_multipler;
+			v[j].pos[1]*= diameter_multipler;
+			v[j].normal[2]= 0.5f * c_birch_trunk_diameter / c_birch_height;
+			Vec3Normalize( v[j].normal );
+		}
+	}
+	ApplyTexture( model, TextureBirchBark );
+	static const float c_tex_scaler[]= { 1.0f, 6.0f };
+	model->ScaleTexCoord( c_tex_scaler );
+
+	mf_DrawingModel leafs;
+	for( unsigned int i= 0; i< 18; i++ )
+	{
+		float h_k= ( 0.2f + 0.8f * float(i) / float(18) );
+		float radius= 4.0f;
+		if( h_k < 0.4f ) radius*= h_k / 0.4f;
+		else if( h_k > 0.7f ) radius*= (1.0f - h_k) / 0.3f;
+		if( radius < 1.5f) radius= 1.5f;
+
+		float angle= randomizer.RandF( MF_2PI );
+
+		float pos[3];
+		pos[0]= radius * mf_Math::cos(angle);
+		pos[1]= radius * mf_Math::sin(angle);
+		pos[2]= ( h_k + 0.15f ) * c_birch_height;
+
+		float rot_vec[3];
+		float rot_mat[16];
+		for( unsigned int j= 0; j< 3; j++ )
+			rot_vec[i]= randomizer.RandF( -1.0f, 1.0f );
+		Mat4RotateAroundVector( rot_mat, rot_vec, randomizer.RandF( MF_2PI ) );
+		Mat4ToMat3( rot_mat );
+
+		GenLeafs( &leafs );
+		
+		leafs.Rotate( rot_mat );
+		leafs.Scale( radius );
+
+		leafs.Shift( pos );
+		model->Add( &leafs );
+	}
+}
+
 void (* const level_static_models_gen_func[mf_StaticLevelObject::LastType])(mf_DrawingModel* model)=
 {
 	GenPalm,
 	GenOak,
-	GenSpruce
+	GenSpruce,
+	GenBirch
 };

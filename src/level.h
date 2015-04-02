@@ -10,6 +10,7 @@ struct mf_StaticLevelObject
 		Palm= 0,
 		Oak,
 		Spruce,
+		Birch,
 		LastType
 	};
 	

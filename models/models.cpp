@@ -28,6 +28,10 @@ const unsigned char star[]=
 #include "star.h"
 ;
 
+const unsigned char leafs[]=
+#include "leafs_icosahedron.h"
+;
+
 const unsigned char* aircraft_models[mf_Aircraft::LastType]=
 {
 	f1949,
