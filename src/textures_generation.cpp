@@ -561,6 +561,11 @@ void GenForcefieldTexture( mf_Texture* tex )
 {
 	tex->GenHexagonalGrid( float(tex->SizeX()) * (0.5f/1.5f), 2.0f * 1.0f / mf_Math::sqrt(3.0f) );
 
+	static const float mul_color[]= { 0.7f, 0.7f, 0.7f, 0.7f };
+	static const float add_color[]= { 0.3f, 0.3f, 0.3f, 0.3f };
+	tex->Mul( mul_color );
+	tex->Add( add_color );
+
 	static const float forcefield_color[4]= {0.3f, 0.3f, 0.7f, 1.0f };
 	tex->Mul( forcefield_color );
 }

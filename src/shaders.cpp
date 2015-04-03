@@ -400,9 +400,11 @@ const char* const forcefield_shader_v=
 "uniform mat4 mat;"
 "in vec3 p;"
 "in vec2 tc;"
+"out vec3 fp;"
 "out vec2 ftc;"
 "void main()"
 "{"
+	"fp=p;"
 	"ftc=tc;"
 	"gl_Position=mat*vec4(p,1.0);"
 "}";
@@ -410,11 +412,15 @@ const char* const forcefield_shader_v=
 const char* const forcefield_shader_f=
 "#version 330\n"
 "uniform sampler2D tex;"
+"uniform vec3 aircp;" // aircraft position
+"in vec3 fp;" // fragment world position
 "in vec2 ftc;" // texture coord
 "out vec4 c_;" // out color
 "void main()"
 "{"
-	"c_=texture(tex,ftc);"
+	"vec3 v=fp-aircp;"
+	"float id=1.0/dot(v,v);"
+	"c_=clamp(256*id,0.5,1.0)*texture(tex,ftc)+min(id*128,0.7)*vec4(1.0,0.5,0.5,0.0);"
 "}";
 
 const char* const naviball_shader_v=

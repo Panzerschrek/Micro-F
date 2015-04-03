@@ -195,7 +195,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	forcefield_data_.shader.SetAttribLocation( "n", 1 );
 	forcefield_data_.shader.SetAttribLocation( "tc", 2 );
 	forcefield_data_.shader.Create( mf_Shaders::forcefield_shader_v, mf_Shaders::forcefield_shader_f );
-	static const char* const forcefield_shader_uniforms[]= { "mat", "tex" };
+	static const char* const forcefield_shader_uniforms[]= { "mat", "tex", "aircp" };
 	forcefield_data_.shader.FindUniforms( forcefield_shader_uniforms, sizeof(forcefield_shader_uniforms) / sizeof(char*) );
 
 	// sun shader
@@ -1988,6 +1988,7 @@ void mf_Renderer::DrawForcefield()
 	forcefield_data_.shader.UniformInt( "tex", 0 );
 
 	forcefield_data_.shader.UniformMat4( "mat", view_matrix_ );
+	forcefield_data_.shader.UniformVec3( "aircp", player_->GetAircraft()->Pos() );
 
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_ONE, GL_ONE );
