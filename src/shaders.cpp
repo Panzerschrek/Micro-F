@@ -395,6 +395,28 @@ const char* const static_models_shadowmap_shader_f=
 	"c_=vec4(0.0,0.0,0.0,0.5);"
 "}";
 
+const char* const forcefield_shader_v=
+"#version 330\n"
+"uniform mat4 mat;"
+"in vec3 p;"
+"in vec2 tc;"
+"out vec2 ftc;"
+"void main()"
+"{"
+	"ftc=tc;"
+	"gl_Position=mat*vec4(p,1.0);"
+"}";
+
+const char* const forcefield_shader_f=
+"#version 330\n"
+"uniform sampler2D tex;"
+"in vec2 ftc;" // texture coord
+"out vec4 c_;" // out color
+"void main()"
+"{"
+	"c_=texture(tex,ftc);"
+"}";
+
 const char* const naviball_shader_v=
 "#version 330\n"
 "uniform mat4 mat;"

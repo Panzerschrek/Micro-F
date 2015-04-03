@@ -43,5 +43,6 @@ extern void (* const static_level_object_texture_gen_func[])(mf_Texture* t);
 
 void GenSunTexture( mf_Texture* tex );
 void GenMoonTexture( mf_Texture* textures ); // input - array of six textures - cubemap sides
+void GenForcefieldTexture( mf_Texture* tex );
 
 void GenSmokeParticle( mf_Texture* tex );

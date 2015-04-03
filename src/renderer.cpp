@@ -191,6 +191,13 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	level_static_objects_shadowmap_shader_.Create( mf_Shaders::static_models_shadowmap_shader_v, mf_Shaders::static_models_shadowmap_shader_f );
 	level_static_objects_shadowmap_shader_.FindUniform( "tex" );
 
+	forcefield_data_.shader.SetAttribLocation( "p", 0 );
+	forcefield_data_.shader.SetAttribLocation( "n", 1 );
+	forcefield_data_.shader.SetAttribLocation( "tc", 2 );
+	forcefield_data_.shader.Create( mf_Shaders::forcefield_shader_v, mf_Shaders::forcefield_shader_f );
+	static const char* const forcefield_shader_uniforms[]= { "mat", "tex" };
+	forcefield_data_.shader.FindUniforms( forcefield_shader_uniforms, sizeof(forcefield_shader_uniforms) / sizeof(char*) );
+
 	// sun shader
 	sun_shader_.Create( mf_Shaders::sun_shader_v, mf_Shaders::sun_shader_f );
 	static const char* const sun_shader_uniforms[]= { "mat", "s", "tex", "i" };
@@ -319,6 +326,49 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		particles_data_.particles_vbo.VertexAttrib( 2, 4, GL_UNSIGNED_BYTE, true, shift );
 
 	} // particles
+	{ // forcefield
+		mf_DrawingModel model;
+		GenCylinder( &model, 40/*rounder*/, 8/*longer*/, false );
+		float scale_vec[3]=
+		{
+			level_->TerrainAmplitude() * 4.0f,
+			level_->TerrainAmplitude() * 4.0f,
+			float(level_->TerrainSizeY()) * level_->TerrainCellSize() * 0.5f
+		};
+		model.Scale( scale_vec );
+
+		float mat[16];
+		Mat4RotateX( mat, MF_PI2 );
+		Mat4ToMat3( mat );
+		model.Rotate( mat );
+
+		float shift_vec[3]=
+		{
+			(level_->TerrainSizeX()) * level_->TerrainCellSize() * 0.5f,
+			(level_->TerrainSizeY()) * level_->TerrainCellSize() * 0.5f,
+			- level_->TerrainAmplitude() * 2.0f
+		};
+		model.Shift( shift_vec );
+
+		static const float c_hex_grid_scaler= 1.0f / 32.0f;
+		float tc_scale_vec[2]=
+		{
+			c_hex_grid_scaler * scale_vec[0] * MF_PI,
+			c_hex_grid_scaler * scale_vec[2] * mf_Math::sqrt(3.0f) * 0.5f
+		};
+		model.ScaleTexCoord( tc_scale_vec );
+
+		forcefield_data_.vbo.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
+		forcefield_data_.vbo.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
+		mf_DrawingModelVertex vert;
+		unsigned int shift;
+		shift= (char*)vert.pos - (char*)&vert;
+		forcefield_data_.vbo.VertexAttrib( 0, 3, GL_FLOAT, false, shift );
+		shift= (char*)vert.normal - (char*)&vert;
+		forcefield_data_.vbo.VertexAttrib( 1, 3, GL_FLOAT, false, shift );
+		shift= (char*)vert.tex_coord - (char*)&vert;
+		forcefield_data_.vbo.VertexAttrib( 2, 2, GL_FLOAT, false, shift );
+	}
 	{ // static level meshes
 		// setup ubo for matrices and sun vectors
 		int alignment;
@@ -452,7 +502,6 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 	}
-
 	{ // sun texture
 		mf_Texture sun_tex( 6, 6 );
 		GenSunTexture( &sun_tex );
@@ -467,7 +516,20 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap( GL_TEXTURE_2D );
 	}
+	{ // forcefield texture
+		mf_Texture sun_tex( 7, 7 );
+		GenForcefieldTexture( &sun_tex );
+		sun_tex.LinearNormalization(1.0f);
 
+		glGenTextures( 1, &forcefield_data_.texture );
+		glBindTexture( GL_TEXTURE_2D, forcefield_data_.texture );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
+			sun_tex.SizeX(), sun_tex.SizeY(), 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, sun_tex.GetNormalizedData() );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glGenerateMipmap( GL_TEXTURE_2D );
+	}
 	{ // terrain textures
 		const unsigned int terrain_texture_size_log2= 9;
 		const unsigned int terrain_texture_size= 1 << terrain_texture_size_log2;
@@ -573,7 +635,7 @@ void mf_Renderer::DrawFrame()
 	DrawLevelStaticObjects( true );
 	DrawPowerups();
 	DrawSky( true );
-	//DrawStars( true );
+	DrawForcefield();
 	DrawParticles( true );
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
@@ -592,7 +654,7 @@ void mf_Renderer::DrawFrame()
 	DrawLevelStaticObjects( false );
 	DrawSky( false );
 	DrawPowerups();
-	//DrawStars( false );
+	DrawForcefield();
 	DrawWater();
 	DrawParticles( false );
 
@@ -1915,6 +1977,29 @@ void mf_Renderer::DrawPowerups()
 			GL_UNSIGNED_SHORT,
 			(void*) ( aircrafts_data_.models[ 0 ].first_index * sizeof(unsigned short) ) );
 	}
+}
+
+void mf_Renderer::DrawForcefield()
+{
+	forcefield_data_.shader.Bind();
+
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, forcefield_data_.texture );
+	forcefield_data_.shader.UniformInt( "tex", 0 );
+
+	forcefield_data_.shader.UniformMat4( "mat", view_matrix_ );
+
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_ONE, GL_ONE );
+
+	forcefield_data_.vbo.Bind();
+	glDrawElements(
+		GL_TRIANGLES,
+		forcefield_data_.vbo.IndexDataSize() / sizeof(unsigned short),
+		GL_UNSIGNED_SHORT,
+		0 );
+
+	glDisable( GL_BLEND );
 }
 
 void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )

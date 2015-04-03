@@ -8,8 +8,12 @@
 * boljše modelej
 	* paljma
 	* dub
-	* beröza
+	* [sdelano] beröza
 	* kamni i voluny
+* silovoje pole dlä ogranocenija prostranstva igry
+	* [sdelano] modelj i tekstura
+	* otsecenije nevidimyh poligonov modeli
+	* logika vzaimodejstvija s igrovym polem
 * bolee složnaja generaçoja landšafta
 * stolknovenije s landšaftom
 	* [sdelano] rascöt stolknovenije tocki, sfery

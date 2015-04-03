@@ -30,6 +30,7 @@ public:
 	// param min_distanse_div_sqrt2 - minimal distance between points / sqrt(2)
 	void PoissonDiskPoints( unsigned int min_distanse_div_sqrt2, unsigned int rand_seed= 0 );
 
+	void GenHexagonalGrid( float edge_size, float y_scaler );
 	void GenNormalMap(); // takes heightmap in alpha channel and writes d/dx in r-channel and d/dy in g-channel
 	void Gradient( unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, const float* color0, const float* color1 );
 	void RadialGradient( int center_x, int center_y, int radius, const float* color0, const float* color1 );

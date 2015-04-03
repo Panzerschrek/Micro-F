@@ -557,6 +557,14 @@ void GenSmokeParticle( mf_Texture* tex )
 	tex->Mul( &circle );
 }
 
+void GenForcefieldTexture( mf_Texture* tex )
+{
+	tex->GenHexagonalGrid( float(tex->SizeX()) * (0.5f/1.5f), 2.0f * 1.0f / mf_Math::sqrt(3.0f) );
+
+	static const float forcefield_color[4]= {0.3f, 0.3f, 0.7f, 1.0f };
+	tex->Mul( forcefield_color );
+}
+
 void (* const terrain_texture_gen_func[])(mf_Texture* t)=
 {
 	GenDirtTexture,

@@ -51,6 +51,7 @@ private:
 	void DrawSky( bool draw_to_water_framebuffer );
 	void DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count );
 	void DrawPowerups();
+	void DrawForcefield();
 	void DrawLevelStaticObjects( bool draw_to_water_framebuffer );
 	void DrawWater();
 	void DrawShadows();
@@ -198,4 +199,11 @@ private:
 		mf_GLSLProgram clouds_shader;
 
 	} sky_clouds_data_;
+
+	struct
+	{
+		GLuint texture;
+		mf_VertexBuffer vbo;
+		mf_GLSLProgram shader;
+	} forcefield_data_;
 };

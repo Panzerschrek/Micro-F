@@ -34,6 +34,9 @@ extern const char* const static_models_shadowmap_shader_f;
 extern const char* const naviball_shader_v;
 extern const char* const naviball_shader_f;
 
+extern const char* const forcefield_shader_v;
+extern const char* const forcefield_shader_f;
+
 extern const char* const aircrafts_shadowmap_shader_v;
 
 extern const char* const aircrafts_stencil_shadow_shader_v;

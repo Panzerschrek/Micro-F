@@ -203,6 +203,43 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2, unsigne
 	delete[] grid;
 }
 
+void mf_Texture::GenHexagonalGrid( float edge_size, float y_scaler )
+{
+	float inv_step_size= 1.0f / (edge_size * 1.5f);
+
+	const float c_hexagon_y_scale= 1.1547005383792515290182975610039f;
+	const float c_inv_hexagon_y_scale= 1.0f / c_hexagon_y_scale;
+
+	float* data= data_;
+	for( unsigned int y= 0; y< size_[1]; y++ )
+	{
+		float f_y= float(y+65536) * inv_step_size * y_scaler;
+		for( unsigned int x= 0; x< size_[0]; x++, data+= 4 )
+		{
+			float f_x= float(x) * inv_step_size;
+			int grid_x= int(f_x);
+			int grid_y= int( f_y * c_inv_hexagon_y_scale - 0.5f * float(grid_x&1) );
+
+			float centers[3][2];
+			centers[0][0]= float(grid_x) + (2.0f/3.0f);
+			centers[0][1]= (float(grid_y) + float(grid_x&1) * 0.5f + 0.5f) * c_hexagon_y_scale;
+			centers[1][0]= centers[0][0] - 1.0f;
+			centers[1][1]= centers[0][1] + c_hexagon_y_scale * 0.5f;
+			centers[2][0]= centers[1][0];
+			centers[2][1]= centers[1][1] - c_hexagon_y_scale;
+
+			float nearest_dist2= 100500.0f;
+			for( unsigned int i= 0; i< 3; i++ )
+			{
+				float vec[2]= { f_x - centers[i][0], f_y - centers[i][1] };
+				float dist2= vec[0] * vec[0] + vec[1] * vec[1];
+				if( dist2 < nearest_dist2 ) nearest_dist2= dist2;
+			}
+			data[0]= data[1]= data[2]= data[3]= nearest_dist2 * 1.5f;
+		} // for x
+	} // for y
+}
+
 void mf_Texture::GenNormalMap()
 {
 	unsigned int size_x1= size_[0] - 1;
