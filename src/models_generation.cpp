@@ -533,7 +533,7 @@ void GenBirch( mf_DrawingModel* model )
 		float rot_vec[3];
 		float rot_mat[16];
 		for( unsigned int j= 0; j< 3; j++ )
-			rot_vec[i]= randomizer.RandF( -1.0f, 1.0f );
+			rot_vec[j]= randomizer.RandF( -1.0f, 1.0f );
 		Mat4RotateAroundVector( rot_mat, rot_vec, randomizer.RandF( MF_2PI ) );
 		Mat4ToMat3( rot_mat );
 

@@ -202,6 +202,11 @@ private:
 
 	struct
 	{
+		mf_GLSLProgram shader;
+	} powerups_data_;
+
+	struct
+	{
 		GLuint texture;
 		mf_VertexBuffer vbo;
 		mf_GLSLProgram shader;

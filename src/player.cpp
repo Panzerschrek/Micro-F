@@ -13,7 +13,7 @@
 #define MF_INITIAL_FOV MF_PI2 - MF_FOV_STEP
 
 mf_Player::mf_Player()
-	: control_mode_(ModeAircraftControl)
+	: control_mode_(ModeDebugFreeFlight)
 	, aircraft_(mf_Aircraft::F1949)
 	, autopilot_(&aircraft_)
 	, cam_radius_(10.0f)

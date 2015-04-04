@@ -395,6 +395,48 @@ const char* const static_models_shadowmap_shader_f=
 	"c_=vec4(0.0,0.0,0.0,0.5);"
 "}";
 
+const char* const powerups_shader_v=
+"#version 330\n"
+"uniform mat4 mat;" // view matrix
+"uniform mat3 nmat;" // normal matrix
+"uniform mat4 mmat;" // model matrix
+"in vec3 p;"
+"in vec3 n;"
+"in vec2 tc;"
+"out vec3 fp;" // fragmnet position relative camera
+"out vec3 fn;" // fragment normal
+"void main()"
+"{"
+	"fp=(mmat*vec4(p,1.0)).xyz;"
+	"fn=nmat*n;"
+	"gl_Position=mat*vec4(p,1.0);"
+"}";
+
+const char* const powerups_shader_f=
+"#version 330\n"
+"uniform vec3 c;" // color of powerup
+"uniform vec3 sun;" // normalized vector to sun
+"uniform vec3 sl;" // sun light
+"uniform vec3 alcube[6];" // ambient light cube
+"in vec3 fp;" // fragment world position
+"in vec3 fn;" // fragment normal
+"out vec4 c_;" // out color
+"void main()"
+"{"
+	"vec3 nn=normalize(fn);"
+	"float ldot=max(dot(sun,nn),0.0);"
+	"vec3 ref=reflect(normalize(fp),nn);"
+	"float l=ldot+step(0.01,ldot)*8.0*pow(max(dot(ref,sun),0.01),32.0);"
+	// make fetch from ambient light cube
+	"vec3 side_step=step(0.0,ref);"
+	"ref*=ref;"
+	"vec3 als="
+		"ref.x*mix(alcube[1],alcube[0],side_step.x)+"
+		"ref.y*mix(alcube[3],alcube[2],side_step.y)+"
+		"ref.z*mix(alcube[5],alcube[4],side_step.z);"
+	"c_=vec4(c*(als+sl*l),1.0);"
+"}";
+
 const char* const forcefield_shader_v=
 "#version 330\n"
 "uniform mat4 mat;"
