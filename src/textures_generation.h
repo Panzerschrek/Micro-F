@@ -1,6 +1,7 @@
 #pragma once
 #include "micro-f.h"
 
+
 class mf_Texture;
 
 enum mf_TerrainTexture
@@ -36,10 +37,19 @@ enum mf_StaticLevelObjectTexture
 	LastStaticLevelObjectTexture
 };
 
+enum mf_ParticleTexture
+{
+	TextureEngineSmoke,
+	TextureEngineFire,
+	TextureEnginePlasma,
+	LastParticleTexture
+};
+
 extern void (* const terrain_texture_gen_func[])(mf_Texture* t);
 extern void (* const aircraft_texture_gen_func[])(mf_Texture* t);
 extern void (* const gui_texture_gen_func[])(mf_Texture* t);
 extern void (* const static_level_object_texture_gen_func[])(mf_Texture* t);
+extern void (* const particles_texture_gen_func[])(mf_Texture* t);
 
 void GenSunTexture( mf_Texture* tex );
 void GenMoonTexture( mf_Texture* textures ); // input - array of six textures - cubemap sides

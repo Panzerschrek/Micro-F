@@ -184,7 +184,7 @@ private:
 		mf_VertexBuffer particles_vbo;
 		mf_GLSLProgram particles_shader;
 
-		GLuint smoke_texture;
+		GLuint textures_array;
 	} particles_data_;
 
 	struct

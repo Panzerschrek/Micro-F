@@ -331,7 +331,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		particles_data_.particles_vbo.VertexAttrib( 0, 4, GL_FLOAT, false, shift );
 		shift= ((char*)&v.luminance) - ((char*)&v);
 		particles_data_.particles_vbo.VertexAttrib( 1, 1, GL_FLOAT, false, shift );
-		shift= ((char*)v.transparency_multipler__backgound_multipler__texture_id__reserved) - ((char*)&v);
+		shift= ((char*)v.t_dt_lt_r) - ((char*)&v);
 		particles_data_.particles_vbo.VertexAttrib( 2, 4, GL_UNSIGNED_BYTE, true, shift );
 
 	} // particles
@@ -433,19 +433,26 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 	}
 
-	{ // test texture
+	{ // particles textures
 		mf_Texture tex( 7, 7 );
-		GenSmokeParticle( &tex );
-		tex.LinearNormalization(1.0f);
 
-		glGenTextures( 1, &particles_data_.smoke_texture );
-		glBindTexture( GL_TEXTURE_2D, particles_data_.smoke_texture );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-			1 << tex.SizeXLog2(), 1 << tex.SizeYLog2(), 0,
-			GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-		glGenerateMipmap(GL_TEXTURE_2D);
+		glGenTextures( 1, &particles_data_.textures_array );
+		glBindTexture( GL_TEXTURE_2D_ARRAY, particles_data_.textures_array );
+		glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8,
+		tex.SizeX(), tex.SizeY(), LastParticleTexture,
+			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+		for (unsigned int i= 0; i< LastParticleTexture; i++ )
+		{
+			particles_texture_gen_func[i]( &tex );
+			tex.LinearNormalization( 1.0f );
+			glTexSubImage3D( GL_TEXTURE_2D_ARRAY, 0,
+				0, 0, i,
+				tex.SizeX(), tex.SizeY(), 1,
+				GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
+		}
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 	}
 	{ // aircraft textures
 		mf_Texture tex( 10, 10 );
@@ -1642,7 +1649,7 @@ void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
 	particles_data_.particles_shader.UniformMat4( "mat", view_matrix_ );
 
 	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, particles_data_.smoke_texture );
+	glBindTexture( GL_TEXTURE_2D_ARRAY, particles_data_.textures_array );
 	particles_data_.particles_shader.UniformInt( "tex", 0 );
 
 	glActiveTexture( GL_TEXTURE1 );

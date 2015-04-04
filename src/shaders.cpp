@@ -640,14 +640,16 @@ const char* const particles_shader_v=
 "uniform float s;" // point size
 "in vec4 p;" // position + size
 "in float i;" // intensity
-"in vec4 c;" // transparency_multipler__backgound_multipler__texture_id__reserved
+"in vec4 c;" // transparency, diffuse texture, luminance texture
 "out float fi;" // frag intensity
 "out float fbm;" // backgound_multipler
 "out float fsl;" // sun light intencity
+"flat out vec2 ftn;" // frag texture number
 "void main()"
 "{"
 	"fi=i;"
-	"fbm= c[1];"
+	"ftn=c.yz*255.1;"
+	"fbm= c[0];"
 	"vec4 p4=mat*vec4(p.xyz,1.0);"
 	"gl_Position=p4;"
 	"vec3 sp=(smat*vec4(p.xyz,1.0)).xyz;"
@@ -657,20 +659,22 @@ const char* const particles_shader_v=
 
 const char* const particles_shader_f=
 "#version 330\n"
-"uniform sampler2D tex;"
+"uniform sampler2DArray tex;"
 "uniform vec3 sl;" // sun light intencity
 "uniform vec3 al;" // ambient light intencity
 "in float fi;"
 "in float fbm;" // backgound_multipler
 "in float fsl;" // sun light
+"flat in vec2 ftn;" // frag texture number
 "out vec4 c_;"
 "void main()"
 "{"
-	"vec4 texc=texture(tex,gl_PointCoord);"
+	"vec4 dtex=texture(tex,vec3(gl_PointCoord,ftn.x));" // diffuse texture
+	"vec4 ltex=texture(tex,vec3(gl_PointCoord,ftn.y));" // luminance texture
 	"vec3 l=fsl*sl+al;"
-	"vec3 c=texc.xyz*l*(texc.a*fbm);" // diffuse color * light
-	"c+=vec3(1.0,0.9,0.5)*(fi*texc.a);" // self-luminanse
-	"c_=vec4(c,1.0-texc.a*fbm);"
+	"vec3 c=dtex.xyz*l*(dtex.a*fbm);" // diffuse color * light
+	"c+=ltex.xyz*(fi*ltex.a);" // self-luminanse
+	"c_=vec4(c,1.0-dtex.a*fbm);"
 "}";
 
 const char* const tonemapping_shader_v=

@@ -8,16 +8,21 @@ class mf_Aircraft;
  Input - texture with premultipled alpha.
  Blending mode: GL_ONE, GL_ONE_MINUS_SRC_ALPHA
  color.xyz=
-	albedo_tex.xyz * sun_light * albedo_tex.a * ( 1.0 - background_multipler ) ) +
+	albedo_tex.xyz * sun_light * albedo_tex.a * ( 1.0 - transparency ) ) +
 	brightness_tex.xyz * luminance
- color.a= background_multipler * albedo_tex.a
+ color.a= transparency * albedo_tex.a
 */
 #pragma pack(push, 1)
 struct mf_ParticleVertex
 {
 	float pos_size[4];
 	float luminance;
-	unsigned char transparency_multipler__backgound_multipler__texture_id__reserved[4];
+
+	//! 0 - transparency
+	//! 1 - diffuse texture id
+	//! 2 - luminance texture id
+	//! 3 - reserved
+	unsigned char t_dt_lt_r[4];
 
 };
 #pragma pack(pop)
@@ -27,14 +32,6 @@ struct mf_ParticleVertex
 class mf_ParticlesManager
 {
 public:
-
-	enum ParticleTexture
-	{
-		TextureEngineSmoke,
-		TextureEngineFire,
-		LastTexture
-	};
-
 	mf_ParticlesManager();
 	~mf_ParticlesManager();
 
@@ -46,11 +43,14 @@ public:
 	void PrepareParticlesVertices( mf_ParticleVertex* out_vertices ) const;
 private:
 
+	void AddF2XXXTrail( const mf_Aircraft* aircraft, unsigned int engine_number );
+	void AddV1Trail( const mf_Aircraft* aircraft );
 	struct Particle
 	{
 		enum Type
 		{
 			JetEngineTrail,
+			PlasmaEngineTrail,
 			LastType
 		};
 		Type type;
