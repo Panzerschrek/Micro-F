@@ -12,7 +12,7 @@ public:
 		LastType
 	};
 
-	mf_Aircraft( Type type = F1949 );
+	mf_Aircraft( Type type = F1949, int hp= 1000 );
 	~mf_Aircraft();
 
 	void Tick( float dt );
@@ -28,7 +28,8 @@ public:
 
 	float Throttle() const;
 
-	unsigned int HP() const;
+	int HP() const;
+	void AddHP( int hp_bonus );
 
 	void SetType( Type type );
 
@@ -60,7 +61,7 @@ private:
 	//[0;1]
 	float throttle_;
 
-	unsigned int hp_; // [0;1]
+	int hp_;
 
 	float max_engines_trust_; // N
 	float wings_area_; // m^2
@@ -125,9 +126,14 @@ inline const float* mf_Aircraft::AngularAcceleration() const
 	return angular_acceleration_;
 }
 
-inline unsigned int mf_Aircraft::HP() const
+inline int mf_Aircraft::HP() const
 {
 	return hp_;
+}
+
+inline void mf_Aircraft::AddHP( int hp_bonus )
+{
+	hp_+= hp_bonus;
 }
 
 inline void mf_Aircraft::SetType( Type type )

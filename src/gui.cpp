@@ -77,6 +77,22 @@ static void GenGuiQuadTextureCoords( mf_GuiVertex* v, mf_GuiTexture tex )
 	v[2].tex_coord[2]= v[3].tex_coord[2]= float(tex) + 0.01f;
 }
 
+void IntToStr( int i, char* str, int digits )
+{
+	str[0]= i > 0 ? '+' : '-';
+	str++;
+	if( i < 0 ) i= -i;
+
+	int ten_pow= 1;
+	for( int k= 0; k< digits-1; k++ )
+		ten_pow*= 10;
+	for( int k= 0; k< digits; k++ )
+	{
+		str[k]= (i / ten_pow) %10 + '0';
+		ten_pow/= 10;
+	}
+}
+
 mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 	: main_loop_(mf_MainLoop::Instance())
 	, text_(text)
@@ -244,20 +260,41 @@ void mf_Gui::Draw()
 	const float* vel= aircraft->Velocity();
 	float horizontal_speed= mf_Math::sqrt( vel[0] * vel[0] + vel[1] * vel[1] );
 
-	float lon, lat;
-	VecToSphericalCoordinates( aircraft->AxisVec(1), &lon, &lat );
-	char str[128];
-	sprintf( str,
-		"horizontal speed: %3.2f\nvertical speed: %+3.2f\nazimuth: %+3.1f\nelevation: %+3.1f\naltitude: %+3.1f",
-		horizontal_speed, vel[2], lon * MF_RAD2DEG, lat * MF_RAD2DEG, aircraft->Pos()[2] );
-	text_->AddText( 1, 9, 1, mf_Text::default_color, str );
+	{ // aircraft parameters
+		float lon, lat;
+		VecToSphericalCoordinates( aircraft->AxisVec(1), &lon, &lat );
+		char str[128];
+		sprintf( str,
+			"horizontal speed: %3.2f\nvertical speed: %+3.2f\nazimuth: %+3.1f\nelevation: %+3.1f\naltitude: %+3.1f",
+			horizontal_speed, vel[2], lon * MF_RAD2DEG, lat * MF_RAD2DEG, aircraft->Pos()[2] );
+		text_->AddText( 1, 9, 1, mf_Text::default_color, str );
 
-#ifdef MF_DEBUG
-	sprintf( str, "angle of attack: %+2.3f\nlift force k: %+2.3f\npitch/yaw/roll factors: %+1.2f %+1.2f %+1.2f",
-		aircraft->debug_angle_of_attack_deg_, aircraft->debug_cyk_,
-		aircraft->debug_pitch_control_factor_, aircraft->debug_yaw_control_factor_, aircraft->debug_roll_control_factor_ );
-	text_->AddText( 1, 15, 1, mf_Text::default_color, str );
-#endif
+	#ifdef MF_DEBUG
+		sprintf( str, "angle of attack: %+2.3f\nlift force k: %+2.3f\npitch/yaw/roll factors: %+1.2f %+1.2f %+1.2f",
+			aircraft->debug_angle_of_attack_deg_, aircraft->debug_cyk_,
+			aircraft->debug_pitch_control_factor_, aircraft->debug_yaw_control_factor_, aircraft->debug_roll_control_factor_ );
+		text_->AddText( 1, 15, 1, mf_Text::default_color, str );
+	#endif
+	}
+
+	{ // hp, score
+		unsigned int bottom_row= main_loop_->ViewportHeight() / MF_LETTER_HEIGHT;
+		unsigned int right_column= main_loop_->ViewportWidth() / MF_LETTER_WIDTH;
+		static const unsigned char c_hp_color[3][4]=
+		{
+			{ 64, 220, 64, 0  },
+			{ 220, 220, 64, 0 },
+			{ 220, 64, 64, 0  }
+		};
+		unsigned int color_index;
+		if( aircraft->HP() >= 600 ) color_index= 0;
+		else if( aircraft->HP() >= 200 ) color_index= 1;
+		else color_index= 2;
+
+		char str[]= "HP: sdddd";
+		IntToStr( aircraft->HP(), str+4, 4 );
+		text_->AddText( right_column - 20, bottom_row - 2, 2, c_hp_color[color_index], str );
+	}
 
 	DrawControlPanel();
 	DrawNaviball();

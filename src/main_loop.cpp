@@ -129,10 +129,15 @@ void mf_MainLoop::Play(  const mf_Settings* settings )
 	game_logic_= new mf_GameLogic( &player_ );
 
 	mode_= ModeGame;
-
 	renderer_= new mf_Renderer( &player_, game_logic_, text_, settings );
-
 	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
+
+	mf_Aircraft* aircraft= (mf_Aircraft*)player_.GetAircraft();
+	float pos[3];
+	pos[0]= game_logic_->GetLevel()->TerrainSizeX() * game_logic_->GetLevel()->TerrainCellSize() * 0.5f;
+	pos[1]= 64.0f;
+	pos[2]= game_logic_->GetLevel()->TerrainAmplitude();
+	aircraft->SetPos( pos );
 }
 
 mf_MainLoop::mf_MainLoop(

@@ -1,6 +1,7 @@
 #pragma once
 #include "level.h"
 #include "particles_manager.h"
+#include "mf_math.h"
 class mf_Player;
 
 
@@ -37,6 +38,8 @@ private:
 	mf_Level level_;
 	mf_ParticlesManager particles_manager_;
 	mf_Player* player_;
+
+	mf_Rand randomizer_;
 
 	mf_Powerup* powerups_;
 	unsigned int powerup_count_;

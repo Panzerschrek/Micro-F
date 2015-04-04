@@ -6,6 +6,8 @@
 
 #define MF_MAX_POWERUPS_COUNT 128
 
+#define MF_FORCEFIELD_DAMAGE_RADIUS 8.0f
+
 mf_GameLogic::mf_GameLogic(mf_Player* player)
 	: level_()
 	, particles_manager_()
@@ -44,8 +46,21 @@ void mf_GameLogic::Tick( float dt )
 		float pos[3];
 		VEC3_CPY( pos, player_aircraft->Pos() );
 		pos[2]+= 4.0f;
-		player_aircraft->SetPos(pos);
+		player_aircraft->AddHP( - ( player_aircraft->HP() + 100 ) );
 	}
+
+	{ // calculate collision with forcefield
+		float vec_to_forcefield[3];
+		vec_to_forcefield[0]= player_aircraft->Pos()[0] - float(level_.TerrainSizeX()) * level_.TerrainCellSize() * 0.5f;
+		vec_to_forcefield[1]= 0;
+		vec_to_forcefield[2]= player_aircraft->Pos()[2] - level_.ForcefieldZPos();
+		float dist_to_forcefield= Vec3Len( vec_to_forcefield );
+		if( dist_to_forcefield > level_.ForcefieldRadius() )
+			player_aircraft->AddHP( - ( player_aircraft->HP() + 100 ) );
+		else if( level_.ForcefieldRadius() - dist_to_forcefield < MF_FORCEFIELD_DAMAGE_RADIUS )
+			player_aircraft->AddHP( -50 );
+	}
+
 
 	particles_manager_.Tick( dt );
 	particles_manager_.AddEnginesTrail( player_->GetAircraft() );

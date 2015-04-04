@@ -49,12 +49,13 @@ float ThrottleToEngineSoundVolumeScaler( float throttle )
 	return throttle * 2.0f;
 }
 
-mf_Aircraft::mf_Aircraft( Type type )
+mf_Aircraft::mf_Aircraft( Type type, int hp )
 	: type_(type)
 	, pitch_factor_(0.0f)
 	, yaw_factor_  (0.0f)
 	, roll_factor_ (0.0f)
 	, throttle_(1.0f)
+	, hp_(hp)
 {
 	axis_[0][0]= 1.0f;
 	axis_[0][1]= 0.0f;
