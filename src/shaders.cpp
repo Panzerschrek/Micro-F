@@ -444,13 +444,17 @@ const char* const powerups_shader_f=
 const char* const forcefield_shader_v=
 "#version 330\n"
 "uniform mat4 mat;"
+"uniform float iffh;" // inverted forcefield height
 "in vec3 p;"
 "in vec2 tc;"
 "out vec3 fp;"
 "out vec2 ftc;"
+"out float fhk;"
 "void main()"
 "{"
 	"fp=p;"
+	"float hk=1.0-0.3*p.z*iffh;"
+	"fhk=hk*hk;"
 	"ftc=tc;"
 	"gl_Position=mat*vec4(p,1.0);"
 "}";
@@ -461,12 +465,13 @@ const char* const forcefield_shader_f=
 "uniform vec3 aircp;" // aircraft position
 "in vec3 fp;" // fragment world position
 "in vec2 ftc;" // texture coord
+"in float fhk;"
 "out vec4 c_;" // out color
 "void main()"
 "{"
 	"vec3 v=fp-aircp;"
 	"float id=1.0/dot(v,v);"
-	"c_=clamp(256*id,0.5,1.0)*texture(tex,ftc)+min(id*128,0.7)*vec4(1.0,0.5,0.5,0.0);"
+	"c_=fhk*clamp(256*id,0.7,1.0)*texture(tex,ftc)+min(id*128,0.7)*vec4(1.0,0.5,0.5,0.0);"
 "}";
 
 const char* const naviball_shader_v=

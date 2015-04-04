@@ -39,9 +39,9 @@ struct mf_StarVertex
 	unsigned char intencity;
 };
 
-static const float g_clouds_distance_scaler= 1.4f;
-static const float g_sun_distance_scaler= 1.5f;
-static const float g_stars_distance_scaler= 1.7f;
+static const float g_clouds_distance_scaler= 1.8f;
+static const float g_sun_distance_scaler= 1.85f;
+static const float g_stars_distance_scaler= 1.9f;
 static const float g_sky_radius_scaler= 2.0f;
 static const float g_zfar_scaler= 2.5f;
 
@@ -204,7 +204,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	forcefield_data_.shader.SetAttribLocation( "n", 1 );
 	forcefield_data_.shader.SetAttribLocation( "tc", 2 );
 	forcefield_data_.shader.Create( mf_Shaders::forcefield_shader_v, mf_Shaders::forcefield_shader_f );
-	static const char* const forcefield_shader_uniforms[]= { "mat", "tex", "aircp" };
+	static const char* const forcefield_shader_uniforms[]= { "mat", "tex", "iffh", "aircp" };
 	forcefield_data_.shader.FindUniforms( forcefield_shader_uniforms, sizeof(forcefield_shader_uniforms) / sizeof(char*) );
 
 	// sun shader
@@ -276,7 +276,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	}
 	{ // clouds mesh
 		mf_DrawingModel model;
-		GenSkySphere( &model, 2 );
+		GenSkySphere( &model, 4 );
 
 		sky_clouds_data_.clouds_dome_vbo.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
 		sky_clouds_data_.clouds_dome_vbo.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
@@ -337,35 +337,13 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	} // particles
 	{ // forcefield
 		mf_DrawingModel model;
-		GenCylinder( &model, 40/*rounder*/, 8/*longer*/, false );
-		float scale_vec[3]=
-		{
-			level_->TerrainAmplitude() * 4.0f,
-			level_->TerrainAmplitude() * 4.0f,
-			float(level_->TerrainSizeY()) * level_->TerrainCellSize() * 0.5f
-		};
-		model.Scale( scale_vec );
-
-		float mat[16];
-		Mat4RotateX( mat, MF_PI2 );
-		Mat4ToMat3( mat );
-		model.Rotate( mat );
-
-		float shift_vec[3]=
+		float pos[3]=
 		{
 			(level_->TerrainSizeX()) * level_->TerrainCellSize() * 0.5f,
 			(level_->TerrainSizeY()) * level_->TerrainCellSize() * 0.5f,
-			- level_->TerrainAmplitude() * 2.0f
+			level_->ForcefieldZPos()
 		};
-		model.Shift( shift_vec );
-
-		static const float c_hex_grid_scaler= 1.0f / 32.0f;
-		float tc_scale_vec[2]=
-		{
-			c_hex_grid_scaler * scale_vec[0] * MF_PI,
-			c_hex_grid_scaler * scale_vec[2] * mf_Math::sqrt(3.0f) * 0.5f
-		};
-		model.ScaleTexCoord( tc_scale_vec );
+		GenForcefieldModel( &model, level_->ForcefieldRadius(), float(level_->TerrainSizeY()), pos );
 
 		forcefield_data_.vbo.VertexData( model.GetVertexData(), model.VertexCount() * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
 		forcefield_data_.vbo.IndexData( model.GetIndexData(), model.IndexCount() * sizeof(unsigned short) );
@@ -2006,6 +1984,7 @@ void mf_Renderer::DrawForcefield()
 
 	forcefield_data_.shader.UniformMat4( "mat", view_matrix_ );
 	forcefield_data_.shader.UniformVec3( "aircp", player_->GetAircraft()->Pos() );
+	forcefield_data_.shader.UniformFloat( "iffh", 1.0f / ( level_->ForcefieldRadius() + level_->ForcefieldZPos() ) );
 
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_ONE, GL_ONE );

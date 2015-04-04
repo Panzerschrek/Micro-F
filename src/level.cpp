@@ -57,6 +57,9 @@ mf_Level::mf_Level()
 	terrain_cell_size_= 2.0f;
 	terrain_water_level_= terrain_amplitude_ / 9.0f;
 
+	forcefield_radius_= terrain_amplitude_ * 4.0f;
+	forcefield_z_pos_= - terrain_amplitude_ * 2.0f;
+
 	terrain_heightmap_data_= new unsigned short[ terrain_size_[0] * terrain_size_[1] ];
 	terrain_normal_textures_map_= new char[ terrain_size_[0] * terrain_size_[1] * 4 ];
 

@@ -174,6 +174,42 @@ void GenCylinder( mf_DrawingModel* model, unsigned int segments, unsigned int pa
 	model->SetIndexData( ind, index_count );
 }
 
+void GenForcefieldModel( mf_DrawingModel* model, float radius, float length, const float* pos )
+{
+	static const unsigned int c_cylinder_partitions= 64;
+	static const unsigned int c_partitions_left= 22;
+	GenCylinder( model, c_cylinder_partitions/*rounder*/, 1/*longer*/, false );
+	float scale_vec[3]=
+	{
+		radius,
+		radius,
+		length
+	};
+	model->Scale( scale_vec );
+
+	float x_mat[16];
+	float y_mat[16];
+	float mat[16];
+	Mat4RotateX( x_mat, MF_PI2 );
+	Mat4RotateY( y_mat, -MF_PI2 + MF_PI * float(c_partitions_left) / float(c_cylinder_partitions) );
+	Mat4Mul( x_mat, y_mat, mat );
+	Mat4ToMat3( mat );
+	model->Rotate( mat );
+
+	model->Shift( pos );
+
+	static const float c_hex_grid_scaler= 1.0f / 32.0f;
+	float tc_scale_vec[2]=
+	{
+		c_hex_grid_scaler * scale_vec[0] * MF_PI,
+		c_hex_grid_scaler * scale_vec[2] * mf_Math::sqrt(3.0f) * 0.5f
+	};
+	model->ScaleTexCoord( tc_scale_vec );
+
+	unsigned short* ind = new unsigned short[ c_partitions_left * 6 ];
+	memcpy( ind, model->GetIndexData(), c_partitions_left * 6 * sizeof(unsigned short) );
+	model->SetIndexData( ind, c_partitions_left * 6 );
+}
 
 void GenSkySphere( mf_DrawingModel* model, unsigned int partitiion )
 {

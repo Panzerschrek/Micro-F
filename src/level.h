@@ -41,6 +41,9 @@ public:
 	float TerrainCellSize() const;
 	float TerrainWaterLevel() const;
 
+	float ForcefieldRadius() const;
+	float ForcefieldZPos() const;
+
 	const mf_StaticLevelObjectsRow* GetStaticObjectsRows() const;
 	unsigned int GetStaticObjectsRowCount() const;
 
@@ -77,6 +80,9 @@ private:
 	float terrain_water_level_;
 
 	unsigned int terrain_size_[2];
+
+	float forcefield_radius_;
+	float forcefield_z_pos_;
 
 	ValleyWayPoint* valley_way_points_;
 	unsigned int valley_way_point_count_;
@@ -121,6 +127,16 @@ inline float mf_Level::TerrainWaterLevel() const
 	return terrain_water_level_;
 }
 
+inline float mf_Level::ForcefieldRadius() const
+{
+	return forcefield_radius_;
+}
+
+inline float mf_Level::ForcefieldZPos() const
+{
+	return forcefield_z_pos_;
+}
+
 inline const mf_StaticLevelObjectsRow* mf_Level::GetStaticObjectsRows() const
 {
 	return static_objects_rows_;
@@ -130,12 +146,3 @@ inline unsigned int mf_Level::GetStaticObjectsRowCount() const
 {
 	return static_objects_row_count_;
 }
-/*inline const mf_StaticLevelObject* mf_Level::GetStaticObjects() const
-{
-	return static_objects_;
-}
-
-inline unsigned int mf_Level::StaticObjectsCount() const
-{
-	return static_objects_count_;
-}*/
