@@ -79,7 +79,7 @@ static void GenGuiQuadTextureCoords( mf_GuiVertex* v, mf_GuiTexture tex )
 
 void IntToStr( int i, char* str, int digits )
 {
-	str[0]= i > 0 ? '+' : '-';
+	str[0]= i >= 0 ? '+' : '-';
 	str++;
 	if( i < 0 ) i= -i;
 
@@ -286,14 +286,20 @@ void mf_Gui::Draw()
 			{ 220, 220, 64, 0 },
 			{ 220, 64, 64, 0  }
 		};
+		static const unsigned char c_score_color[4]= { 240, 230, 220, 0 };
+
 		unsigned int color_index;
 		if( aircraft->HP() >= 600 ) color_index= 0;
 		else if( aircraft->HP() >= 200 ) color_index= 1;
 		else color_index= 2;
 
-		char str[]= "HP: sdddd";
-		IntToStr( aircraft->HP(), str+4, 4 );
-		text_->AddText( right_column - 20, bottom_row - 2, 2, c_hp_color[color_index], str );
+		char hp_str[]= "HP: sdddd";
+		IntToStr( aircraft->HP(), hp_str+4, 4 );
+		text_->AddText( right_column - 20, bottom_row - 2, 2, c_hp_color[color_index], hp_str );
+
+		char score_str[]= "Score: sdddd";
+		IntToStr( player_->Score(), score_str+7, 4 );
+		text_->AddText( right_column - 26, bottom_row - 4, 2, c_score_color, score_str );
 	}
 
 	DrawControlPanel();

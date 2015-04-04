@@ -22,6 +22,7 @@ mf_Player::mf_Player()
 	, up_pressed_(false), down_pressed_(false)
 	, rotate_up_pressed_(false), rotate_down_pressed_(false), rotate_left_pressed_(false), rotate_right_pressed_(false)
 	, rotate_clockwise_pressed_(false), rotate_anticlockwise_pressed_(false)
+	, score_(0)
 {
 	pos_[0]= pos_[1]= pos_[2]= 0.0f;
 	angle_[0]= angle_[1]= angle_[2]= 0.0f;

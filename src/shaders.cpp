@@ -422,6 +422,7 @@ const char* const powerups_shader_f=
 "uniform vec3 sun;" // normalized vector to sun
 "uniform vec3 sl;" // sun light
 "uniform vec3 alcube[6];" // ambient light cube
+"uniform float trans;" // transparency of powerup
 "in vec3 fp;" // fragment world position
 "in vec3 fn;" // fragment normal
 "out vec4 c_;" // out color
@@ -438,7 +439,7 @@ const char* const powerups_shader_f=
 		"ref.x*mix(alcube[1],alcube[0],side_step.x)+"
 		"ref.y*mix(alcube[3],alcube[2],side_step.y)+"
 		"ref.z*mix(alcube[5],alcube[4],side_step.z);"
-	"c_=vec4(c*(als+sl*l),1.0);"
+	"c_=vec4(c*(als+sl*l),trans);"
 "}";
 
 const char* const forcefield_shader_v=

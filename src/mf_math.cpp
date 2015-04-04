@@ -110,9 +110,9 @@ float Vec3Len( const float* v )
 
 float Distance( const float* v0, const float* v1 )
 {
-	float v[]= { v0[0], v0[1], v0[2] };
-	Vec3Sub( v, v1 );
-	return Vec3Len(v0);
+	float v[3];
+	Vec3Sub( v0, v1, v );
+	return Vec3Len(v);
 }
 
 void SphericalCoordinatesToVec( float longitude, float latitude, float* out_vec )

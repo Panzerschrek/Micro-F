@@ -29,6 +29,10 @@ public:
 
 	const mf_Aircraft* GetAircraft() const;
 
+	unsigned int Score() const;
+	void AddScorePoints( unsigned int points );
+	void ResetScore();
+
 	void ForwardPressed();
 	void BackwardPressed();
 	void LeftPressed();
@@ -85,6 +89,8 @@ private:
 	bool up_pressed_, down_pressed_;
 	bool rotate_up_pressed_, rotate_down_pressed_, rotate_left_pressed_, rotate_right_pressed_;
 	bool rotate_clockwise_pressed_, rotate_anticlockwise_pressed_;
+
+	unsigned int score_;
 };
 
 inline void mf_Player::SetControlMode( ControlMode mode )
@@ -100,6 +106,21 @@ inline const float* mf_Player::Pos() const
 inline const mf_Aircraft* mf_Player::GetAircraft() const
 {
 	return &aircraft_;
+}
+
+inline unsigned int mf_Player::Score() const
+{
+	return score_;
+}
+
+inline void mf_Player::AddScorePoints( unsigned int points )
+{
+	score_+= points;
+}
+
+inline void mf_Player::ResetScore()
+{
+	score_= 0;
 }
 
 inline const float* mf_Player::Angle() const

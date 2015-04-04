@@ -6,6 +6,7 @@
 #include "particles_manager.h"
 #include "text.h"
 #include "settings.h"
+#include "game_logic.h"
 
 #include "mf_model.h"
 
@@ -32,6 +33,7 @@ private:
 	void GenTerrainMesh();
 	void GenWaterMesh();
 	void PrepareAircraftModels();
+	void PreparePowerupsModels();
 	void PrepareLevelStaticObjectsModels();
 
 	void CreateViewMatrix( float* out_matrix, bool water_reflection );
@@ -202,6 +204,8 @@ private:
 
 	struct
 	{
+		mf_ModelInfoForDrawing models[ mf_Powerup::LastType ];
+		mf_VertexBuffer vbo;
 		mf_GLSLProgram shader;
 	} powerups_data_;
 

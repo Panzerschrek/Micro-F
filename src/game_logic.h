@@ -10,12 +10,13 @@ struct mf_Powerup
 	enum Type
 	{
 		Star,
+		MiddleHealth,
 		LastType
 	};
 	Type type;
 	float pos[3];
-	int health_bonus;
 	int stars_bonus;
+	int health_bonus;
 };
 
 class mf_GameLogic

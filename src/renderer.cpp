@@ -196,7 +196,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	powerups_data_.shader.SetAttribLocation( "n", 1 );
 	powerups_data_.shader.SetAttribLocation( "tc", 2 );
 	powerups_data_.shader.Create( mf_Shaders::powerups_shader_v, mf_Shaders::powerups_shader_f );
-	static const char* const powerups_shader_uniforms[]= { "mat", "nmat", "mmat", /*frag*/ "c", "sun", "sl", "alcube" };
+	static const char* const powerups_shader_uniforms[]= { "mat", "nmat", "mmat", /*frag*/ "c", "sun", "sl", "alcube", "trans" };
 	powerups_data_.shader.FindUniforms( powerups_shader_uniforms,sizeof(powerups_shader_uniforms) / sizeof(char*) );
 
 	// forcefield shader
@@ -258,6 +258,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	GenWaterMesh();
 	PrepareAircraftModels();
 	PrepareLevelStaticObjectsModels();
+	PreparePowerupsModels();
 
 	{ // sky mesh
 		mf_DrawingModel model;
@@ -1313,6 +1314,60 @@ void mf_Renderer::PrepareAircraftModels()
 	}
 }
 
+void mf_Renderer::PreparePowerupsModels()
+{
+	unsigned int total_vertex_count= 0;
+	unsigned int total_index_count= 0;
+
+	for (unsigned int i= 0; i< mf_Powerup::LastType; i++ )
+	{
+		const mf_ModelHeader* header= (const mf_ModelHeader*) mf_Models::powerups_models[i];
+		total_vertex_count+= header->vertex_count;
+		total_index_count+= header->trialgle_count * 3;
+	}
+
+	powerups_data_.vbo.VertexData( NULL, total_vertex_count * sizeof(mf_DrawingModelVertex), sizeof(mf_DrawingModelVertex) );
+	powerups_data_.vbo.IndexData( NULL, total_index_count * sizeof(unsigned short) );
+
+	mf_DrawingModelVertex vert;
+	unsigned int shift;
+	shift= (char*)vert.pos - (char*)&vert;
+	powerups_data_.vbo.VertexAttrib( 0, 3, GL_FLOAT, false, shift );
+	shift= (char*)vert.normal - (char*)&vert;
+	powerups_data_.vbo.VertexAttrib( 1, 3, GL_FLOAT, false, shift );
+	shift= (char*)vert.tex_coord - (char*)&vert;
+	powerups_data_.vbo.VertexAttrib( 2, 2, GL_FLOAT, false, shift );
+
+	mf_DrawingModel model;
+
+	unsigned int vertex_shift= 0;
+	unsigned int index_shift= 0;
+	for (unsigned int i= 0; i< mf_Powerup::LastType; i++ )
+	{
+		model.LoadFromMFMD( mf_Models::powerups_models[i] );
+
+		powerups_data_.vbo.VertexSubData(
+			model.GetVertexData(), 
+			model.VertexCount() * sizeof(mf_DrawingModelVertex),
+			vertex_shift * sizeof(mf_DrawingModelVertex) );
+
+		unsigned short* indeces= (unsigned short*) model.GetIndexData();
+		for( unsigned int ind= 0; ind< model.IndexCount(); ind++ )
+			indeces[ind]+= (unsigned short)vertex_shift;
+
+		powerups_data_.vbo.IndexSubData(
+			model.GetIndexData(),
+			model.IndexCount() * sizeof(unsigned short),
+			index_shift * sizeof(unsigned short) );
+
+		powerups_data_.models[i].first_index= index_shift;
+		powerups_data_.models[i].index_count= model.IndexCount();
+
+		vertex_shift+= model.VertexCount();
+		index_shift+= model.IndexCount();
+	}
+}
+
 void mf_Renderer::PrepareLevelStaticObjectsModels()
 {
 	mf_DrawingModel combined_model;
@@ -1932,7 +1987,7 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 
 void mf_Renderer::DrawPowerups()
 {
-	aircrafts_data_.vbo.Bind();
+	powerups_data_.vbo.Bind();
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D_ARRAY, aircrafts_data_.textures_array );
 
@@ -1951,6 +2006,11 @@ void mf_Renderer::DrawPowerups()
 		0.2f,  0.18f, 0.35f,  0.1f,  0.21f, 0.18f  // z+ z-
 	};
 	powerups_data_.shader.UniformVec3Array( "alcube", 6, ambeint_light_cube );
+
+	glEnable( GL_CULL_FACE );
+	glCullFace( GL_BACK );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
 	const mf_Powerup* powerups= game_logic_->GetPowerups();
 	for( unsigned int i= 0; i< game_logic_->GetPowerupCount(); i++ )
@@ -1974,11 +2034,19 @@ void mf_Renderer::DrawPowerups()
 		powerups_data_.shader.UniformMat3( "nmat", rotate_mat );
 		powerups_data_.shader.UniformMat4( "mmat", cam_mat );
 
+		float dist_to_aircraft= Distance( powerups[i].pos, player_->GetAircraft()->Pos() );
+		float alpha= 1.0f;
+		if( dist_to_aircraft < 64.0f ) alpha = dist_to_aircraft / 64.0f;
+		if( alpha < 0.2f ) alpha= 0.2f;
+		powerups_data_.shader.UniformFloat( "trans", alpha );
+
 		glDrawElements( GL_TRIANGLES,
-			aircrafts_data_.models[ mf_Aircraft::V1 ].index_count,
+			powerups_data_.models[ powerups[i].type ].index_count,
 			GL_UNSIGNED_SHORT,
-			(void*) ( aircrafts_data_.models[ mf_Aircraft::V1 ].first_index * sizeof(unsigned short) ) );
+			(void*) ( powerups_data_.models[ powerups[i].type ].first_index * sizeof(unsigned short) ) );
 	}
+	glDisable( GL_CULL_FACE );
+	glDisable( GL_BLEND );
 }
 
 void mf_Renderer::DrawForcefield()
