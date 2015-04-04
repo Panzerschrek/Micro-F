@@ -2263,7 +2263,7 @@ void mf_Renderer::DrawShadows()
 
 	} // draw terrain
 	{ // draw water
-		water_shadowmap_shader_.Bind();
+		/*water_shadowmap_shader_.Bind();
 		water_shadowmap_shader_.UniformMat4( "mat", projection_final_mat );
 		water_shadowmap_shader_.UniformFloat( "wl", level_->TerrainWaterLevel() );
 
@@ -2279,7 +2279,7 @@ void mf_Renderer::DrawShadows()
 		CalculateWaterMeshVisiblyPart( &first_quad, &quad_count );
 
 		water_mesh_.vbo.Bind();
-		glDrawArrays( GL_TRIANGLES, first_quad * 6 , quad_count * 6 );
+		glDrawArrays( GL_TRIANGLES, first_quad * 6 , quad_count * 6 );*/
 	} // draw water
 	{ // draw aircrafts
 		aircraft_shadowmap_shader_.Bind();

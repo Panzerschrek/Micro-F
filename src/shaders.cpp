@@ -116,6 +116,7 @@ const char* const terrain_shader_v=
 "out vec2 ftc;" // frag tex coord
 "out vec3 fstc;" // frag shadowmap tex coord
 "out vec2 fp;" // frag position
+"out float fwdk;" // fragment water depth k
 "void main()"
 "{"
 	"vec2 sp=p+sh.xy;"
@@ -125,6 +126,7 @@ const char* const terrain_shader_v=
 	"float h=texelFetch(hm,ivec2(sp),0).x;"
 	"vec3 p=vec3(sp,h);"
 	"gl_Position=mat*vec4(p,1.0);"
+	"fwdk=smoothstep(0.5*wl,wl,p.z);"
 	"p=(smat*vec4(p,1.0)).xyz;"
 	"fstc=p*0.5+vec3(0.5,0.5,0.5);"
 	"gl_ClipDistance[0]=h-wl;"
@@ -143,6 +145,7 @@ const char* const terrain_shader_f=
 "in vec2 ftc;" // texture coord for diffuse texture
 "in vec3 fstc;"
 "in vec2 fp;"
+"in float fwdk;" // fragment water depth k
 "out vec4 c_;"
 "void main()"
 "{"
@@ -159,7 +162,8 @@ const char* const terrain_shader_f=
 	"vec4 cy0=mix(c00,c01,tcmod.y);"
 	"vec4 cy1=mix(c10,c11,tcmod.y);"
 	"float l=max(0.0,texture(stex,fstc)*dot(sun,normalize(fn)));"
-	"c_=vec4(mix(cy0,cy1,tcmod.x).xyz*(l*sl+al),1.0);"
+	"float lk=fwdk*fwdk;" // underwater fog factor
+	"c_=vec4(mix(cy0,cy1,tcmod.x).xyz*(lk*l*sl+al+(1.0-lk)*vec3(0.1,0.1,0.3)),1.0);"
 "}"
 ;
 
