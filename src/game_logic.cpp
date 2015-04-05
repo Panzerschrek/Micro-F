@@ -71,6 +71,7 @@ void mf_GameLogic::Tick( float dt )
 		{
 			player_aircraft->AddHP( powerups_[i].health_bonus );
 			player_->AddScorePoints( powerups_[i].stars_bonus );
+			mf_SoundEngine::Instance()->AddSingleSound( SoundPowerupPickup, 1.0f, 1.0f, NULL );
 
 			if( i < powerup_count_ - 1 )
 				powerups_[i]= powerups_[ powerup_count_ - 1 ];

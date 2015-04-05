@@ -64,8 +64,8 @@ private:
 private:
 	struct ValleyWayPoint
 	{
-		unsigned int x, y; // in terrain units
-		unsigned int h; // height in terrain scale
+		int x, y; // in terrain units
+		int h; // height in terrain scale
 	};
 
 	struct ValleyYparams

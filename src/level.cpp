@@ -6,7 +6,7 @@
 
 #define MF_MAX_VALLEY_WAY_POINTS 1024
 
-static unsigned short Noise2( int x,  int y ) 
+static unsigned short Noise2( int x,  int y )
 {
 	int n= x + y * 57;
 	n= (n << 13) ^ n;
@@ -327,19 +327,18 @@ void mf_Level::GenValleyWayPoints()
 	const float y_range[]= {96.0f * 2.0f, 128.0f * 2.5f };
 	const float x_amplitude= 144.0f;
 
-	unsigned int y= 16;
+	int y= -512;
 
 	float x_center= float(terrain_size_[0]/2);
-	while( y < terrain_size_[1] - 32 )
+	while( y < int(terrain_size_[1]) + 512 )
 	{
 		float x= x_center + randomizer.RandF( -x_amplitude, x_amplitude );
 		float dy= randomizer.RandF( y_range[0], y_range[1] );
 
-		y+= (unsigned int)(dy);
-		if( y >= terrain_size_[1] -32)
-			break;
+		y+= int(dy);
+		if( y >= int(terrain_size_[1]) + 512 ) break;
 
-		valley_way_points_[ valley_way_point_count_ ].x= (unsigned int)(x);
+		valley_way_points_[ valley_way_point_count_ ].x= int(x);
 		valley_way_points_[ valley_way_point_count_ ].y= y;
 		valley_way_points_[ valley_way_point_count_ ].h= randomizer.RandI( 0,0xFFFF/12 );
 		valley_way_point_count_++;
@@ -367,14 +366,14 @@ void mf_Level::GenValleyWayPoints()
 			mat[5]= mat[9] * mat[9]; // y1^2
 			mat[1]= mat[5] * mat[9]; // y1^3
 
-			double der0= double( int(valley_way_points_[i].x) - int(valley_way_points_[i-1].x) ) /
-				double( int(valley_way_points_[i].y) - int(valley_way_points_[i-1].y) );
+			double der0= double( valley_way_points_[i].x - valley_way_points_[i-1].x ) /
+				double( valley_way_points_[i].y - valley_way_points_[i-1].y );
 
-			double der1= double( int(valley_way_points_[i+1].x) - int(valley_way_points_[i].x) ) /
-				float( int(valley_way_points_[i+1].y) - int(valley_way_points_[i].y) );
+			double der1= double( valley_way_points_[i+1].x - valley_way_points_[i].x ) /
+				float( valley_way_points_[i+1].y - valley_way_points_[i].y );
 
-			double der2= double( int(valley_way_points_[i+2].x) - int(valley_way_points_[i+1].x) ) /
-				float( int(valley_way_points_[i+2].y) - int(valley_way_points_[i+1].y) );
+			double der2= double( valley_way_points_[i+2].x - valley_way_points_[i+1].x ) /
+				float( valley_way_points_[i+2].y - valley_way_points_[i+1].y );
 
 			xyzw[0]= double(valley_way_points_[i  ].x);
 			xyzw[1]= double(valley_way_points_[i+1].x);
@@ -400,11 +399,14 @@ void mf_Level::GenValleyWayPoints()
 			}
 		}
 
-		int dy= int(valley_way_points_[i+1].y - valley_way_points_[i].y);
-		int dh= int(valley_way_points_[i+1].h - valley_way_points_[i].h);
+		int dy= valley_way_points_[i+1].y - valley_way_points_[i].y;
+		int dh= valley_way_points_[i+1].h - valley_way_points_[i].h;
 		double h_d= double(valley_way_points_[i].h);
 		double dh_d= double(dh) / double(dy);
-		for( int y= valley_way_points_[i].y; y< int(valley_way_points_[i+1].y); y++, h_d+= dh_d )
+
+		y= valley_way_points_[i].y;
+		if( y < 0 ) { y= 0; h_d+= dh_d * double(-y); }
+		for( ; y< int(valley_way_points_[i+1].y) && y < int(terrain_size_[1]); y++, h_d+= dh_d )
 		{
 			double y_d= double(y) + 0.5;
 			double x_center_d= (y_d * abcd[0] * y_d * y_d) + (y_d * abcd[1] * y_d) + (y_d * abcd[2]) + (abcd[3]);
@@ -523,9 +525,10 @@ void mf_Level::PlaceStaticObjects()
 		current_point_terrain_space_xy[0]= current_point->xy[0] * grid_cell_size_f;
 		current_point_terrain_space_xy[1]= current_point->xy[1] * grid_cell_size_f;
 		int current_point_terrain_space_xy_i[2];
+		current_point_terrain_space_xy_i[0]= int(current_point_terrain_space_xy[0]);
 		current_point_terrain_space_xy_i[1]= int(current_point_terrain_space_xy[1]);
 		float radius_scaler= mf_Math::fabs(float(
-			current_point_terrain_space_xy[0]
+			current_point_terrain_space_xy_i[0]
 			- int(valley_y_params_[current_point_terrain_space_xy_i[1]].x_center)))
 			/ float(terrain_size_[0]/2);
 		radius_scaler= mf_Math::clamp( 0.0f, 1.0f, radius_scaler );
