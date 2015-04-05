@@ -4,6 +4,8 @@
 #include "mf_math.h"
 class mf_Player;
 
+#define MF_MAX_POWERUPS 128
+#define MF_MAX_BULLETS 1024
 
 struct mf_Powerup
 {
@@ -19,6 +21,21 @@ struct mf_Powerup
 	int health_bonus;
 };
 
+struct mf_Bullet
+{
+	enum Type
+	{
+		ChaingunBullet,
+		PlasmaShell,
+		LastType
+	};
+	Type type;
+	mf_Aircraft* owner;
+	float pos[3];
+	float dir[3];
+	float velocity; // can be INF
+};
+
 class mf_GameLogic
 {
 public:
@@ -26,6 +43,7 @@ public:
 	~mf_GameLogic();
 
 	void Tick( float dt );
+	void PlayerShot( const float* dir );
 
 	const mf_Level* GetLevel() const;
 	const mf_ParticlesManager* GetParticlesManager() const;
@@ -33,7 +51,7 @@ public:
 	unsigned int GetPowerupCount() const;
 
 private:
-	void PlaceStars();
+	void PlacePowerups();
 
 private:
 	mf_Level level_;
@@ -42,8 +60,11 @@ private:
 
 	mf_Rand randomizer_;
 
-	mf_Powerup* powerups_;
+	mf_Powerup powerups_[ MF_MAX_POWERUPS ];
 	unsigned int powerup_count_;
+
+	mf_Bullet bullets_[ MF_MAX_BULLETS ];
+	unsigned int bullets_count_;
 };
 
 inline const mf_Level* mf_GameLogic::GetLevel() const

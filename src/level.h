@@ -51,6 +51,7 @@ public:
 	float GetTerrainHeight( float x, float y ) const;
 	float GetValleyCenterX( float y ) const;
 	bool SphereIntersectTerrain( const float* pos, float radius ) const;
+	bool BeamIntersectTerrain( const float* pos, const float* dir, bool need_accuracy= false, float* out_pos_opt= NULL );
 
 private:
 	void GenTarrain();

@@ -23,6 +23,8 @@ public:
 	const float* Angle() const;
 	const float Fov() const;
 
+	void ScreenPointToWorldSpaceVec( unsigned int x, unsigned int y, float* out_vec ) const;
+
 	void RotateX( float pixel_delta );
 	void RotateZ( float pixel_delta );
 	void SetPos( float x, float y, float z );

@@ -1,5 +1,6 @@
 #include "micro-f.h"
 #include "player.h"
+#include "main_loop.h"
 
 #include "mf_math.h"
 
@@ -118,6 +119,28 @@ void mf_Player::Tick( float dt )
 		Vec3Mul( cam_vec, -cam_radius_ );
 		Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
 	}
+}
+
+void mf_Player::ScreenPointToWorldSpaceVec( unsigned int x, unsigned int y,  float* out_vec ) const
+{
+	mf_MainLoop* main_loop= mf_MainLoop::Instance();
+	float vec[3];
+	vec[0]= float(x) / float(main_loop->ViewportWidth()) * 2.0f - 1.0f;
+	vec[2]= float(y) / float(main_loop->ViewportHeight()) * (-2.0f) + 1.0f;
+	vec[1]= 1.0f;
+
+	float t= mf_Math::tan( fov_ * 0.5f );
+	vec[0]*= t * float(main_loop->ViewportWidth()) / float(main_loop->ViewportHeight());
+	vec[2]*= t;
+	Vec3Normalize(vec);
+
+	float rot_x_mat[16];
+	float rot_z_mat[16];
+	float mat[16];
+	Mat4RotateX( rot_x_mat, angle_[0] );
+	Mat4RotateZ( rot_z_mat, angle_[2] );
+	Mat4Mul( rot_x_mat, rot_z_mat, mat );
+	Vec3Mat4Mul( vec, mat, out_vec );
 }
 
 void mf_Player::ZoomIn()

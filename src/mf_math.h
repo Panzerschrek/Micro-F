@@ -13,6 +13,17 @@
 #define MF_SQRT_2 1.4142135623730950488016887242097f
 #define MF_INV_SQRT_2 0.70710678118654752440084436210485f
 
+inline float mfInf()
+{
+	union
+	{
+		float f;
+		int i;
+	}u;
+	u.i= 0x7F800000;
+	return u.f;
+}
+
 #define VEC3_CPY(dst,src) (dst)[0]= (src)[0]; (dst)[1]= (src)[1]; (dst)[2]= src[2];
 
 void Vec3Mul( const float* v, float s, float* v_out );

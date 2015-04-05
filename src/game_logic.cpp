@@ -4,8 +4,6 @@
 #include "player.h"
 #include "mf_math.h"
 
-#define MF_MAX_POWERUPS_COUNT 128
-
 #define MF_FORCEFIELD_DAMAGE_RADIUS 8.0f
 
 namespace PowerupsTables
@@ -27,9 +25,9 @@ mf_GameLogic::mf_GameLogic(mf_Player* player)
 	: level_()
 	, particles_manager_()
 	, player_(player)
-	, powerups_(NULL), powerup_count_(0)
+	, powerup_count_(0), bullets_count_(0)
 {
-	PlaceStars();
+	PlacePowerups();
 }
 
 mf_GameLogic::~mf_GameLogic()
@@ -41,6 +39,27 @@ void mf_GameLogic::Tick( float dt )
 	mf_Aircraft* player_aircraft= (mf_Aircraft*) player_->GetAircraft();
 
 	const float c_powerup_pick_distance2= 16.0f * 16.0f;
+
+	for( unsigned int i= 0; i< bullets_count_; )
+	{
+		mf_Bullet* bullet= bullets_ + i;
+		if( bullet->velocity == mfInf() )
+		{
+			float pos[3];
+			if( level_.BeamIntersectTerrain( bullet->pos, bullet->dir, false, pos ) )
+			{
+				particles_manager_.AddBulletTerrainHit( pos );
+			}
+			if( i != bullets_count_ - 1 )
+				*bullet= bullets_[ bullets_count_ - 1 ];
+			bullets_count_--;
+			continue;
+		}
+		else
+		{
+		}
+		i++;
+	}
 
 	for( unsigned int i= 0; i< powerup_count_; i++ )
 	{
@@ -84,11 +103,22 @@ void mf_GameLogic::Tick( float dt )
 	particles_manager_.AddEnginesTrail( player_->GetAircraft() );
 }
 
-void mf_GameLogic::PlaceStars()
+void mf_GameLogic::PlayerShot( const float* dir )
+{
+	mf_Bullet* bullet= &bullets_[ bullets_count_ ];
+	bullet->type= mf_Bullet::ChaingunBullet;
+	bullet->owner= (mf_Aircraft*)player_->GetAircraft();
+	VEC3_CPY( bullet->pos, bullet->owner->Pos() );
+	VEC3_CPY( bullet->dir, dir );
+	bullet->velocity= mfInf();
+
+	bullets_count_++;
+}
+
+void mf_GameLogic::PlacePowerups()
 {
 	static const float c_stars_step_range[2]= { 64.0f, 128.0f };
 
-	powerups_= new mf_Powerup[ MF_MAX_POWERUPS_COUNT ];
 	powerup_count_= 0;
 
 	float y= 32.0f;

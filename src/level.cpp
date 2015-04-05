@@ -161,6 +161,43 @@ bool mf_Level::SphereIntersectTerrain( const float* pos, float radius ) const
 	return false;
 }
 
+bool mf_Level::BeamIntersectTerrain( const float* in_pos, const float* dir, bool need_accuracy, float* out_pos_opt )
+{
+	float pos[3];
+	float step[3];
+	VEC3_CPY( pos, in_pos );
+	Vec3Normalize( dir, step );
+	Vec3Mul( step, 1.0f / terrain_cell_size_ );
+
+	bool is_intersect= false;
+
+	float xy_max[2]=
+	{
+		float(terrain_size_[0]) * terrain_cell_size_,
+		float(terrain_size_[1]) * terrain_cell_size_,
+	};
+	while(pos[2] <= terrain_amplitude_ && pos[2] >= 0 )
+	{
+		if( pos[0] < 0.0f || pos[1] < 0.0f || pos[0] > xy_max[0] || pos[1] > xy_max[1] )
+			break;
+		if( GetTerrainHeight( pos[0], pos[1] ) > pos[2] )
+		{
+			is_intersect= true;
+			break;
+		}
+		Vec3Add( pos, step );
+	}
+
+	//TODO - make hight precisionresult
+	(void)need_accuracy;
+
+	if( is_intersect && out_pos_opt != NULL )
+	{
+		VEC3_CPY( out_pos_opt, pos );
+	}
+	return is_intersect;
+}
+
 void mf_Level::GenTarrain()
 {
 	unsigned short* primary_terrain_data= new unsigned short[ terrain_size_[0] * terrain_size_[1] ];

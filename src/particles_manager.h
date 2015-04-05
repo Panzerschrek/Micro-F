@@ -37,6 +37,7 @@ public:
 
 	void Tick( float dt );
 	void AddEnginesTrail( const mf_Aircraft* aircraft );
+	void AddBulletTerrainHit( const float* pos );
 	void AddBlast( const float* pos );
 
 	unsigned int GetParticlesCount() const;
