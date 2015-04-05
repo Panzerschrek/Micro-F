@@ -134,7 +134,7 @@ void mf_SoundEngine::DestroySoundSource( mf_SoundSource* source )
 void mf_SoundEngine::GenSounds()
 {
 	unsigned int sample_count;
-	short* data= GenPulsejetSound( samples_per_second_, &sample_count );
+	short* data= GenPlasmagetSound( samples_per_second_, &sample_count );
 
 	WAVEFORMATEX sound_format;
 	ZeroMemory( &sound_format, sizeof(WAVEFORMATEX) );

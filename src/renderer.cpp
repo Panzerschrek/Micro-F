@@ -1293,7 +1293,7 @@ void mf_Renderer::PrepareAircraftModels()
 		model.LoadFromMFMD( mf_Models::aircraft_models[i] );
 
 		aircrafts_data_.vbo.VertexSubData(
-			model.GetVertexData(), 
+			model.GetVertexData(),
 			model.VertexCount() * sizeof(mf_DrawingModelVertex),
 			vertex_shift * sizeof(mf_DrawingModelVertex) );
 
