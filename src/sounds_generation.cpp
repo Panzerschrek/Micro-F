@@ -1,4 +1,5 @@
 #include "sounds_generation.h"
+#include "sound_engine.h"
 
 #include "mf_math.h"
 
@@ -77,7 +78,7 @@ short* GenPulsejetSound( unsigned int sample_rate, unsigned int* out_samples_cou
 	return data;
 }
 
-short* GenPlasmagetSound( unsigned int sample_rate, unsigned int* out_samples_count )
+short* GenPlasmajetSound( unsigned int sample_rate, unsigned int* out_samples_count )
 {
 	const float c_length= 1.0f;
 
@@ -120,10 +121,37 @@ short* GenPowerupPickupSound( unsigned int sample_rate, unsigned int* out_sample
 			 0.5f * a[0] * mf_Math::sin(t) +
 			0.25f * a[1] * mf_Math::sin(t*2.0f) +
 			0.25f * a[2] * mf_Math::sin(t*3.0f) +
-			0.25f * a[4] * mf_Math::sin(t*4.0f);
+			0.25f * a[3] * mf_Math::sin(t*4.0f);
 		data[i]= AmplitudeFloatToShort( s );
 	}
 
 	*out_samples_count= sample_count;
 	return data;
 }
+
+short* GenMachinegunShotSound( unsigned int sample_rate, unsigned int* out_samples_count )
+{
+	const float c_length= 0.1f;
+
+	unsigned int sample_count= (unsigned int) ( float(sample_rate) * c_length );
+	short* data= new short[ sample_count ];
+
+	float sample_rate_f= float(sample_rate);
+	for( unsigned int i= 0; i< sample_count; i++ )
+	{
+		float t= float(i) / sample_rate_f;
+		float a= Noise1Final( t * 1536.0f, 4 ) * 2.0f * mf_Math::exp(-t*10.0f);
+		data[i]= AmplitudeFloatToShort( a );
+	}
+
+	*out_samples_count= sample_count;
+	return data;
+}
+
+short* (* const sound_gen_func[LastSound])(unsigned int sample_rate, unsigned int* out_samples_count)=
+{
+	GenPulsejetSound,
+	GenPlasmajetSound,
+	GenPowerupPickupSound,
+	GenMachinegunShotSound
+};

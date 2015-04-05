@@ -272,6 +272,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\sounds_generation.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\text.cpp"
 				>
 			</File>
@@ -379,10 +383,6 @@
 			</File>
 			<File
 				RelativePath=".\src\sound_engine.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\sounds_generation.cpp"
 				>
 			</File>
 			<File

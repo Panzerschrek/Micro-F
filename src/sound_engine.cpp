@@ -1,5 +1,6 @@
 #include "micro-f.h"
 #include "sound_engine.h"
+#include "main_loop.h"
 
 #include "mf_math.h"
 #include "sounds_generation.h"
@@ -39,8 +40,11 @@ void mf_SoundSource::SetVolume( float volume )
 	source_buffer_3d_->SetMinDistance( mf_Math::sqrt(volume), DS3D_IMMEDIATE );
 }
 
+
+mf_SoundEngine* mf_SoundEngine::instance_= NULL;
+
 mf_SoundEngine::mf_SoundEngine(HWND hwnd)
-	: sound_source_count_(0)
+	: sound_source_count_(0), single_sounds_count_(0)
 {
 	DirectSoundCreate8( &DSDEVID_DefaultPlayback, &direct_sound_p_, NULL );
 
@@ -65,6 +69,9 @@ mf_SoundEngine::mf_SoundEngine(HWND hwnd)
 	primary_sound_buffer_p_->Play( 0, 0, DSBPLAY_LOOPING );
 
 	GenSounds();
+
+	MF_ASSERT( instance_ == NULL );
+	instance_= this;
 }
 
 mf_SoundEngine::~mf_SoundEngine()
@@ -72,6 +79,24 @@ mf_SoundEngine::~mf_SoundEngine()
 	listener_p_->Release();
 	primary_sound_buffer_p_->Release();
 	direct_sound_p_->Release();
+	instance_= NULL;
+}
+
+void mf_SoundEngine::Tick()
+{
+	float current_time= mf_MainLoop::Instance()->CurrentTime();
+	for( unsigned int i= 0; i< single_sounds_count_; )
+	{
+		if(single_sounds_[i].death_time <= current_time )
+		{
+			DestroySoundSource( single_sounds_[i].source );
+			if( i != single_sounds_count_ - 1 )
+				single_sounds_[i]= single_sounds_[ single_sounds_count_ - 1 ];
+			single_sounds_count_--;
+			continue;
+		}
+		i++;
+	}
 }
 
 void mf_SoundEngine::SetListenerOrinetation( const float* pos, const float* angle, const float* vel )
@@ -106,13 +131,13 @@ mf_SoundSource* mf_SoundEngine::CreateSoundSource( mf_SoundType sound_type )
 	if ( sound_source_count_ == MF_MAX_PARALLEL_SOUNDS )
 		return NULL;
 
-	mf_SoundSource* src= &sound_sources_[ sound_source_count_++ ];
+	mf_SoundSource* src= new mf_SoundSource;
+	sound_sources_[ sound_source_count_++ ]= src;
 
 	direct_sound_p_->DuplicateSoundBuffer( sound_buffers_[ sound_type ].buffer, &src->source_buffer_ );
 	src->source_buffer_->QueryInterface( IID_IDirectSound3DBuffer8, (LPVOID*) &src->source_buffer_3d_ );
 
 	src->source_buffer_3d_->SetMaxDistance( MF_SOUND_MAX_DISTANCE, DS3D_IMMEDIATE );
-	src->source_buffer_->Play( 0, MF_SND_PRIORITY, DSBPLAY_LOOPING );
 
 	src->samples_per_second_= samples_per_second_;
 	return src;
@@ -123,51 +148,71 @@ void mf_SoundEngine::DestroySoundSource( mf_SoundSource* source )
 	source->source_buffer_->Stop();
 	source->source_buffer_->Release();
 
-	unsigned int i= source - sound_sources_;
-	if( i != sound_source_count_ - 1 )
-	{
-		sound_sources_[i]= sound_sources_[ sound_source_count_ - 1 ];
-	}
+	for( unsigned int i= 0; i< sound_source_count_-1; i++ )
+		if( source == sound_sources_[i] )
+			sound_sources_[i]= sound_sources_[ sound_source_count_ - 1];
+
+	delete source;
 	sound_source_count_--;
+}
+
+void mf_SoundEngine::AddSingleSound( mf_SoundType sound_type, float volume, float pitch, const float* opt_pos )
+{
+	static const float c_zero_vel[3]= { 0.0f, 0.0f, 0.0f };
+
+	single_sounds_[ single_sounds_count_ ].source= CreateSoundSource( sound_type );
+	single_sounds_[ single_sounds_count_ ].death_time= mf_MainLoop::Instance()->CurrentTime() + sound_buffers_[sound_type].length + 0.01f;
+	if( opt_pos != NULL )
+		single_sounds_[ single_sounds_count_ ].source->SetOrientation( opt_pos, c_zero_vel );
+	else
+		single_sounds_[ single_sounds_count_ ].source->source_buffer_3d_->SetMode( DS3DMODE_HEADRELATIVE, DS3D_IMMEDIATE );
+	single_sounds_[ single_sounds_count_ ].source->SetVolume( volume );
+	single_sounds_[ single_sounds_count_ ].source->SetPitch( pitch );
+	single_sounds_[ single_sounds_count_ ].source->source_buffer_->Play( 0, MF_SND_PRIORITY, 0 );
+
+	single_sounds_count_++;
 }
 
 void mf_SoundEngine::GenSounds()
 {
-	unsigned int sample_count;
-	short* data= GenPlasmagetSound( samples_per_second_, &sample_count );
+	for( unsigned int i= 0; i< LastSound; i++ )
+	{
+		unsigned int sample_count;
+		short* data= sound_gen_func[i]( samples_per_second_, &sample_count );;
 
-	WAVEFORMATEX sound_format;
-	ZeroMemory( &sound_format, sizeof(WAVEFORMATEX) );
-	sound_format.nSamplesPerSec= samples_per_second_;
-	sound_format.wFormatTag= WAVE_FORMAT_PCM;
-	sound_format.nChannels= 1;
-	sound_format.nAvgBytesPerSec= samples_per_second_ * sizeof(short);
-	sound_format.wBitsPerSample= 16;
-	sound_format.nBlockAlign= 2;
+		WAVEFORMATEX sound_format;
+		ZeroMemory( &sound_format, sizeof(WAVEFORMATEX) );
+		sound_format.nSamplesPerSec= samples_per_second_;
+		sound_format.wFormatTag= WAVE_FORMAT_PCM;
+		sound_format.nChannels= 1;
+		sound_format.nAvgBytesPerSec= samples_per_second_ * sizeof(short);
+		sound_format.wBitsPerSample= 16;
+		sound_format.nBlockAlign= 2;
 
-	DSBUFFERDESC secondary_buffer_info;
-	ZeroMemory( &secondary_buffer_info, sizeof(DSBUFFERDESC) );
-	secondary_buffer_info.dwSize= sizeof(DSBUFFERDESC);
-	secondary_buffer_info.dwFlags= DSBCAPS_CTRL3D | DSBCAPS_CTRLFREQUENCY;
-	secondary_buffer_info.dwBufferBytes= sample_count * sizeof(short);
-	secondary_buffer_info.lpwfxFormat= &sound_format;
+		DSBUFFERDESC secondary_buffer_info;
+		ZeroMemory( &secondary_buffer_info, sizeof(DSBUFFERDESC) );
+		secondary_buffer_info.dwSize= sizeof(DSBUFFERDESC);
+		secondary_buffer_info.dwFlags= DSBCAPS_CTRL3D | DSBCAPS_CTRLFREQUENCY;
+		secondary_buffer_info.dwBufferBytes= sample_count * sizeof(short);
+		secondary_buffer_info.lpwfxFormat= &sound_format;
 
-	direct_sound_p_->CreateSoundBuffer( &secondary_buffer_info, &sound_buffers_[0].buffer, 0 );
+		direct_sound_p_->CreateSoundBuffer( &secondary_buffer_info, &sound_buffers_[i].buffer, 0 );
 
-	char* buff_data1, *buff_data2= NULL;
-	unsigned int buff_size1, buff_size2= 0;
-	sound_buffers_[0].buffer->Lock(
-		0, sample_count * sizeof(short),
-		(LPVOID*)&buff_data1,
-		(LPDWORD)&buff_size1,
-		(LPVOID*)&buff_data2,
-		(LPDWORD)&buff_size2,
-		0 );
+		char* buff_data1, *buff_data2= NULL;
+		unsigned int buff_size1, buff_size2= 0;
+		sound_buffers_[i].buffer->Lock(
+			0, sample_count * sizeof(short),
+			(LPVOID*)&buff_data1,
+			(LPDWORD)&buff_size1,
+			(LPVOID*)&buff_data2,
+			(LPDWORD)&buff_size2,
+			0 );
 
-	memcpy( buff_data1, data, sample_count * sizeof(short) );
+		memcpy( buff_data1, data, sample_count * sizeof(short) );
 
-	sound_buffers_[0].buffer->Unlock( buff_data1, buff_size1, NULL, 0 );
-	sound_buffers_[0].length= float(sample_count) / float(samples_per_second_);
+		sound_buffers_[i].buffer->Unlock( buff_data1, buff_size1, NULL, 0 );
+		sound_buffers_[i].length= float(sample_count) / float(samples_per_second_);
 
-	delete[] data;
+		delete[] data;
+	}
 }

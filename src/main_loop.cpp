@@ -105,6 +105,7 @@ void mf_MainLoop::Loop()
 					test_sound_->SetVolume( 40.0f * ThrottleToEngineSoundVolumeScaler( aircraft->Throttle() ) );
 					test_sound_->SetPitch( ThrottleToEngineSoundPitch( aircraft->Throttle() ) );
 				}
+				sound_engine_->Tick();
 			}
 
 			renderer_->DrawFrame();
@@ -130,7 +131,8 @@ void mf_MainLoop::Play(  const mf_Settings* settings )
 
 	mode_= ModeGame;
 	renderer_= new mf_Renderer( &player_, game_logic_, text_, settings );
-	test_sound_= sound_engine_->CreateSoundSource( SoundTurbojetEngine );
+	test_sound_= sound_engine_->CreateSoundSource( SoundPlasmajetEngine );
+	test_sound_->Play();
 
 	mf_Aircraft* aircraft= (mf_Aircraft*)player_.GetAircraft();
 	float pos[3];
@@ -277,6 +279,10 @@ mf_MainLoop::mf_MainLoop(
 
 mf_MainLoop::~mf_MainLoop()
 {
+	delete renderer_;
+	delete sound_engine_;
+	delete game_logic_;
+
 	wglMakeCurrent( NULL, NULL );
 	wglDeleteContext( hrc_ );
 

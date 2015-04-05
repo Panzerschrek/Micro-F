@@ -24,6 +24,7 @@ public:
 	static mf_MainLoop* Instance();
 	static void DeleteInstance();
 
+	float CurrentTime() const;
 	void Loop();
 	unsigned int ViewportWidth();
 	unsigned int ViewportHeight();
@@ -100,6 +101,11 @@ private:
 	} mode_;
 
 };
+
+inline float mf_MainLoop::CurrentTime() const
+{
+	return game_time_;
+}
 
 inline unsigned int mf_MainLoop::ViewportWidth()
 {

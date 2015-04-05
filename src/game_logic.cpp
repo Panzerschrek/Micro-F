@@ -1,5 +1,6 @@
 #include "micro-f.h"
 #include "game_logic.h"
+#include "sound_engine.h"
 
 #include "player.h"
 #include "mf_math.h"
@@ -113,6 +114,8 @@ void mf_GameLogic::PlayerShot( const float* dir )
 	bullet->velocity= mfInf();
 
 	bullets_count_++;
+
+	mf_SoundEngine::Instance()->AddSingleSound( SoundMachinegunShot, 1.0f, 1.0f, NULL );
 }
 
 void mf_GameLogic::PlacePowerups()
