@@ -2,6 +2,7 @@
 
 #include "textures_generation.h"
 #include "texture.h"
+#include "text.h"
 #include "mf_math.h"
 #include "aircraft.h"
 #include "level.h"
@@ -202,6 +203,20 @@ void GenVerticalSpeedIndicatorTexture( mf_Texture* tex )
 			( tex->SizeX() - int(dx) )/2,
 			( tex->SizeX() + int(dy) )/2,
 			g_indicators_lines_color );
+	}
+}
+
+void GenNumbersTexture( mf_Texture* tex )
+{
+	MF_ASSERT( tex->SizeX() == 16 && tex->SizeY() == 512 );
+	tex->Fill( g_indicators_background_color );
+	char text[2];
+	text[1]= 0;
+	static const char numbers_mps[]= "0123456789 m/s";
+	for( unsigned int i= 0; i< 14; i++ )
+	{
+		text[0]= numbers_mps[i];
+		tex->DrawText( tex->SizeX() - 1, i * MF_LETTER_HEIGHT * 2, 2, g_indicators_lines_color, text );
 	}
 }
 
@@ -892,6 +907,7 @@ void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 	GenThrottleBarTexture,
 	GenThrottleIndicatorTexture,
 	GenVerticalSpeedIndicatorTexture,
+	GenNumbersTexture,
 	GenNaviballGlassTexture,
 	GenGuiButtonTexture,
 	GenMenuBackgroundTexture

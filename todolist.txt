@@ -12,12 +12,12 @@
 	* kamni i voluny
 * silovoje pole dlä ogranocenija prostranstva igry
 	* [sdelano] modelj i tekstura
-	* otsecenije nevidimyh poligonov modeli
-	* logika vzaimodejstvija s igrovym polem
+	* [sdelano] otsecenije nevidimyh poligonov modeli
+	* [sdelano] logika vzaimodejstvija s igrovym polem
 * bolee složnaja generaçoja landšafta
 * stolknovenije s landšaftom
 	* [sdelano] rascöt stolknovenije tocki, sfery
-* [sdelano] samozatenenije samolötov cerez stencil buffer
+	* [sdelano] samozatenenije samolötov cerez stencil buffer
 * HDR
 	* [sdelano] risovanije v rgba16f teksturu, prostejšij tone-mapping
 	* nužen boleje složnyj tone-mapping
@@ -41,10 +41,10 @@
 * [v processe] gui
 	* [sdelano] nadpisi
 	* [casticno sdelano] knopki s dejstvijami
-	* [casticno sdelano] igrofoj interfejs
+	* [casticno sdelano] igrovoj interfejs
 * [sdelano] sozdanije nebesnoj sfery tesseläçije ikosaedra
 * [casticno sdelano] zvözdy
 * [sdelano] oblaka
-	* nužno sdelatj generaçiju v vysokom razrešenii, a potom umenjšatj, ctoby sgladitj šumy
-	* nastrojka plotnosti
+	* [sdelano] nužno sdelatj generaçiju v vysokom razrešenii, a potom umenjšatj, ctoby sgladitj šumy
+	* [sdelano] nastrojka plotnosti
 * luna ( modelj + tekstura, generirujemaja po algoritmu generaçii tekstur dlä planet )

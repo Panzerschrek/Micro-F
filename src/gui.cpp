@@ -168,6 +168,7 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 		5, 8, // throttle bar
 		3, 3, // throttle indicator
 		7, 7, // vertical speed indicator
+		4, 9, // numbers
 		8, 8, // naviball glass
 		3, 3, // gui button
 		9, 9  // backgound
@@ -262,23 +263,13 @@ void mf_Gui::Draw()
 {
 	const mf_Aircraft* aircraft= player_->GetAircraft();
 
-	const float* vel= aircraft->Velocity();
-	float horizontal_speed= mf_Math::sqrt( vel[0] * vel[0] + vel[1] * vel[1] );
-
 	{ // aircraft parameters
-		float lon, lat;
-		VecToSphericalCoordinates( aircraft->AxisVec(1), &lon, &lat );
-		char str[128];
-		sprintf( str,
-			"horizontal speed: %3.2f\nvertical speed: %+3.2f\nazimuth: %+3.1f\nelevation: %+3.1f\naltitude: %+3.1f",
-			horizontal_speed, vel[2], lon * MF_RAD2DEG, lat * MF_RAD2DEG, aircraft->Pos()[2] );
-		text_->AddText( 1, 9, 1, mf_Text::default_color, str );
-
 	#ifdef MF_DEBUG
+		char str[256];
 		sprintf( str, "angle of attack: %+2.3f\nlift force k: %+2.3f\npitch/yaw/roll factors: %+1.2f %+1.2f %+1.2f",
 			aircraft->debug_angle_of_attack_deg_, aircraft->debug_cyk_,
 			aircraft->debug_pitch_control_factor_, aircraft->debug_yaw_control_factor_, aircraft->debug_roll_control_factor_ );
-		text_->AddText( 1, 15, 1, mf_Text::default_color, str );
+		text_->AddText( 1, 9, 1, mf_Text::default_color, str );
 	#endif
 	}
 
@@ -564,14 +555,15 @@ void mf_Gui::DrawControlPanel()
 
 	gui_shader_.Bind();
 
-	int textures_id[LastGuiTexture];
-	for( unsigned int i= TextureControlPanel; i<= TextureVerticalSpeedIndicator; i++ )
+	int textures_id[ LastGuiTexture ];
+	textures_id[0]= TextureNaviball;
+	for( unsigned int i= TextureControlPanel; i<= TextureNumbers; i++ )
 	{
-		glActiveTexture( GL_TEXTURE0 + i - TextureControlPanel );
+		glActiveTexture( GL_TEXTURE0 + i );
 		glBindTexture( GL_TEXTURE_2D, textures[i] );
-		textures_id[i]= i - TextureControlPanel ;
+		textures_id[i]= i;
 	}
-	gui_shader_.UniformIntArray( "tex", 6, textures_id );
+	gui_shader_.UniformIntArray( "tex", LastGuiTexture, textures_id );
 
 	mf_GuiVertex vertices[256];
 	mf_GuiVertex* v= vertices;
@@ -676,6 +668,39 @@ void mf_Gui::DrawControlPanel()
 			v[i].tex_coord[2]= float(TextureThrottleIndicator) + tex_z_delta;
 		}
 		v+= 3;
+	}
+
+	{ // speed indicator
+		static const float speed_indicator_pos[2]= { 0.26f, -0.85f };
+		static const float speed_indicator_digit_size[2]= { 0.06f * 0.44f, 0.06f };
+
+		int speed= int(mf_Math::round(Vec3Len(aircraft->Velocity())));
+		// first 3 symbols - value of speed. last - string " m/s"
+		int s[7]= { speed / 100, (speed / 10) % 10, speed % 10, 10, 11, 12, 13 };
+		float x= speed_indicator_pos[0];
+		for( unsigned int i= 0; i< 7; i++, x+= speed_indicator_digit_size[0] )
+		{
+			v[0].pos[0]= x * k;
+			v[0].pos[1]= speed_indicator_pos[1];
+			v[1].pos[0]= ( x + speed_indicator_digit_size[0] ) * k;
+			v[1].pos[1]= speed_indicator_pos[1];
+			v[2].pos[0]= ( x + speed_indicator_digit_size[0] ) * k;
+			v[2].pos[1]= speed_indicator_pos[1] +  speed_indicator_digit_size[1];
+			v[3].pos[0]= x * k;
+			v[3].pos[1]= speed_indicator_pos[1] +  speed_indicator_digit_size[1];
+			v[0].tex_coord[0]= 0.0f;
+			v[0].tex_coord[1]= float(s[i]* 2 * MF_LETTER_HEIGHT ) * (1.0f/512.0f);
+			v[1].tex_coord[0]= 1.0f;
+			v[1].tex_coord[1]= v[0].tex_coord[1];
+			v[2].tex_coord[0]= 1.0f;
+			v[2].tex_coord[1]= v[0].tex_coord[1] + float(2 * MF_LETTER_HEIGHT ) * (1.0f/512.0f);
+			v[3].tex_coord[0]= 0.0f;
+			v[3].tex_coord[1]= v[2].tex_coord[1];
+			v[0].tex_coord[2]= v[1].tex_coord[2]= v[2].tex_coord[2]= v[3].tex_coord[2]= TextureNumbers;
+			v[4]= v[0];
+			v[5]= v[2];
+			v+= 6;
+		}
 	}
 	
 	common_vbo_.Bind();
@@ -835,7 +860,7 @@ void mf_Gui::DrawNaviballGlass()
 	v[2].pos[1]= naviball_center[1] + naviball_radius;
 	v[3].pos[0]= (naviball_center[0] - naviball_radius) * k;
 	v[3].pos[1]= naviball_center[1] + naviball_radius;
-	GenGuiQuadTextureCoords( v, TextureNaviballGlass );
+	GenGuiQuadTextureCoords( v, mf_GuiTexture(0) );
 	v[4]= v[0];
 	v[5]= v[2];
 	v+= 6;

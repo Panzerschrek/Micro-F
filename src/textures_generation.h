@@ -20,6 +20,7 @@ enum mf_GuiTexture
 	TextureThrottleBar,
 	TextureThrottleIndicator,
 	TextureVerticalSpeedIndicator,
+	TextureNumbers,
 	TextureNaviballGlass,
 	TextureGuiButton,
 	TextureMenuBackgound,
