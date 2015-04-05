@@ -6,6 +6,18 @@
 #define MF_SMOKE_MAX_LIFETIME 7.0f
 #define MF_PLASMA_ENGINE_PARTICEL_LIFETIME 0.5f
 
+static void TransformAircraftPoint( const mf_Aircraft* aircraft, const float* in_pos, float* out_pos )
+{
+	float mat[16];
+	Mat4Identity( mat );
+	VEC3_CPY( mat+0, aircraft->AxisVec(0) );
+	VEC3_CPY( mat+4, aircraft->AxisVec(1) );
+	VEC3_CPY( mat+8, aircraft->AxisVec(2) );
+
+	Vec3Mat4Mul( in_pos, mat, out_pos );
+	Vec3Add( out_pos, aircraft->Pos() );
+}
+
 mf_ParticlesManager::mf_ParticlesManager()
 	: particle_count_(0)
 	, prev_tick_time_(0.0f), current_tick_time_(0.0000001f), dt_(current_tick_time_ - prev_tick_time_)
@@ -138,18 +150,6 @@ void mf_ParticlesManager::AddF2XXXTrail( const mf_Aircraft* aircraft, unsigned i
 		-1.5f, -2.3f, 0.0f
 	};
 
-	float trail_begin_pos[3];
-	{
-		float mat[16];
-		Mat4Identity( mat );
-		VEC3_CPY( mat+0, aircraft->AxisVec(0) );
-		VEC3_CPY( mat+4, aircraft->AxisVec(1) );
-		VEC3_CPY( mat+8, aircraft->AxisVec(2) );
-
-		Vec3Mat4Mul( c_engines_pos + engine_number*3, mat, trail_begin_pos );
-		Vec3Add( trail_begin_pos, aircraft->Pos() );
-	}
-
 	const float c_particles_per_meter= 8.0f;
 
 	float aircraft_velocity= Vec3Len( aircraft->Velocity() );
@@ -163,7 +163,7 @@ void mf_ParticlesManager::AddF2XXXTrail( const mf_Aircraft* aircraft, unsigned i
 	float partice_pos[3];
 	float particle_step[3];
 	float particle_dir[3];
-	VEC3_CPY( partice_pos, trail_begin_pos );
+	TransformAircraftPoint( aircraft, c_engines_pos + engine_number*3, partice_pos );
 	Vec3Mul( aircraft->Velocity(), - 1.0f / aircraft_velocity, particle_dir );
 	Vec3Mul( particle_dir, 1.0f / c_particles_per_meter, particle_step );
 	float dt= (1.0f / c_particles_per_meter) / aircraft_velocity;
@@ -192,6 +192,8 @@ void mf_ParticlesManager::AddF2XXXTrail( const mf_Aircraft* aircraft, unsigned i
 
 void mf_ParticlesManager::AddV1Trail( const mf_Aircraft* aircraft )
 {
+	static const float c_v1_engine_pos[3]= { 0.0f, -4.7f, 0.9f };
+
 	const float c_smoke_particles_per_second= 60.0f;
 	float particles_per_second= ( aircraft->Throttle() + 1.0f ) * 0.5f * c_smoke_particles_per_second;
 
@@ -207,20 +209,20 @@ void mf_ParticlesManager::AddV1Trail( const mf_Aircraft* aircraft )
 	};
 
 	Particle* particle= particles_ + particle_count_;
-	float partice_pos[3];
+	float particle_pos[3];
 	float particle_step[3];
 	float particle_dir[3];
 	float particle_velocity;
 	float particle_acceleration;
-	VEC3_CPY( partice_pos, aircraft->Pos() );
-	Vec3Mul( aircraft->Velocity(), -dt_, particle_step );
+	TransformAircraftPoint( aircraft, c_v1_engine_pos, particle_pos );
+	Vec3Mul( aircraft->Velocity(), -dt_ , particle_step );
 	Vec3Mul( aircraft->Velocity(), - 1.0f / aircraft_velocity, particle_dir );
 	particle_velocity= aircraft_velocity * 0.25f;
 	particle_acceleration= -aircraft_velocity * aircraft_velocity * 0.125f;
-	for( unsigned int i= 0; i< smoke_particle_count; i++, Vec3Add( partice_pos, particle_step ), particle++ )
+	for( unsigned int i= 0; i< smoke_particle_count; i++, Vec3Add( particle_pos, particle_step ), particle++ )
 	{
 		particle->type= Particle::JetEngineTrail;
-		VEC3_CPY( particle->pos, partice_pos );
+		VEC3_CPY( particle->pos, particle_pos );
 		VEC3_CPY( particle->direction, particle_dir );
 		particle->velocity= particle_velocity;
 		particle->acceleration= particle_acceleration;
