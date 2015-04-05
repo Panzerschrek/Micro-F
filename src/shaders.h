@@ -68,4 +68,6 @@ extern const char* const brightness_history_write_shader_f;
 
 extern const char* const clouds_gen_shader_v;
 extern const char* const clouds_gen_shader_f;
+extern const char* const clouds_downscale_shader_v;
+extern const char* const clouds_downscale_shader_f;
 } // namespace mf_Shaders

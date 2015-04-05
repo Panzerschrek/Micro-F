@@ -241,12 +241,23 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	static const char* const particles_shader_uniforms[]= { /*vert*/"mat", "smat", "stex", "s", /*frag*/ "tex", "sl", "al" };
 	particles_data_.particles_shader.FindUniforms( particles_shader_uniforms, sizeof(particles_shader_uniforms) / sizeof(char*) );
 
-	// clouds generation shader
-	sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "p", 0 );
-	sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "tc", 1 );
-	sky_clouds_data_.clouds_gen_shader.Create( mf_Shaders::clouds_gen_shader_v, mf_Shaders::clouds_gen_shader_f );
-	static const char* const uniforms_names[]= { "mat",  "sl", "al", "sun", "inv_tex_size", "horizont" };
-	sky_clouds_data_.clouds_gen_shader.FindUniforms( uniforms_names, sizeof(uniforms_names) / sizeof(char*) );
+	if( settings_.clouds_intensity != mf_Settings::CloudsDisabled )
+	{ // clouds generation shader
+		// setup constant in shader, becouse it is faster, then uniform
+		char f_shader[4096];
+		static const float c_cloud_destiny_border[mf_Settings::LastCloudsQuality]= { 0.0f, 0.6f, 0.54f, 0.45f };
+		sprintf( f_shader, mf_Shaders::clouds_gen_shader_f, c_cloud_destiny_border[ settings_.clouds_intensity ] );
+		sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "p", 0 );
+		sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "tc", 1 );
+		sky_clouds_data_.clouds_gen_shader.Create( mf_Shaders::clouds_gen_shader_v, f_shader );
+		static const char* const clouds_gen_uniforms_names[]= {
+			"mat", "sl", "al", "sun", "inv_tex_size", "horizont" };
+		sky_clouds_data_.clouds_gen_shader.FindUniforms( clouds_gen_uniforms_names, sizeof(clouds_gen_uniforms_names) / sizeof(char*) );
+
+		// clouds downscale shader
+		sky_clouds_data_.clouds_downscale_shader.Create( mf_Shaders::clouds_downscale_shader_v, mf_Shaders::clouds_downscale_shader_f );
+		sky_clouds_data_.clouds_downscale_shader.FindUniform( "tex" );
+	}
 
 	// clousds shader
 	sky_clouds_data_.clouds_shader.SetAttribLocation( "p", 0 );
@@ -550,7 +561,8 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 
 	CreateWaterReflectionFramebuffer();
 	CreateShadowmapFramebuffer();
-	GenClouds();
+	if( settings_.clouds_intensity != mf_Settings::CloudsDisabled )
+		GenClouds();
 
 	if( settings_.use_hdr )
 	{
@@ -897,7 +909,7 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 
 void mf_Renderer::GenClouds()
 {
-	static const float c_horizont_height= 0.15f;
+	static const float c_horizont_height= 0.1f;
 	{ // gen skydome mesh
 		static const float vert_pos[5 * 6*3]=
 		{
@@ -951,12 +963,16 @@ void mf_Renderer::GenClouds()
 		sky_clouds_data_.vbo.VertexAttrib( 1, 2, GL_FLOAT, false, sizeof(float) * 3 );
 	}
 
-	unsigned int generation_texture_size= 512;
-	sky_clouds_data_.texture_size= 512;
+	static const unsigned int c_clouds_quality_size[ mf_Settings::LastQuality ]= { 768, 1024, 1536 };
+	unsigned int generation_texture_size= c_clouds_quality_size[ settings_.sky_quality ];
+	sky_clouds_data_.texture_size= generation_texture_size / 2;
 
 	GLuint cubemap_tex_id;
 	GLuint tex_id;
+	GLuint cubemap_fbo_id;
 	GLuint fbo_id;
+
+	glActiveTexture( GL_TEXTURE0 );
 
 	glGenTextures( 1, &cubemap_tex_id );
 	glBindTexture( GL_TEXTURE_CUBE_MAP, cubemap_tex_id );
@@ -969,8 +985,10 @@ void mf_Renderer::GenClouds()
 	glGenTextures( 1, &tex_id );
 	glBindTexture( GL_TEXTURE_2D, tex_id );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-		generation_texture_size, generation_texture_size,
-		0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+		generation_texture_size, generation_texture_size, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
 	glGenFramebuffers( 1, &fbo_id );
 	glBindFramebuffer( GL_FRAMEBUFFER, fbo_id );
@@ -978,7 +996,7 @@ void mf_Renderer::GenClouds()
 	GLuint color_attachment= GL_COLOR_ATTACHMENT0;
 	glDrawBuffers( 1, &color_attachment );
 
-	glViewport( 0, 0, generation_texture_size, generation_texture_size );
+	glGenFramebuffers( 1, &cubemap_fbo_id );
 
 	sky_clouds_data_.clouds_gen_shader.Bind();
 	sky_clouds_data_.clouds_gen_shader.UniformVec3( "sun", shadowmap_fbo_.sun_vector );
@@ -988,30 +1006,39 @@ void mf_Renderer::GenClouds()
 	sky_clouds_data_.clouds_gen_shader.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
 	sky_clouds_data_.clouds_gen_shader.UniformFloat( "horizont", c_horizont_height );
 
-	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	glDisable( GL_DEPTH_TEST );
 	sky_clouds_data_.vbo.Bind();
 	for( unsigned int i= 0; i< 6; i++ )
 	{
+		glBindFramebuffer( GL_FRAMEBUFFER, fbo_id );
+		glViewport( 0, 0, generation_texture_size, generation_texture_size );
+		glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 		glClear( GL_COLOR_BUFFER_BIT );
+		sky_clouds_data_.clouds_gen_shader.Bind();
 
 		float mat[16];
 		static const float rot_angle[]= { MF_PI2, -MF_PI2, 0.0f, MF_PI, 0.0f };
 		Mat4RotateZ( mat, rot_angle[i] );
 		sky_clouds_data_.clouds_gen_shader.UniformMat4( "mat", mat );
-
 		if( i != 5 ) // do not draw lower side
 			glDrawArrays( GL_TRIANGLES, i * 6, 6 );
 
-		glCopyTexSubImage2D(
-			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
-			0, 0, 0, 0,
-			sky_clouds_data_.texture_size, sky_clouds_data_.texture_size );
+		glBindFramebuffer( GL_FRAMEBUFFER, cubemap_fbo_id );
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, cubemap_tex_id, 0 );
+		glDrawBuffers( 1, &color_attachment );
+		glViewport( 0, 0, sky_clouds_data_.texture_size, sky_clouds_data_.texture_size );
+
+		sky_clouds_data_.clouds_downscale_shader.Bind();
+		glBindTexture( GL_TEXTURE_2D, tex_id );
+		sky_clouds_data_.clouds_downscale_shader.UniformInt( "tex", 0 );
+		glDrawArrays( GL_TRIANGLES, 0, 6 );
+
 	} // for cubemap sides
 	glEnable( GL_DEPTH_TEST );
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	glDeleteFramebuffers( 1, &fbo_id );
+	glDeleteFramebuffers( 1, &cubemap_fbo_id );
 	glDeleteTextures( 1, &tex_id );
 
 	glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
@@ -1858,29 +1885,32 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	/*
 	CLOUDS
 	*/
-	sky_clouds_data_.clouds_shader.Bind();
+	if( settings_.clouds_intensity != mf_Settings::CloudsDisabled )
+	{
+		sky_clouds_data_.clouds_shader.Bind();
 
-	Mat4Scale( scale_mat, g_clouds_distance_scaler * GetSceneRadius() );
-	Mat4Mul( scale_mat, translate_mat, mat );
-	Mat4Mul( mat, view_matrix_ );
+		Mat4Scale( scale_mat, g_clouds_distance_scaler * GetSceneRadius() );
+		Mat4Mul( scale_mat, translate_mat, mat );
+		Mat4Mul( mat, view_matrix_ );
 
-	sky_clouds_data_.clouds_shader.UniformMat4( "mat", mat );
+		sky_clouds_data_.clouds_shader.UniformMat4( "mat", mat );
 
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_CUBE_MAP, sky_clouds_data_.clouds_cubemap_tex_id );
-	sky_clouds_data_.clouds_shader.UniformInt( "tex", 0 );
+		glActiveTexture( GL_TEXTURE0 );
+		glBindTexture( GL_TEXTURE_CUBE_MAP, sky_clouds_data_.clouds_cubemap_tex_id );
+		sky_clouds_data_.clouds_shader.UniformInt( "tex", 0 );
 
-	glEnable( GL_BLEND );
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+		glEnable( GL_BLEND );
+		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-	sky_clouds_data_.clouds_dome_vbo.Bind();
-	glDrawElements(
-		GL_TRIANGLES,
-		sky_clouds_data_.clouds_dome_vbo.IndexDataSize() / sizeof(unsigned short),
-		GL_UNSIGNED_SHORT,
-		0 );
+		sky_clouds_data_.clouds_dome_vbo.Bind();
+		glDrawElements(
+			GL_TRIANGLES,
+			sky_clouds_data_.clouds_dome_vbo.IndexDataSize() / sizeof(unsigned short),
+			GL_UNSIGNED_SHORT,
+			0 );
 
-	glDisable( GL_BLEND );
+		glDisable( GL_BLEND );
+	}
 }
 
 void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count )

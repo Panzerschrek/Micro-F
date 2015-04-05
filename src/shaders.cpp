@@ -605,7 +605,7 @@ const char* const clouds_shader_f=
 "out vec4 c_;"
 "void main()"
 "{"
-	"c_=texture(tex,fp);"
+	"c_=texture(tex,vec3(fp.xy,fp.z*0.95+0.05));"
 "}";
 
 const char* const stars_shader_v=
@@ -840,7 +840,7 @@ const char* const clouds_gen_shader_f=
 "const float c_clouds_height= 400.0;"
 "const float c_clouds_depth= 128.0;"
 "const float c_inv_clouds_depth=1.0/c_clouds_depth;"
-"const float c_cloud_destiny_border= 0.54;"
+"float c_cloud_destiny_border=%f;" // not uniform for perfomance
 
 "float CloudFunc( vec3 xyz )"
 "{"
@@ -901,9 +901,39 @@ const char* const clouds_gen_shader_f=
 		"float ambient_light_scaler= normal.z*0.25+1.05;"
 		"c= vec4( al * ambient_light_scaler + final_sun_light, 1.0-sky_k);"
 	"}"
-		"else c= vec4(al,0.0);"
+		"else c= vec4(0.0,0.0,0.0,0.0);"
 
 	"c_=c;"
 "}"; // multiline string
+
+
+const char* const clouds_downscale_shader_v=
+"#version 330\n"
+"const vec2 coord[6]=vec2[6]"
+"("
+	"vec2(0.0,0.0),vec2(1.0,0.0),vec2(1.0,1.0),"
+	"vec2(0.0,0.0),vec2(0.0,1.0),vec2(1.0,1.0)"
+");"
+"void main()"
+"{"
+	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
+"}";
+
+const char* const clouds_downscale_shader_f=
+"#version 330\n"
+"uniform sampler2D tex;"
+"out vec4 c_;"
+"void main()"
+"{"
+	"ivec2 tc=ivec2(gl_FragCoord.xy)*2;"
+	"vec4 t[4];"
+	"t[0]=texelFetch(tex,tc,0);"
+	"t[1]=texelFetch(tex,tc+ivec2(0,1),0);"
+	"t[2]=texelFetch(tex,tc+ivec2(1,0),0);"
+	"t[3]=texelFetch(tex,tc+ivec2(1,1),0);"
+	"const float b=1.0/512.0;"
+	"vec3 rgb=(t[0].xyz+t[1].xyz+t[2].xyz+t[3].xyz)/(step(b,t[0].a)+step(b,t[1].a)+step(b,t[2].a)+step(b,t[3].a));"
+	"c_=vec4(rgb,(t[0].a+t[1].a+t[2].a+t[3].a)*0.25);"
+"}";
 
 } // namespace mf_Shaders

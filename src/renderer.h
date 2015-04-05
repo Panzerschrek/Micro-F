@@ -198,6 +198,7 @@ private:
 		mf_VertexBuffer clouds_dome_vbo;
 
 		mf_GLSLProgram clouds_gen_shader;
+		mf_GLSLProgram clouds_downscale_shader;
 		mf_GLSLProgram clouds_shader;
 
 	} sky_clouds_data_;

@@ -88,6 +88,8 @@ private:
 
 	void OnChangeDayTimeButton();
 	void OnHdrButton();
+	void OnCloudsButton();
+	void OnSkyQualityButton();
 	void OnSettingsBackButton();
 
 private:
