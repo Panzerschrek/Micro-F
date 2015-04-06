@@ -670,30 +670,48 @@ void mf_Gui::DrawControlPanel()
 		v+= 3;
 	}
 
-	{ // speed indicator
-		static const float speed_indicator_pos[2]= { 0.26f, -0.85f };
+	// speed indicator and altitude indicator
+	for( unsigned int indicator_type= 0; indicator_type< 2; indicator_type++ )
+	{
 		static const float speed_indicator_digit_size[2]= { 0.06f * 0.44f, 0.06f };
+		static const float speed_indicator_pos[4]= {
+			0.26f, -0.85f,
+			0.26f + speed_indicator_digit_size[0], -0.85f - speed_indicator_digit_size[1] - 0.006f };
 
-		int speed= int(mf_Math::round(Vec3Len(aircraft->Velocity())));
-		// first 3 symbols - value of speed. last - string " m/s"
-		int s[7]= { speed / 100, (speed / 10) % 10, speed % 10, 10, 11, 12, 13 };
-		float x= speed_indicator_pos[0];
-		for( unsigned int i= 0; i< 7; i++, x+= speed_indicator_digit_size[0] )
+		int s[7];
+		unsigned int symbols_count;
+		if( indicator_type == 0 )
+		{
+			int speed= int(mf_Math::round(Vec3Len(aircraft->Velocity())));
+			// first 3 symbols - value of speed. last - string " m/s"
+			s[0]= speed / 100; s[1]= (speed / 10) % 10; s[2]= speed % 10;
+			s[3]= 10; s[4]= 11; s[5]= 12; s[6]= 13;
+			symbols_count= 7;
+		}
+		else
+		{
+			int alt= int(mf_Math::round(aircraft->Pos()[2]));
+			s[0]= alt / 100; s[1]= (alt / 10) % 10; s[2]= alt % 10;
+			s[3]= 10; s[4]= 11;
+			symbols_count= 5;
+		}
+		float x= speed_indicator_pos[ indicator_type * 2 ];
+		for( unsigned int i= 0; i< symbols_count; i++, x+= speed_indicator_digit_size[0] )
 		{
 			v[0].pos[0]= x * k;
-			v[0].pos[1]= speed_indicator_pos[1];
+			v[0].pos[1]= speed_indicator_pos[ 1 + indicator_type * 2 ];
 			v[1].pos[0]= ( x + speed_indicator_digit_size[0] ) * k;
-			v[1].pos[1]= speed_indicator_pos[1];
+			v[1].pos[1]= v[0].pos[1];
 			v[2].pos[0]= ( x + speed_indicator_digit_size[0] ) * k;
-			v[2].pos[1]= speed_indicator_pos[1] +  speed_indicator_digit_size[1];
+			v[2].pos[1]= v[0].pos[1] +  speed_indicator_digit_size[1];
 			v[3].pos[0]= x * k;
-			v[3].pos[1]= speed_indicator_pos[1] +  speed_indicator_digit_size[1];
+			v[3].pos[1]= v[0].pos[1] +  speed_indicator_digit_size[1];
 			v[0].tex_coord[0]= 0.0f;
-			v[0].tex_coord[1]= float(s[i]* 2 * MF_LETTER_HEIGHT ) * (1.0f/512.0f);
+			v[0].tex_coord[1]= float( s[i]* 2 * MF_LETTER_HEIGHT ) * (1.0f/512.0f);
 			v[1].tex_coord[0]= 1.0f;
 			v[1].tex_coord[1]= v[0].tex_coord[1];
 			v[2].tex_coord[0]= 1.0f;
-			v[2].tex_coord[1]= v[0].tex_coord[1] + float(2 * MF_LETTER_HEIGHT ) * (1.0f/512.0f);
+			v[2].tex_coord[1]= v[0].tex_coord[1] + float( 2 * MF_LETTER_HEIGHT ) * (1.0f/512.0f);
 			v[3].tex_coord[0]= 0.0f;
 			v[3].tex_coord[1]= v[2].tex_coord[1];
 			v[0].tex_coord[2]= v[1].tex_coord[2]= v[2].tex_coord[2]= v[3].tex_coord[2]= TextureNumbers;
