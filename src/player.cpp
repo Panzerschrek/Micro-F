@@ -8,10 +8,10 @@
 #include "../models/models.h"
 
 #define MF_FOV_CHANGE_SPEED MF_PI6
-#define MF_MIN_FOV MF_PI4
-#define MF_MAX_FOV MF_PI2
-#define MF_FOV_STEP MF_PI6 * 0.25f
-#define MF_INITIAL_FOV MF_PI2 - MF_FOV_STEP
+#define MF_MIN_FOV MF_PI6
+#define MF_MAX_FOV (MF_PI2 + MF_PI6)
+#define MF_FOV_STEP (MF_PI6 * 0.25f)
+#define MF_INITIAL_FOV (MF_PI2 - MF_FOV_STEP)
 
 mf_Player::mf_Player()
 	: control_mode_(ModeAircraftControl)
@@ -42,7 +42,7 @@ mf_Player::~mf_Player()
 void mf_Player::Tick( float dt )
 {
 	float d_fov= target_fov_ - fov_;
-	if( mf_Math::fabs(d_fov) > 0.0001f )
+	if( mf_Math::fabs(d_fov) > dt * MF_FOV_CHANGE_SPEED )
 		fov_+= dt * MF_FOV_CHANGE_SPEED * mf_Math::sign(d_fov);
 	else
 		fov_= target_fov_;
