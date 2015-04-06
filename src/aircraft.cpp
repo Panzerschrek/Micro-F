@@ -5,7 +5,7 @@
 
 static const float g_roll_rotate_speed=  0.0625f;
 static const float g_pitch_rotate_speed= 0.125f;
-static const float g_yaw_rotate_speed=   0.03125f;
+static const float g_yaw_rotate_speed=   0.0625f;
 
 static const float g_gravitation[]= { 0.0f, 0.0f, -9.8f }; // m / s^2
 static const float g_air_weight_destiny= 1.225f; // kg / m^3
@@ -265,7 +265,7 @@ void mf_Aircraft::Tick( float dt )
 			angular_speed_drag_k= -angular_speed_[2] * mf_Math::fabs(angular_speed_[2]) *12.5f;
 			angular_acceleration_[2]+= angular_speed_drag_k;
 
-			angular_speed_drag_k= -angular_speed_[1] * mf_Math::fabs(angular_speed_[1]) *15.5f;
+			angular_speed_drag_k= -angular_speed_[1] * mf_Math::fabs(angular_speed_[1]) *10.5f;
 			angular_acceleration_[1]+= angular_speed_drag_k;
 		}
 

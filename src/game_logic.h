@@ -3,9 +3,11 @@
 #include "particles_manager.h"
 #include "mf_math.h"
 class mf_Player;
+class mf_Enemy;
 
 #define MF_MAX_POWERUPS 128
 #define MF_MAX_BULLETS 1024
+#define MF_MAX_ENEMIES 32
 
 struct mf_Powerup
 {
@@ -49,9 +51,12 @@ public:
 	const mf_ParticlesManager* GetParticlesManager() const;
 	const mf_Powerup* GetPowerups() const;
 	unsigned int GetPowerupCount() const;
+	const mf_Enemy* const* GetEnemies() const;
+	unsigned int GetEnemiesCount() const;
 
 private:
 	void PlacePowerups();
+	void SpawnEnemy();
 
 private:
 	mf_Level level_;
@@ -65,6 +70,9 @@ private:
 
 	mf_Bullet bullets_[ MF_MAX_BULLETS ];
 	unsigned int bullets_count_;
+
+	mf_Enemy* enemies_[ MF_MAX_ENEMIES ];
+	unsigned int enemies_count_;
 };
 
 inline const mf_Level* mf_GameLogic::GetLevel() const
@@ -85,4 +93,14 @@ inline const mf_Powerup* mf_GameLogic::GetPowerups() const
 inline unsigned int mf_GameLogic::GetPowerupCount() const
 {
 	return powerup_count_;
+}
+
+inline const mf_Enemy* const* mf_GameLogic::GetEnemies() const
+{
+	return enemies_;
+}
+
+inline unsigned int mf_GameLogic::GetEnemiesCount() const
+{
+	return enemies_count_;
 }

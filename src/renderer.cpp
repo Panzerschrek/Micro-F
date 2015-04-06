@@ -1,6 +1,7 @@
 #include "micro-f.h"
 #include "renderer.h"
 
+#include "enemy.h"
 #include "main_loop.h"
 #include "game_logic.h"
 #include "shaders.h"
@@ -634,11 +635,7 @@ void mf_Renderer::DrawFrame()
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	CreateViewMatrix( view_matrix_, true );
 	DrawTerrain( true );
-	{
-		const mf_Aircraft* aircrafts[1];
-		aircrafts[0]= player_->GetAircraft();
-		DrawAircrafts( aircrafts, 1 );
-	}
+	DrawAircrafts();
 	DrawLevelStaticObjects( true );
 	DrawPowerups();
 	DrawSky( true );
@@ -653,11 +650,7 @@ void mf_Renderer::DrawFrame()
 
 	CreateViewMatrix( view_matrix_, false );
 	DrawTerrain( false );
-	{
-		const mf_Aircraft* aircrafts[1];
-		aircrafts[0]= player_->GetAircraft();
-		DrawAircrafts( aircrafts, 1 );
-	}
+	DrawAircrafts();
 	DrawLevelStaticObjects( false );
 	DrawSky( false );
 	DrawPowerups();
@@ -1913,8 +1906,14 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	}
 }
 
-void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned int count )
+void mf_Renderer::DrawAircrafts()
 {
+	const mf_Aircraft* aircrafts[64];
+	for( unsigned int i= 0; i< game_logic_->GetEnemiesCount(); i++ )
+		aircrafts[i]= game_logic_->GetEnemies()[i]->GetAircraft();
+	aircrafts[ game_logic_->GetEnemiesCount() ]= player_->GetAircraft();
+	unsigned int aircrafts_count= game_logic_->GetEnemiesCount() + 1;
+
 	aircrafts_data_.vbo.Bind();
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D_ARRAY, aircrafts_data_.textures_array );
@@ -1928,7 +1927,7 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 		aircraft_shader_.UniformVec3( "sl", zero_light );
 		aircraft_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
 
-		for( unsigned int i= 0; i< count; i++ )
+		for( unsigned int i= 0; i< aircrafts_count; i++ )
 		{
 			const mf_Aircraft* aircraft= aircrafts[i];
 			float normal_mat[9];
@@ -1957,7 +1956,7 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 
 		aircraft_stencil_shadow_shader_.Bind();
 
-		for( unsigned int i= 0; i< count; i++ )
+		for( unsigned int i= 0; i< aircrafts_count; i++ )
 		{
 			const mf_Aircraft* aircraft= aircrafts[i];
 
@@ -1992,7 +1991,7 @@ void mf_Renderer::DrawAircrafts( const mf_Aircraft* const* aircrafts, unsigned i
 		aircraft_shader_.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
 		aircraft_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
 
-		for( unsigned int i= 0; i< count; i++ )
+		for( unsigned int i= 0; i< aircrafts_count; i++ )
 		{
 			const mf_Aircraft* aircraft= aircrafts[i];
 			float normal_mat[9];

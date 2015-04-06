@@ -30,6 +30,7 @@ public:
 	void SetPos( float x, float y, float z );
 
 	const mf_Aircraft* GetAircraft() const;
+	mf_Aircraft* GetAircraft();
 
 	unsigned int Score() const;
 	void AddScorePoints( unsigned int points );
@@ -106,6 +107,11 @@ inline const float* mf_Player::Pos() const
 }
 
 inline const mf_Aircraft* mf_Player::GetAircraft() const
+{
+	return &aircraft_;
+}
+
+inline mf_Aircraft* mf_Player::GetAircraft()
 {
 	return &aircraft_;
 }

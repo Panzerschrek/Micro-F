@@ -208,6 +208,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\enemy.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\gl\func_addresses.cpp"
 				>
 			</File>
@@ -307,6 +311,10 @@
 			</File>
 			<File
 				RelativePath=".\src\drawing_model.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\enemy.h"
 				>
 			</File>
 			<File

@@ -134,7 +134,7 @@ void mf_MainLoop::Play(  const mf_Settings* settings )
 	test_sound_= sound_engine_->CreateSoundSource( SoundPlasmajetEngine );
 	test_sound_->Play();
 
-	mf_Aircraft* aircraft= (mf_Aircraft*)player_.GetAircraft();
+	mf_Aircraft* aircraft= player_.GetAircraft();
 	float pos[3];
 	pos[0]= game_logic_->GetLevel()->TerrainSizeX() * game_logic_->GetLevel()->TerrainCellSize() * 0.5f;
 	pos[1]= 64.0f;

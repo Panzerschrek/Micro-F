@@ -4,6 +4,7 @@
 
 #include "player.h"
 #include "mf_math.h"
+#include "enemy.h"
 
 #define MF_FORCEFIELD_DAMAGE_RADIUS 8.0f
 
@@ -26,9 +27,10 @@ mf_GameLogic::mf_GameLogic(mf_Player* player)
 	: level_()
 	, particles_manager_()
 	, player_(player)
-	, powerup_count_(0), bullets_count_(0)
+	, powerup_count_(0), bullets_count_(0), enemies_count_(0)
 {
 	PlacePowerups();
+	SpawnEnemy();
 }
 
 mf_GameLogic::~mf_GameLogic()
@@ -37,7 +39,10 @@ mf_GameLogic::~mf_GameLogic()
 
 void mf_GameLogic::Tick( float dt )
 {
-	mf_Aircraft* player_aircraft= (mf_Aircraft*) player_->GetAircraft();
+	for( unsigned int i= 0; i< enemies_count_; i++ )
+		enemies_[i]->Tick(dt);
+
+	mf_Aircraft* player_aircraft= player_->GetAircraft();
 
 	const float c_powerup_pick_distance2= 16.0f * 16.0f;
 
@@ -103,13 +108,15 @@ void mf_GameLogic::Tick( float dt )
 
 	particles_manager_.Tick( dt );
 	particles_manager_.AddEnginesTrail( player_->GetAircraft() );
+	for( unsigned int i= 0; i< enemies_count_; i++ )
+		particles_manager_.AddEnginesTrail( enemies_[i]->GetAircraft() );
 }
 
 void mf_GameLogic::PlayerShot( const float* dir )
 {
 	mf_Bullet* bullet= &bullets_[ bullets_count_ ];
 	bullet->type= mf_Bullet::ChaingunBullet;
-	bullet->owner= (mf_Aircraft*)player_->GetAircraft();
+	bullet->owner= player_->GetAircraft();
 	VEC3_CPY( bullet->pos, bullet->owner->Pos() );
 	VEC3_CPY( bullet->dir, dir );
 	bullet->velocity= mfInf();
@@ -139,4 +146,12 @@ void mf_GameLogic::PlacePowerups()
 
 		y+= randomizer_.RandF( c_stars_step_range[0], c_stars_step_range[1] );
 	}
+}
+
+void mf_GameLogic::SpawnEnemy()
+{
+	mf_Enemy* enemy= new mf_Enemy( mf_Aircraft::F2XXX, 100 );
+	float spawn_pos[]= { float(level_.TerrainSizeX()/2) * level_.TerrainCellSize(), 0.0f, level_.TerrainAmplitude() };
+	enemy->GetAircraft()->SetPos( spawn_pos );
+	enemies_[ enemies_count_++ ]= enemy;
 }

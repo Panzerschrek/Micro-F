@@ -108,6 +108,7 @@ void mf_Player::Tick( float dt )
 		
 		autopilot_.GetControlResult( &pitch_factor, &yaw_factor, &roll_factor );
 
+		//pitch_factor= 0.0008f; stability pitch factor
 		aircraft_.SetPitchFactor( pitch_factor );
 		aircraft_.SetRollFactor ( roll_factor  );
 		aircraft_.SetYawFactor  ( yaw_factor   );
