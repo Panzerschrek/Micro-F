@@ -464,6 +464,7 @@ const char* const forcefield_shader_f=
 "#version 330\n"
 "uniform sampler2D tex;"
 "uniform vec3 aircp;" // aircraft position
+"uniform float time;"
 "in vec3 fp;" // fragment world position
 "in vec2 ftc;" // texture coord
 "in float fhk;"
@@ -472,7 +473,9 @@ const char* const forcefield_shader_f=
 "{"
 	"vec3 v=fp-aircp;"
 	"float id=1.0/dot(v,v);"
-	"c_=fhk*clamp(256*id,0.7,1.0)*texture(tex,ftc)+min(id*128,0.7)*vec4(1.0,0.5,0.5,0.0);"
+	"vec4 texc=texture(tex,ftc);"
+	"float sf=(sin(time+texc.a*64.0)+2.0)*0.333;"
+	"c_=fhk*clamp(256*id,0.7,1.0)*texc+min(id*128,0.7)*vec4(1.0,0.5,0.5,0.0)+vec4(0.05,0.025,0.05,0.0)*sf*max((0.8-texc.a),0.0);"
 "}";
 
 const char* const naviball_shader_v=

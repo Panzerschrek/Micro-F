@@ -593,6 +593,8 @@ void GenEnginePlasmaParticle( mf_Texture* tex )
 void GenForcefieldTexture( mf_Texture* tex )
 {
 	tex->GenHexagonalGrid( float(tex->SizeX()) * (0.5f/1.5f), 2.0f * 1.0f / mf_Math::sqrt(3.0f) );
+	mf_Texture grid_copy( tex->SizeXLog2(), tex->SizeYLog2() );
+	grid_copy.Copy( tex );
 
 	static const float mul_color[]= { 0.7f, 0.7f, 0.7f, 0.7f };
 	static const float add_color[]= { 0.3f, 0.3f, 0.3f, 0.3f };
@@ -601,6 +603,14 @@ void GenForcefieldTexture( mf_Texture* tex )
 
 	static const float forcefield_color[4]= {0.3f, 0.3f, 0.7f, 1.0f };
 	tex->Mul( forcefield_color );
+
+	grid_copy.Pow( 0.5f );
+	static const float grid_copy_mul[]= { 0.0f, 0.0f, 0.0f, 1.0f };
+	grid_copy.Mul( grid_copy_mul );
+
+	static const float zero_alpha[]= { 1.0f, 1.0f, 1.0f, 0.0f };
+	tex->Mul( zero_alpha );
+	tex->Add( &grid_copy );
 }
 
 void (* const terrain_texture_gen_func[])(mf_Texture* t)=
