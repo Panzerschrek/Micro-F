@@ -6,7 +6,7 @@
 #include "sounds_generation.h"
 
 #define MF_SND_PRIORITY 0
-#define MF_SOUND_MAX_DISTANCE 4000.0f
+#define MF_SOUND_MAX_DISTANCE 768.0f
 
 void mf_SoundSource::Play()
 {

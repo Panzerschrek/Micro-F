@@ -23,14 +23,51 @@ int health_bonus_table[mf_Powerup::LastType]=
 
 } // namespace PowerupsTables
 
+
+static mf_SoundType AircraftTypeToEngineSoundType( mf_Aircraft::Type type )
+{
+	switch( type )
+	{
+	case mf_Aircraft::V1:
+		return SoundPulsejetEngine;
+	case mf_Aircraft::F1949:
+	case mf_Aircraft::F2XXX:
+	default:
+		return SoundPlasmajetEngine;
+	};
+}
+
+static float ThrottleToEngineSoundPitch( float throttle )
+{
+	const float min_pitch= 0.8f;
+	const float max_pitch= 1.2f;
+
+	const float a= -2.0f * ( max_pitch - min_pitch );
+	const float b=  3.0f * ( max_pitch - min_pitch );
+	const float c= 0.0f;
+	const float d= min_pitch;
+
+	return d + throttle * ( c + throttle * ( b + throttle * a ) );
+}
+
+static float ThrottleToEngineSoundVolumeScaler( float throttle )
+{
+	if( throttle > 0.5f ) return 1.0f;
+	return throttle * 2.0f;
+}
+
 mf_GameLogic::mf_GameLogic(mf_Player* player)
 	: level_()
 	, particles_manager_()
 	, player_(player)
 	, powerup_count_(0), bullets_count_(0), enemies_count_(0)
+	, player_sound_(NULL)
 {
 	PlacePowerups();
 	SpawnEnemy();
+
+	player_sound_= mf_SoundEngine::Instance()->CreateSoundSource( AircraftTypeToEngineSoundType( player_->GetAircraft()->GetType() ) );
+	player_sound_->Play();
 }
 
 mf_GameLogic::~mf_GameLogic()
@@ -105,11 +142,34 @@ void mf_GameLogic::Tick( float dt )
 			player_aircraft->AddHP( -50 );
 	}
 
-
+	// particels
 	particles_manager_.Tick( dt );
 	particles_manager_.AddEnginesTrail( player_->GetAircraft() );
 	for( unsigned int i= 0; i< enemies_count_; i++ )
 		particles_manager_.AddEnginesTrail( enemies_[i]->GetAircraft() );
+
+	// sound
+	for( unsigned int i= 0; i< enemies_count_ + 1; i++ )
+	{
+		mf_Aircraft* aircraft;
+		mf_SoundSource* source;
+		float volume_scaler;
+		if( i == enemies_count_)
+		{
+			aircraft= player_->GetAircraft();
+			source= player_sound_;
+			volume_scaler= 1.0f;
+		}
+		else
+		{
+			aircraft= enemies_[i]->GetAircraft();
+			source= enemies_sounds_[i];
+			volume_scaler= 512.0f;
+		}
+		source->SetOrientation( aircraft->Pos(), aircraft->Velocity() );
+		source->SetPitch( ThrottleToEngineSoundPitch( aircraft->Throttle() ) );
+		source->SetVolume( volume_scaler * ThrottleToEngineSoundVolumeScaler( aircraft->Throttle() ) );
+	}
 }
 
 void mf_GameLogic::PlayerShot( const float* dir )
@@ -153,5 +213,8 @@ void mf_GameLogic::SpawnEnemy()
 	mf_Enemy* enemy= new mf_Enemy( mf_Aircraft::F2XXX, 100 );
 	float spawn_pos[]= { float(level_.TerrainSizeX()/2) * level_.TerrainCellSize(), 0.0f, level_.TerrainAmplitude() };
 	enemy->GetAircraft()->SetPos( spawn_pos );
-	enemies_[ enemies_count_++ ]= enemy;
+	enemies_[ enemies_count_ ]= enemy;
+	enemies_sounds_[ enemies_count_ ]= mf_SoundEngine::Instance()->CreateSoundSource( AircraftTypeToEngineSoundType( enemy->GetAircraft()->GetType() ) );
+	enemies_sounds_[ enemies_count_ ]->Play();
+	enemies_count_++;
 }

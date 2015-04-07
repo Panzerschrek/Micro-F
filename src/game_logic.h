@@ -4,6 +4,7 @@
 #include "mf_math.h"
 class mf_Player;
 class mf_Enemy;
+class mf_SoundSource;
 
 #define MF_MAX_POWERUPS 128
 #define MF_MAX_BULLETS 1024
@@ -72,7 +73,10 @@ private:
 	unsigned int bullets_count_;
 
 	mf_Enemy* enemies_[ MF_MAX_ENEMIES ];
+	mf_SoundSource* enemies_sounds_[ MF_MAX_ENEMIES ];
 	unsigned int enemies_count_;
+
+	mf_SoundSource* player_sound_;
 };
 
 inline const mf_Level* mf_GameLogic::GetLevel() const

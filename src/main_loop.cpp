@@ -92,21 +92,9 @@ void mf_MainLoop::Loop()
 				game_logic_->Tick( prev_tick_dt_ );
 			}// if normal dt
 
-			{ // sound setup
-				const mf_Aircraft* aircraft= player_.GetAircraft();
-
-				sound_engine_->SetListenerOrinetation( player_.Pos(), player_.Angle(), aircraft->Velocity() );
-				if (test_sound_ != NULL )
-				{
-					extern float ThrottleToEngineSoundPitch( float throttle );
-					extern float ThrottleToEngineSoundVolumeScaler( float throttle );
-
-					test_sound_->SetOrientation( aircraft->Pos(), aircraft->Velocity() );
-					test_sound_->SetVolume( 40.0f * ThrottleToEngineSoundVolumeScaler( aircraft->Throttle() ) );
-					test_sound_->SetPitch( ThrottleToEngineSoundPitch( aircraft->Throttle() ) );
-				}
-				sound_engine_->Tick();
-			}
+			// sound setup
+			sound_engine_->SetListenerOrinetation( player_.Pos(), player_.Angle(), player_.GetAircraft()->Velocity() );
+			sound_engine_->Tick();
 
 			renderer_->DrawFrame();
 		} // if in game or ingame menu
