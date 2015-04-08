@@ -71,6 +71,8 @@ void Mat4ToMat3( const float* m_in, float* m_out );
 
 void DoubleMat4Invert( const double* m, double* out_m );
 
+float DistanceFromLineToPoint(const float* line_point, const float* line_dir, const float* point );
+
 // special namespace for replasement for std::math functions
 namespace mf_Math
 {

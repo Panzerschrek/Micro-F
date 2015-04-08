@@ -221,3 +221,76 @@ void mf_DrawingModel::FlipTriangles()
 		indeces_[i+2]= tmp;
 	}
 }
+
+void mf_DrawingModel::CalculateBoundingBox()
+{
+	const float max_float= 1e32f;
+	for( unsigned int i= 0; i< 3; i++ )
+	{
+		bounding_box_min_[i]= max_float;
+		bounding_box_max_[i]= -max_float;
+	}
+
+	for( unsigned int i= 0; i< vertex_count_; i++ )
+	{
+		for( unsigned int j= 0; j< 3; j++ )
+		{
+			if( vertices_[i].pos[j] > bounding_box_max_[j] ) bounding_box_max_[j]= vertices_[i].pos[j];
+			else if( vertices_[i].pos[j] < bounding_box_min_[j] ) bounding_box_min_[j]= vertices_[i].pos[j];
+		}
+	}
+	for( unsigned int i= 0; i< 3; i++ )
+		bounding_sphere_center_[i]= (bounding_box_min_[i] + bounding_box_max_[i]) * 0.5f;
+
+	bounding_sphere_radius_= 0.5f * Distance( bounding_box_max_, bounding_box_min_ );
+}
+
+bool mf_DrawingModel::BeamIntersectModel( const float* beam_point, const float* beam_dir, float* out_pos_opt ) const
+{
+	float min_distance= 1e24f;
+	bool is_intersection= false;
+
+	const unsigned short* ind= indeces_;
+	for( unsigned int i= 0; i< index_count_; i+= 3, ind+= 3 )
+	{
+		float normal[3];
+		Vec3Cross( vertices_[ind[0]].pos, vertices_[ind[1]].pos, normal );
+
+		float e= Vec3Dot( beam_dir, normal );
+		if( e == 0.0f ) continue;
+
+		float vec_to_triangle_plane[3]; // vector from beam point to ponit to triangle vertex
+		Vec3Sub( beam_point, vertices_[ind[0]].pos, vec_to_triangle_plane );
+		float dist_to_plane= Vec3Dot( normal, vec_to_triangle_plane );
+
+		float dir_to_plane_vec[3];
+		Vec3Mul( beam_dir, dist_to_plane / e, dir_to_plane_vec );
+
+		float beam_with_plane_intersection_point[3];
+		float perpendicular_to_plane[3];
+		Vec3Mul( normal, dist_to_plane, perpendicular_to_plane );
+		Vec3Sub( dir_to_plane_vec, perpendicular_to_plane, beam_with_plane_intersection_point );
+
+		float cross_normal_dots[3];
+		for( unsigned int j= 0; j< 3; j++ )
+		{
+			float vec_from_trianlgle_point_to_intersection_point[3];
+			float edge_vec[3];
+			Vec3Sub( beam_with_plane_intersection_point, vertices_[ind[j]].pos, vec_from_trianlgle_point_to_intersection_point );
+			Vec3Sub( vertices_[ind[(j+1)%3]].pos, vertices_[ind[j]].pos, edge_vec );
+			float cross[3];
+			Vec3Cross( vec_from_trianlgle_point_to_intersection_point, edge_vec, cross );
+			cross_normal_dots[j]= Vec3Dot( cross, normal );
+		}
+		if( cross_normal_dots[0] > 0.0f && cross_normal_dots[1] > 0.0f && cross_normal_dots[2] > 0.0f )
+		{
+			float dist= Distance( beam_point, beam_with_plane_intersection_point );
+			if( dist < min_distance ) min_distance= dist;
+			is_intersection= true;
+			if( out_pos_opt )
+			{
+				VEC3_CPY( out_pos_opt, beam_with_plane_intersection_point );
+			}
+		}
+	}
+}

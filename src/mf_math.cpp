@@ -460,6 +460,19 @@ void DoubleMat4Invert( const double* m, double* out_m )
 	DoubleMat4Transpose(out_m);
 }
 
+float DistanceFromLineToPoint(const float* line_point, const float* line_dir, const float* point )
+{
+	float vec_from_pomt_to_point[3];
+	Vec3Sub( point, line_point, vec_from_pomt_to_point );
+
+	float projection_to_line[3];
+	Vec3Mul( line_dir, Vec3Dot(vec_from_pomt_to_point, line_dir), projection_to_line );
+
+	float perpendicular[3];
+	Vec3Sub( vec_from_pomt_to_point, projection_to_line, perpendicular );
+	return Vec3Len( perpendicular );
+}
+
 namespace mf_Math
 {
 

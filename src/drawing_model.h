@@ -40,11 +40,25 @@ public:
 
 	void FlipTriangles();
 
+	void CalculateBoundingBox();
+	// This parameters valid only after CalculateBoundingBox() call
+	const float* BoundingBoxMin() const;
+	const float* BoundingBoxMax() const;
+	const float* BoundingSphereCenter() const;
+	float BoundingSphereRadius() const;
+
+	bool BeamIntersectModel( const float* beam_point, const float* beam_dir, float* out_pos_opt ) const;
+
 private:
 	mf_DrawingModelVertex* vertices_;
 	unsigned short* indeces_;
 	unsigned int vertex_count_;
 	unsigned int index_count_;
+
+	float bounding_box_min_[3];
+	float bounding_box_max_[3];
+	float bounding_sphere_center_[3];
+	float bounding_sphere_radius_;
 };
 
 inline const mf_DrawingModelVertex* mf_DrawingModel::GetVertexData() const
@@ -65,4 +79,24 @@ inline unsigned int mf_DrawingModel::VertexCount() const
 inline unsigned int mf_DrawingModel::IndexCount() const
 {
 	return index_count_;
+}
+
+inline const float* mf_DrawingModel::BoundingBoxMin() const
+{
+	return bounding_box_min_;
+}
+
+inline const float* mf_DrawingModel::BoundingBoxMax() const
+{
+	return bounding_box_max_;
+}
+
+inline const float* mf_DrawingModel::BoundingSphereCenter() const
+{
+	return bounding_sphere_center_;
+}
+
+inline float mf_DrawingModel::BoundingSphereRadius() const
+{
+	return bounding_sphere_radius_;
 }
