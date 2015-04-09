@@ -2,6 +2,8 @@
 #include "level.h"
 #include "particles_manager.h"
 #include "mf_math.h"
+#include "aircraft.h"
+#include "drawing_model.h"
 class mf_Player;
 class mf_Enemy;
 class mf_SoundSource;
@@ -77,6 +79,8 @@ private:
 	unsigned int enemies_count_;
 
 	mf_SoundSource* player_sound_;
+
+	mf_DrawingModel aircrafts_models_[ mf_Aircraft::LastType ];
 };
 
 inline const mf_Level* mf_GameLogic::GetLevel() const

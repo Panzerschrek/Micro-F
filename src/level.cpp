@@ -161,7 +161,7 @@ bool mf_Level::SphereIntersectTerrain( const float* pos, float radius ) const
 	return false;
 }
 
-bool mf_Level::BeamIntersectTerrain( const float* in_pos, const float* dir, bool need_accuracy, float* out_pos_opt )
+bool mf_Level::BeamIntersectTerrain( const float* in_pos, const float* dir, float max_distance, bool need_accuracy, float* out_pos_opt )
 {
 	float pos[3];
 	float step[3];
@@ -176,7 +176,8 @@ bool mf_Level::BeamIntersectTerrain( const float* in_pos, const float* dir, bool
 		float(terrain_size_[0]) * terrain_cell_size_,
 		float(terrain_size_[1]) * terrain_cell_size_,
 	};
-	while(pos[2] <= terrain_amplitude_ && pos[2] >= 0 )
+	float dist= 0.0f;
+	while(pos[2] <= terrain_amplitude_ && pos[2] >= 0 && dist <= max_distance )
 	{
 		if( pos[0] < 0.0f || pos[1] < 0.0f || pos[0] > xy_max[0] || pos[1] > xy_max[1] )
 			break;
@@ -186,6 +187,7 @@ bool mf_Level::BeamIntersectTerrain( const float* in_pos, const float* dir, bool
 			break;
 		}
 		Vec3Add( pos, step );
+		dist+= 1.0f; // length of step is 1
 	}
 
 	//TODO - make hight precisionresult

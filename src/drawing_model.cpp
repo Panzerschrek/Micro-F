@@ -254,43 +254,46 @@ bool mf_DrawingModel::BeamIntersectModel( const float* beam_point, const float* 
 	for( unsigned int i= 0; i< index_count_; i+= 3, ind+= 3 )
 	{
 		float normal[3];
-		Vec3Cross( vertices_[ind[0]].pos, vertices_[ind[1]].pos, normal );
+		float edges[3][3];
+		for( unsigned int j= 0; j< 3; j++ )
+			Vec3Sub( vertices_[ind[j]].pos, vertices_[ind[(j+1)%3]].pos, edges[j] );
 
-		float e= Vec3Dot( beam_dir, normal );
-		if( e == 0.0f ) continue;
+		Vec3Cross( edges[0], edges[1], normal );
+		Vec3Normalize( normal );
 
-		float vec_to_triangle_plane[3]; // vector from beam point to ponit to triangle vertex
-		Vec3Sub( beam_point, vertices_[ind[0]].pos, vec_to_triangle_plane );
-		float dist_to_plane= Vec3Dot( normal, vec_to_triangle_plane );
-
-		float dir_to_plane_vec[3];
-		Vec3Mul( beam_dir, dist_to_plane / e, dir_to_plane_vec );
+		float vec_to_triangle_point[3];
+		Vec3Sub( beam_point, vertices_[ind[0]].pos, vec_to_triangle_point );
+		float t= -Vec3Dot( vec_to_triangle_point, normal ) / Vec3Dot( beam_dir, normal );
 
 		float beam_with_plane_intersection_point[3];
-		float perpendicular_to_plane[3];
-		Vec3Mul( normal, dist_to_plane, perpendicular_to_plane );
-		Vec3Sub( dir_to_plane_vec, perpendicular_to_plane, beam_with_plane_intersection_point );
+		float vec_to_intersection_point[3];
+		Vec3Mul( beam_dir, t, vec_to_intersection_point );
+		Vec3Add( vec_to_intersection_point, beam_point, beam_with_plane_intersection_point );
 
 		float cross_normal_dots[3];
 		for( unsigned int j= 0; j< 3; j++ )
 		{
 			float vec_from_trianlgle_point_to_intersection_point[3];
-			float edge_vec[3];
 			Vec3Sub( beam_with_plane_intersection_point, vertices_[ind[j]].pos, vec_from_trianlgle_point_to_intersection_point );
-			Vec3Sub( vertices_[ind[(j+1)%3]].pos, vertices_[ind[j]].pos, edge_vec );
 			float cross[3];
-			Vec3Cross( vec_from_trianlgle_point_to_intersection_point, edge_vec, cross );
+			Vec3Cross( vec_from_trianlgle_point_to_intersection_point, edges[j], cross );
 			cross_normal_dots[j]= Vec3Dot( cross, normal );
 		}
-		if( cross_normal_dots[0] > 0.0f && cross_normal_dots[1] > 0.0f && cross_normal_dots[2] > 0.0f )
+		if(
+			(cross_normal_dots[0] >= 0.0f && cross_normal_dots[1] >= 0.0f && cross_normal_dots[2] >= 0.0f) || 
+			(cross_normal_dots[0] <= 0.0f && cross_normal_dots[1] <= 0.0f && cross_normal_dots[2] <= 0.0f) )
 		{
-			float dist= Distance( beam_point, beam_with_plane_intersection_point );
-			if( dist < min_distance ) min_distance= dist;
 			is_intersection= true;
-			if( out_pos_opt )
+			float dist= Distance( beam_point, beam_with_plane_intersection_point );
+			if( dist < min_distance )
 			{
-				VEC3_CPY( out_pos_opt, beam_with_plane_intersection_point );
+				min_distance= dist;
+				if( out_pos_opt )
+				{
+					VEC3_CPY( out_pos_opt, beam_with_plane_intersection_point );
+				}
 			}
 		}
 	}
+	return is_intersection;
 }

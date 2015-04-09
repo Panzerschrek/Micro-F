@@ -1,6 +1,7 @@
 #include "micro-f.h"
 #include "game_logic.h"
 #include "sound_engine.h"
+#include "../models/models.h"
 
 #include "player.h"
 #include "mf_math.h"
@@ -56,6 +57,14 @@ static float ThrottleToEngineSoundVolumeScaler( float throttle )
 	return throttle * 2.0f;
 }
 
+static bool IsBulletOutsideWorld( const float* pos )
+{
+	return
+		pos[0] < -512.0f || pos[0] > 32768.0f ||
+		pos[1] < -512.0f || pos[1] > 32768.0f ||
+		pos[2] < 0.0f || pos[2] > 1024.0f;
+}
+
 mf_GameLogic::mf_GameLogic(mf_Player* player)
 	: level_()
 	, particles_manager_()
@@ -63,6 +72,9 @@ mf_GameLogic::mf_GameLogic(mf_Player* player)
 	, powerup_count_(0), bullets_count_(0), enemies_count_(0)
 	, player_sound_(NULL)
 {
+	for( unsigned int i= 0; i< mf_Aircraft::LastType; i++ )
+		aircrafts_models_[i].LoadFromMFMD( mf_Models::aircraft_models[i] );
+
 	PlacePowerups();
 	SpawnEnemy();
 
@@ -86,21 +98,52 @@ void mf_GameLogic::Tick( float dt )
 	for( unsigned int i= 0; i< bullets_count_; )
 	{
 		mf_Bullet* bullet= bullets_ + i;
-		if( bullet->velocity == mfInf() )
+		float intersection_pos[3];
+		bool is_intersection= level_.BeamIntersectTerrain( bullet->pos, bullet->dir, bullet->velocity * dt, false, intersection_pos );
+
+		// search intersection with enemies
+		for( unsigned int e= 0; e< enemies_count_; e++ )
 		{
-			float pos[3];
-			if( level_.BeamIntersectTerrain( bullet->pos, bullet->dir, false, pos ) )
+			float aircraft_space_dir[3];
+			float aircraft_space_pos[3];
+			float aircraft_space_hit_pos[3];
+			mf_Aircraft* enemy_aircraft= enemies_[e]->GetAircraft();
+
+			float pos_relative_aircraft[3];
+			Vec3Sub( bullet->pos, enemy_aircraft->Pos(), pos_relative_aircraft );
+
+			for( unsigned int j= 0; j< 3; j++ )
 			{
-				particles_manager_.AddBulletTerrainHit( pos );
+				aircraft_space_pos[j]= Vec3Dot( pos_relative_aircraft, enemy_aircraft->AxisVec(j) );
+				aircraft_space_dir[j]= Vec3Dot( bullet->dir, enemy_aircraft->AxisVec(j) );
 			}
+
+			if( aircrafts_models_[enemy_aircraft->GetType()].BeamIntersectModel( aircraft_space_pos, aircraft_space_dir, aircraft_space_hit_pos ) )
+			{
+				for( unsigned int j= 0; j< 3; j++ )
+					intersection_pos[j]=
+						enemy_aircraft->AxisVec(0)[j] * aircraft_space_hit_pos[0] +
+						enemy_aircraft->AxisVec(1)[j] * aircraft_space_hit_pos[1] +
+						enemy_aircraft->AxisVec(2)[j] * aircraft_space_hit_pos[2] +
+						enemy_aircraft->Pos()[j];
+				is_intersection= true;
+			}
+		}
+
+		if( is_intersection )
+			particles_manager_.AddBulletTerrainHit( intersection_pos );
+
+		if( is_intersection || bullet->velocity == mfInf() || IsBulletOutsideWorld(bullet->pos) )
+		{
 			if( i != bullets_count_ - 1 )
 				*bullet= bullets_[ bullets_count_ - 1 ];
 			bullets_count_--;
 			continue;
 		}
-		else
-		{
-		}
+	
+		float d_pos[3];
+		Vec3Mul( bullet->dir, dt * bullet->velocity, d_pos );
+		Vec3Add( bullet->pos, d_pos );
 		i++;
 	}
 
@@ -177,8 +220,8 @@ void mf_GameLogic::PlayerShot( const float* dir )
 	mf_Bullet* bullet= &bullets_[ bullets_count_ ];
 	bullet->type= mf_Bullet::ChaingunBullet;
 	bullet->owner= player_->GetAircraft();
-	VEC3_CPY( bullet->pos, bullet->owner->Pos() );
-	VEC3_CPY( bullet->dir, dir );
+	VEC3_CPY( bullet->pos, /*bullet->owner->Pos()*/player_->Pos() );
+	Vec3Normalize( dir, bullet->dir );//VEC3_CPY( bullet->dir, dir );
 	bullet->velocity= mfInf();
 
 	bullets_count_++;
