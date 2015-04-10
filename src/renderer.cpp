@@ -999,7 +999,7 @@ void mf_Renderer::GenClouds()
 	sky_clouds_data_.clouds_gen_shader.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
 	sky_clouds_data_.clouds_gen_shader.UniformFloat( "horizont", c_horizont_height );
 
-	glDisable( GL_DEPTH_TEST );
+	glDisable( GL_DEPTH_TEST );;
 	sky_clouds_data_.vbo.Bind();
 	for( unsigned int i= 0; i< 6; i++ )
 	{
@@ -1013,8 +1013,23 @@ void mf_Renderer::GenClouds()
 		static const float rot_angle[]= { MF_PI2, -MF_PI2, 0.0f, MF_PI, 0.0f };
 		Mat4RotateZ( mat, rot_angle[i] );
 		sky_clouds_data_.clouds_gen_shader.UniformMat4( "mat", mat );
+
 		if( i != 5 ) // do not draw lower side
-			glDrawArrays( GL_TRIANGLES, i * 6, 6 );
+		{
+			glEnable( GL_SCISSOR_TEST );
+			for( unsigned int x= 0; x< 8; x++ )
+				for( unsigned int y= 0; y< 8; y++ )
+				{
+					glScissor( x * generation_texture_size / 8, y * generation_texture_size / 8,
+						generation_texture_size / 8, generation_texture_size / 8 );
+					glDrawArrays( GL_TRIANGLES, i * 6, 6 );
+				}
+
+			//glScissor( 0, 0,
+			//			generation_texture_size / 8, generation_texture_size / 8 );
+			//glDrawArrays( GL_TRIANGLES, i * 6, 6 );
+			glDisable( GL_SCISSOR_TEST );
+		}
 
 		glBindFramebuffer( GL_FRAMEBUFFER, cubemap_fbo_id );
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, cubemap_tex_id, 0 );
