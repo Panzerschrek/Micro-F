@@ -245,7 +245,7 @@ void mf_DrawingModel::CalculateBoundingBox()
 	bounding_sphere_radius_= 0.5f * Distance( bounding_box_max_, bounding_box_min_ );
 }
 
-bool mf_DrawingModel::BeamIntersectModel( const float* beam_point, const float* beam_dir, float* out_pos_opt ) const
+bool mf_DrawingModel::BeamIntersectModel( const float* beam_point, const float* beam_dir, float max_distance, float* out_pos_opt ) const
 {
 	float min_distance= 1e24f;
 	bool is_intersection= false;
@@ -269,6 +269,9 @@ bool mf_DrawingModel::BeamIntersectModel( const float* beam_point, const float* 
 		float vec_to_intersection_point[3];
 		Vec3Mul( beam_dir, t, vec_to_intersection_point );
 		Vec3Add( vec_to_intersection_point, beam_point, beam_with_plane_intersection_point );
+
+		if( Vec3Dot( vec_to_intersection_point, beam_dir ) < 0.0f ) continue;
+		if( Distance( beam_with_plane_intersection_point, beam_point ) > max_distance ) continue;
 
 		float cross_normal_dots[3];
 		for( unsigned int j= 0; j< 3; j++ )

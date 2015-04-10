@@ -47,7 +47,7 @@ public:
 	const float* BoundingSphereCenter() const;
 	float BoundingSphereRadius() const;
 
-	bool BeamIntersectModel( const float* beam_point, const float* beam_dir, float* out_pos_opt ) const;
+	bool BeamIntersectModel( const float* beam_point, const float* beam_dir, float max_distance, float* out_pos_opt ) const;
 
 private:
 	mf_DrawingModelVertex* vertices_;

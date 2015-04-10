@@ -99,7 +99,8 @@ void mf_GameLogic::Tick( float dt )
 	{
 		mf_Bullet* bullet= bullets_ + i;
 		float intersection_pos[3];
-		bool is_intersection= level_.BeamIntersectTerrain( bullet->pos, bullet->dir, bullet->velocity * dt, false, intersection_pos );
+		float bullet_travle_distance= dt * bullet->velocity;
+		bool is_intersection= level_.BeamIntersectTerrain( bullet->pos, bullet->dir, bullet_travle_distance, false, intersection_pos );
 
 		// search intersection with enemies
 		for( unsigned int e= 0; e< enemies_count_; e++ )
@@ -118,7 +119,7 @@ void mf_GameLogic::Tick( float dt )
 				aircraft_space_dir[j]= Vec3Dot( bullet->dir, enemy_aircraft->AxisVec(j) );
 			}
 
-			if( aircrafts_models_[enemy_aircraft->GetType()].BeamIntersectModel( aircraft_space_pos, aircraft_space_dir, aircraft_space_hit_pos ) )
+			if( aircrafts_models_[enemy_aircraft->GetType()].BeamIntersectModel( aircraft_space_pos, aircraft_space_dir, bullet_travle_distance, aircraft_space_hit_pos ) )
 			{
 				for( unsigned int j= 0; j< 3; j++ )
 					intersection_pos[j]=
@@ -142,7 +143,7 @@ void mf_GameLogic::Tick( float dt )
 		}
 	
 		float d_pos[3];
-		Vec3Mul( bullet->dir, dt * bullet->velocity, d_pos );
+		Vec3Mul( bullet->dir, bullet_travle_distance, d_pos );
 		Vec3Add( bullet->pos, d_pos );
 		i++;
 	}
@@ -221,7 +222,7 @@ void mf_GameLogic::PlayerShot( const float* dir )
 	bullet->type= mf_Bullet::ChaingunBullet;
 	bullet->owner= player_->GetAircraft();
 	VEC3_CPY( bullet->pos, /*bullet->owner->Pos()*/player_->Pos() );
-	Vec3Normalize( dir, bullet->dir );//VEC3_CPY( bullet->dir, dir );
+	Vec3Normalize( dir, bullet->dir );
 	bullet->velocity= mfInf();
 
 	bullets_count_++;

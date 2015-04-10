@@ -141,16 +141,6 @@ inline const float mf_Player::Fov() const
 	return fov_;
 }
 
-inline void mf_Player::RotateX( float pixel_delta )
-{
-	angle_[0]+= pixel_delta * 0.01f;
-}
-
-inline void mf_Player::RotateZ( float pixel_delta )
-{
-	angle_[2]+= pixel_delta * 0.01f;
-}
-
 inline void mf_Player::SetPos( float x, float y, float z )
 {
 	pos_[0]= x; pos_[1]= y; pos_[2]= z;

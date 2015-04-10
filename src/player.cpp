@@ -122,6 +122,16 @@ void mf_Player::Tick( float dt )
 	}
 }
 
+void mf_Player::RotateX( float pixel_delta )
+{
+	angle_[0]+= pixel_delta * 0.01f * mf_Math::sqrt( mf_Math::tan( fov_ * 0.5f ) );
+}
+
+void mf_Player::RotateZ( float pixel_delta )
+{
+	angle_[2]+= pixel_delta * 0.01f * mf_Math::sqrt( mf_Math::tan( fov_ * 0.5f ) );
+}
+
 void mf_Player::ScreenPointToWorldSpaceVec( unsigned int x, unsigned int y,  float* out_vec ) const
 {
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
