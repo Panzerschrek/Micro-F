@@ -254,7 +254,7 @@ void mf_GameLogic::PlacePowerups()
 
 void mf_GameLogic::SpawnEnemy()
 {
-	mf_Enemy* enemy= new mf_Enemy( mf_Aircraft::F2XXX, 100 );
+	mf_Enemy* enemy= new mf_Enemy( mf_Aircraft::F2XXX, 100, player_->GetAircraft() );
 	float spawn_pos[]= { float(level_.TerrainSizeX()/2) * level_.TerrainCellSize(), 0.0f, level_.TerrainAmplitude() };
 	enemy->GetAircraft()->SetPos( spawn_pos );
 	enemies_[ enemies_count_ ]= enemy;
