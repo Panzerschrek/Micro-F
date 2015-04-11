@@ -767,8 +767,12 @@ void mf_Renderer::CreateWaterReflectionFramebuffer()
 
 void mf_Renderer::CreateShadowmapFramebuffer()
 {
-	shadowmap_fbo_.sun_azimuth= -MF_PI3;
-	shadowmap_fbo_.sun_elevation= MF_PI4;
+	static const float sun_azimuth_table [ mf_Settings::LastDaytime ]=
+		{ -MF_PI2 - MF_PI12, -MF_PI2 - MF_PI4, -MF_PI + MF_PI12, MF_PI2 + MF_PI4, MF_PI2 + MF_PI12, /*night*/MF_PI4 };
+	static const float sun_elevation_table [ mf_Settings::LastDaytime ]=
+		{ MF_PI12, MF_PI6, MF_PI4, MF_PI6, MF_PI12, MF_PI4 };
+	shadowmap_fbo_.sun_azimuth= sun_azimuth_table[ settings_.daytime ];
+	shadowmap_fbo_.sun_elevation= sun_elevation_table[ settings_.daytime ];
 
 	SphericalCoordinatesToVec( shadowmap_fbo_.sun_azimuth, shadowmap_fbo_.sun_elevation, shadowmap_fbo_.sun_vector );
 

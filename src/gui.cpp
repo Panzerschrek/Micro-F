@@ -442,7 +442,7 @@ void mf_Gui::PrepareMenus()
 	menu->text_count++;
 	// daytime button text
 	text= &menu->buttons[0].text;
-	strcpy( text->text, day_times[0] );
+	strcpy( text->text, day_times[1] );
 	text->size= 2;
 	text->colomn= screen_size_cl[0]/2;
 	text->row= 4;
@@ -454,7 +454,7 @@ void mf_Gui::PrepareMenus()
 	button->width=  text->size * cell_size[0] * c_settings_button_width - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnChangeDayTimeButton;
-	button->user_data= 0;
+	button->user_data= 1;
 	menu->button_count++;
 
 	// hdr
@@ -1053,6 +1053,7 @@ void mf_Gui::OnPlayButton()
 	settings.terrain_quality= mf_Settings::QualityMedium;
 	settings.sky_quality= mf_Settings::Quality( menus_[ SettingsMenu ].buttons[3].user_data );
 	settings.clouds_intensity= mf_Settings::CloudsIntensity( menus_[ SettingsMenu ].buttons[2].user_data );
+	settings.daytime= mf_Settings::Daytime( menus_[ SettingsMenu ].buttons[0].user_data );
 
 	main_loop_->Play( &settings );
 	current_menu_= &menus_[ InGame ];
