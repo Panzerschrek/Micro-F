@@ -601,12 +601,13 @@ const char* const clouds_shader_v=
 const char* const clouds_shader_f=
 "#version 330\n"
 "uniform samplerCube tex;"
+"uniform float l;"
 "in vec3 fp;"
 "out vec4 c_;"
 "void main()"
 "{"
 	"vec4 c=texture(tex,vec3(fp.xy,fp.z*0.95+0.05));"
-	"c_=vec4(c.xyz,c.a*smoothstep(0.05,0.15,fp.z));"
+	"c_=vec4(l*c.xyz,c.a*smoothstep(0.05,0.15,fp.z));"
 "}";
 
 const char* const stars_shader_v=
@@ -692,12 +693,18 @@ const char* const tonemapping_shader_v=
 "noperspective out float b;"
 "void main()"
 "{"
-	"float bsum=0.0;"
+	/*"float bsum=0.0;"
 	"int ts=textureSize(btex,0).x;"
 	"for(int i=0; i< ts; i++)"
 	"bsum+=float(ts-i)*texelFetch(btex,ivec2((bhn-i)%ts,0),0).x;"
 	"bsum=bsum/float(ts*ts/2);"
-	"b=log(0.5)*clamp(1.0/bsum,0.0005,20.0);"
+	"b=log(0.5)*clamp(1.0/bsum,0.0005,20.0);"*/
+
+	//"int ts=textureSize(btex,0).x;"
+	//"b=log(0.5)*clamp(1.0/texelFetch(btex,ivec2((bhn)%ts,0),0).x,0.0005,20.0);"
+	"int ts=textureSize(btex,0).x;"
+	"b=-texelFetch(btex,ivec2((bhn)%ts,0),0).x;"
+
 	"ftc=coord[gl_VertexID];"
 	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
 "}";
@@ -777,23 +784,70 @@ const char* const brightness_computing_shader_v=
 const char* const brightness_computing_shader_f=
 "#version 330\n"
 "uniform sampler2D tex;" // input texture with full histogram
-"uniform float pins[20];" // borders for pins
+"const int MF_HDR_HISTOGRAM_BINS= 32;"
+"uniform float pins[MF_HDR_HISTOGRAM_BINS];" // borders for pins
 "out vec4 c_;"
 "void main()"
 "{"
-	"float sum_brightness= (0.0 + pins[0])*0.5 * texelFetch(tex,ivec2(0,0),0).x;"
 	"const vec4 component_mask[4]= vec4[4]"
 	"("
 		"vec4(1.0,0.0,0.0,0.0),"
 		"vec4(0.0,1.0,0.0,0.0),"
 		"vec4(0.0,0.0,1.0,0.0),"
 		"vec4(0.0,0.0,0.0,1.0)"
-		");"
-	"for(int i=1;i<20;i++)"
+	");"
+	"float full_sum= pins[0] * texelFetch(tex,ivec2(0,0),0).x;" // full_sum - is max brightness
+	"for(int i=1;i<MF_HDR_HISTOGRAM_BINS;i++)"
+		"full_sum+=(pins[i] - pins[i-1]) * dot(texelFetch(tex,ivec2(i/4,0),0), component_mask[i&3]);"
+	"float portion_sum= pins[0]/full_sum * texelFetch(tex,ivec2(0,0),0).x;"
+	"float brightness_95=pins[MF_HDR_HISTOGRAM_BINS-1];"
+	"for(int i=1;i<MF_HDR_HISTOGRAM_BINS;i++)"
 	"{"
-		"sum_brightness+= (pins[i-1] + pins[i]) * 0.5 * dot(texelFetch(tex,ivec2(i/4,0),0), component_mask[i&3]);"
+		"float sum_add= (pins[i] - pins[i-1]) / full_sum * dot(texelFetch(tex,ivec2(i/4,0),0), component_mask[i&3]);"
+		"if( sum_add + portion_sum >= 0.95 )"
+		"{"
+		"brightness_95= mix( pins[i-1], pins[i], (0.95 - portion_sum) / sum_add );"
+			"break;"
+		"}"
+		"portion_sum+= sum_add;"
 	"}"
-	"c_=vec4(sum_brightness,sum_brightness,sum_brightness,sum_brightness);"
+	"float k = 0.69 / brightness_95;"
+	"c_=vec4(k,k,k,k);"
+"}";
+
+const char* const histogram_show_shader_v=
+"#version 330\n"
+"const vec2 coord[6]=vec2[6]"
+"("
+	"vec2(0.0,0.0),vec2(1.0,0.0),vec2(1.0,1.0),"
+	"vec2(0.0,0.0),vec2(0.0,1.0),vec2(1.0,1.0)"
+");"
+"out vec2 ftc;"
+"void main()"
+"{"
+	"ftc=coord[gl_VertexID];"
+	"gl_Position=vec4(coord[gl_VertexID]*0.5 + 0.5,0.0,1.0);"
+"}";
+
+const char* const histogram_show_shader_f=
+"#version 330\n"
+"uniform sampler2D tex;" // input texture with full histogram
+"in vec2 ftc;"
+"out vec4 c_;"
+"void main()"
+"{"
+	"int ts=textureSize(tex,0).x;"
+	"int tcx= int(float(ts)*4.0*ftc.x);"
+	"const vec4 component_mask[4]= vec4[4]"
+	"("
+		"vec4(1.0,0.0,0.0,0.0),"
+		"vec4(0.0,1.0,0.0,0.0),"
+		"vec4(0.0,0.0,1.0,0.0),"
+		"vec4(0.0,0.0,0.0,1.0)"
+	");"
+	"float c=dot(texelFetch(tex,ivec2(tcx/4,0),0),component_mask[tcx&3]);"
+	"c=1.0-step(c,ftc.y);"
+	"c_=c*0.5*(component_mask[tcx&3]+vec4(1.0,1.0,1.0,1.0));"
 "}";
 
 const char* const clouds_gen_shader_v=

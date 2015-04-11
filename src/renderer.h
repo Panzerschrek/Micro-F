@@ -14,7 +14,7 @@ class mf_GameLogic;
 
 #define MF_MAX_AIRCRAFT_MODELS 32
 
-#define MF_HDR_HISTOGRAM_BINS 20
+#define MF_HDR_HISTOGRAM_BINS 32
 
 class mf_Renderer
 {
@@ -123,6 +123,9 @@ private:
 		mf_GLSLProgram histogram_write_shader; // write this pixel to histogram data
 		mf_GLSLProgram brightness_computing_shader; // compute brightness - write to history
 		mf_GLSLProgram tonemapping_shader; // draw fullscreen quad
+
+		// for debugging
+		mf_GLSLProgram histogram_show_shader;
 	} hdr_data_;
 
 	struct

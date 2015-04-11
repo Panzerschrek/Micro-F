@@ -129,10 +129,14 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	hdr_data_.histogram_write_shader.FindUniform( "tex" ); // texture with histogram values from previous pass
 	hdr_data_.histogram_write_shader.FindUniform( "p" ); // input position
 
+	// brightness compute shader
 	hdr_data_.brightness_computing_shader.Create( mf_Shaders::brightness_computing_shader_v, mf_Shaders::brightness_computing_shader_f );
 	hdr_data_.brightness_computing_shader.FindUniform( "tex" ); // texture with histogram
 	hdr_data_.brightness_computing_shader.FindUniform( "pins" ); // pins values of histogram
 	hdr_data_.brightness_computing_shader.FindUniform( "p" ); // input position
+
+	hdr_data_.histogram_show_shader.Create( mf_Shaders::histogram_show_shader_v, mf_Shaders::histogram_show_shader_f );
+	hdr_data_.histogram_show_shader.FindUniform( "tex" );
 
 	// prepare terrain shader
 	terrain_shader_.SetAttribLocation( "p", 0 );
@@ -223,7 +227,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		char frag_shader[512];
 		// select different color konvertion k for hdr and ldr
 		sprintf( frag_shader, mf_Shaders::sky_shader_f, settings_.use_hdr
-			? "clrYxy[0]=clrYxy [0]/100.0;"
+			? "clrYxy[0]=clrYxy [0]/50.0;"
 			: "clrYxy[0]=1.0-exp(-clrYxy[0]/25.0);" );
 
 		sky_shader_.SetAttribLocation( "p", 0 );
@@ -269,6 +273,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	sky_clouds_data_.clouds_shader.SetAttribLocation( "p", 0 );
 	sky_clouds_data_.clouds_shader.Create( mf_Shaders::clouds_shader_v, mf_Shaders::clouds_shader_f );
 	sky_clouds_data_.clouds_shader.FindUniform( "tex" );
+	sky_clouds_data_.clouds_shader.FindUniform( "l" );
 	sky_clouds_data_.clouds_shader.FindUniform( "mat" );
 
 	GenTerrainMesh();
@@ -753,6 +758,16 @@ void mf_Renderer::DrawFrame()
 		glDisable( GL_DEPTH_TEST );
 		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
 		glEnable( GL_DEPTH_TEST );
+
+
+		// draw histogram
+		hdr_data_.histogram_show_shader.Bind();
+		glActiveTexture( GL_TEXTURE1 );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_tex_id );
+		hdr_data_.histogram_show_shader.UniformInt( "tex", 1 );
+		glDisable( GL_DEPTH_TEST );
+		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
+		glEnable( GL_DEPTH_TEST );
 	}
 
 #ifdef MF_DEBUG
@@ -924,7 +939,7 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 	for( unsigned int i= 0; i< MF_HDR_HISTOGRAM_BINS; i++ )
 	{
 		startup_histogram_data[i]= (unsigned char)( 255 / MF_HDR_HISTOGRAM_BINS );
-		hdr_data_.histogram_edges[i]= 3.0f * float(i) / float(MF_HDR_HISTOGRAM_BINS);
+		hdr_data_.histogram_edges[i]= 1.0f * float(i) / float(MF_HDR_HISTOGRAM_BINS);
 	}
 
 	glGenTextures( 1, &hdr_data_.histogram_tex_id );
@@ -947,7 +962,7 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 	/*
 	BRIGHTNESS HISTORY
 	*/
-	hdr_data_.brightness_history_tex_size= 8;
+	hdr_data_.brightness_history_tex_size= 2;
 	hdr_data_.current_brightness_history_pixel= 0;
 
 	glGenTextures( 1, &hdr_data_.brightness_history_tex_id );
@@ -1935,7 +1950,7 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 
 	sun_shader_.UniformMat4( "mat", mat );
 
-	float sprite_size= 4.0f * (64.0f/1024.0f) / mf_Math::tan(player_->Fov() * 0.5f);
+	float sprite_size= (64.0f/1024.0f) / mf_Math::tan(player_->Fov() * 0.5f);
 	if( draw_to_water_framebuffer )
 		sprite_size*= float(water_reflection_fbo_.size[1]);
 	else
@@ -1943,11 +1958,10 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	sun_shader_.UniformFloat( "s", sprite_size );
 
 	glActiveTexture( GL_TEXTURE0 );
-	//glBindTexture( GL_TEXTURE_2D, sun_texture_ );
-	glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_fetch_color_tex_id );
+	glBindTexture( GL_TEXTURE_2D, sun_texture_ );
 	sun_shader_.UniformInt( "tex", 0 );
 
-	sun_shader_.UniformFloat( "i", 4.0f ); // sun light intencity
+	sun_shader_.UniformFloat( "i", settings_.use_hdr ? 8.0f : 4.0f ); // sun light intencity
 
 	glEnable( GL_PROGRAM_POINT_SIZE );
 	glEnable( GL_BLEND );
@@ -1974,6 +1988,8 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 		glActiveTexture( GL_TEXTURE0 );
 		glBindTexture( GL_TEXTURE_CUBE_MAP, sky_clouds_data_.clouds_cubemap_tex_id );
 		sky_clouds_data_.clouds_shader.UniformInt( "tex", 0 );
+
+		sky_clouds_data_.clouds_shader.UniformFloat( "l", settings_.use_hdr ? 2.0f : 1.0f );
 
 		glEnable( GL_BLEND );
 		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
