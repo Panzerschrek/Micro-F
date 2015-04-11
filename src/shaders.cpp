@@ -605,7 +605,8 @@ const char* const clouds_shader_f=
 "out vec4 c_;"
 "void main()"
 "{"
-	"c_=texture(tex,vec3(fp.xy,fp.z*0.95+0.05));"
+	"vec4 c=texture(tex,vec3(fp.xy,fp.z*0.95+0.05));"
+	"c_=vec4(c.xyz,c.a*smoothstep(0.05,0.15,fp.z));"
 "}";
 
 const char* const stars_shader_v=
