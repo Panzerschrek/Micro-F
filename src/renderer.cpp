@@ -138,6 +138,9 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	hdr_data_.histogram_show_shader.Create( mf_Shaders::histogram_show_shader_v, mf_Shaders::histogram_show_shader_f );
 	hdr_data_.histogram_show_shader.FindUniform( "tex" );
 
+	hdr_data_.histogram_buffer_show_shader.Create( mf_Shaders::histogram_buffer_show_shader_v, mf_Shaders::histogram_buffer_show_shader_f );
+	hdr_data_.histogram_buffer_show_shader.FindUniform( "tex" );
+
 	// prepare terrain shader
 	terrain_shader_.SetAttribLocation( "p", 0 );
 	terrain_shader_.Create( mf_Shaders::terrain_shader_v, mf_Shaders::terrain_shader_f );
@@ -765,6 +768,16 @@ void mf_Renderer::DrawFrame()
 		glActiveTexture( GL_TEXTURE1 );
 		glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_tex_id );
 		hdr_data_.histogram_show_shader.UniformInt( "tex", 1 );
+		glDisable( GL_DEPTH_TEST );
+		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
+		glEnable( GL_DEPTH_TEST );
+
+		//draw histogram buffer
+		hdr_data_.histogram_buffer_show_shader.Bind();
+
+		glActiveTexture( GL_TEXTURE1 );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_fetch_color_tex_id );
+		hdr_data_.histogram_buffer_show_shader.UniformInt( "tex", 1 );
 		glDisable( GL_DEPTH_TEST );
 		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
 		glEnable( GL_DEPTH_TEST );

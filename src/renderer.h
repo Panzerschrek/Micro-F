@@ -14,7 +14,8 @@ class mf_GameLogic;
 
 #define MF_MAX_AIRCRAFT_MODELS 32
 
-#define MF_HDR_HISTOGRAM_BINS 32
+// if it schanged, it must be changed int shaders.cpp too
+#define MF_HDR_HISTOGRAM_BINS 20
 
 class mf_Renderer
 {
@@ -126,6 +127,7 @@ private:
 
 		// for debugging
 		mf_GLSLProgram histogram_show_shader;
+		mf_GLSLProgram histogram_buffer_show_shader;
 	} hdr_data_;
 
 	struct
