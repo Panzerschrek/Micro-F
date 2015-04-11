@@ -10,25 +10,25 @@ public:
 	{
 		ModeDisabled,
 		ModeKillRotation,
-		ModeHorizontalFlight,
-		ModeAzimuthChange // turn to target
+		ModeReachAltitude
 	};
 
 	mf_Autopilot( const mf_Aircraft* aircraft );
 	~mf_Autopilot();
 
 	void SetMode( Mode mode );
-	void SetTargetAzimuth( float azimuth ); // for ModeAzimuthChange
+	void SetTargetAltitude( float altitude );
 
 	void GetControlResult( float* in_out_pitch_factor, float* in_out_yaw_factor, float* in_out_roll_factor );
 private:
 
 	Mode mode_;
 	const mf_Aircraft* aircraft_;
-	float azimuth_;
+
+	float target_altitude_;
 };
 
-inline void mf_Autopilot::SetTargetAzimuth( float azimuth )
+inline void mf_Autopilot::SetTargetAltitude( float altitude )
 {
-	azimuth_= azimuth;
+	target_altitude_= altitude;
 }
