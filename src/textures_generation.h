@@ -43,6 +43,7 @@ enum mf_ParticleTexture
 	TextureEngineSmoke,
 	TextureEngineFire,
 	TextureEnginePlasma,
+	TexturePowerupGlow,
 	LastParticleTexture
 };
 

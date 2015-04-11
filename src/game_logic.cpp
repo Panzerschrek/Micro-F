@@ -191,6 +191,12 @@ void mf_GameLogic::Tick( float dt )
 	particles_manager_.AddEnginesTrail( player_->GetAircraft() );
 	for( unsigned int i= 0; i< enemies_count_; i++ )
 		particles_manager_.AddEnginesTrail( enemies_[i]->GetAircraft() );
+	for( unsigned int i= 0; i< powerup_count_; i++ )
+	{
+		float glow_factor= ( Distance( player_->GetAircraft()->Pos(), powerups_[i].pos ) - 128.0f ) / 512.0f;
+		glow_factor= mf_Math::clamp( 0.0f, 1.0f, glow_factor );
+		particles_manager_.AddPowerupGlow( powerups_[i].pos , glow_factor );
+	}
 
 	// sound
 	for( unsigned int i= 0; i< enemies_count_ + 1; i++ )

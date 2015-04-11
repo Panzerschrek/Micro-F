@@ -39,6 +39,7 @@ public:
 	void AddEnginesTrail( const mf_Aircraft* aircraft );
 	void AddBulletTerrainHit( const float* pos );
 	void AddBlast( const float* pos );
+	void AddPowerupGlow( const float* pos, float glow_factor /* in range 0 - 1*/ );
 
 	unsigned int GetParticlesCount() const;
 	void PrepareParticlesVertices( mf_ParticleVertex* out_vertices ) const;
@@ -52,6 +53,7 @@ private:
 		{
 			JetEngineTrail,
 			PlasmaEngineTrail,
+			PowerupGlow,
 			LastType
 		};
 		Type type;

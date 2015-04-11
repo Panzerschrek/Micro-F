@@ -99,6 +99,20 @@ void mf_ParticlesManager::AddBulletTerrainHit( const float* pos )
 	particle_count_+= 128;
 }
 
+void mf_ParticlesManager::AddPowerupGlow( const float* pos, float glow_factor )
+{
+	Particle* particle= particles_ + particle_count_;
+
+	VEC3_CPY( particle->pos, pos );
+	particle->velocity= 0.0f;
+	particle->acceleration= 0.0f;
+	particle->type= Particle::PowerupGlow;
+	particle->spawn_time= current_tick_time_;
+	particle->life_time= -glow_factor; // hack, write it to lifetime
+
+	particle_count_++;
+}
+
 void mf_ParticlesManager::PrepareParticlesVertices( mf_ParticleVertex* out_vertices ) const
 {
 	const Particle* particle= particles_;
@@ -134,6 +148,15 @@ void mf_ParticlesManager::PrepareParticlesVertices( mf_ParticleVertex* out_verti
 				vertex->t_dt_lt_r[0]= 0;
 				vertex->t_dt_lt_r[1]= 0;
 				vertex->t_dt_lt_r[2]= TextureEnginePlasma;
+			}
+			break;
+		case Particle::PowerupGlow:
+			{
+				vertex->pos_size[3]= 8.0f;
+				vertex->luminance= -particle->life_time;
+				vertex->t_dt_lt_r[0]= 0;
+				vertex->t_dt_lt_r[1]= 0;
+				vertex->t_dt_lt_r[2]= TexturePowerupGlow;
 			}
 			break;
 		default: break;
