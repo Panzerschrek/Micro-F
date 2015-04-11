@@ -35,6 +35,7 @@ enum mf_StaticLevelObjectTexture
 	TextureSpruceBark,
 	TextureSpruceBranch,
 	TextureBirchBark,
+	TextureBirchLeafs,
 	LastStaticLevelObjectTexture
 };
 

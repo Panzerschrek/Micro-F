@@ -668,7 +668,7 @@ void GenOakTexture( mf_Texture* tex )
 	SetAlphaToOne( tex );
 }
 
-void GenOakLeafsTexture( mf_Texture* tex )
+void GenLeafs( mf_Texture* tex, const float* base_color, float color_delta )
 {
 	mf_Rand randomizer;
 
@@ -682,12 +682,11 @@ void GenOakLeafsTexture( mf_Texture* tex )
 	static const float clamp_green[]= { 0.0f, 1.0f, 0.0f, 100500.0f };
 	tex->Min(clamp_green);
 
-	static const float leaf_color[]= { 0.08f, 0.45f, 0.09f, 1.0f };
 	const unsigned int c_random_leaf_colors_count= 64;
 	float random_colors[c_random_leaf_colors_count][4];
 	for( unsigned int i= 0; i< c_random_leaf_colors_count; i++ )
 		for( unsigned int j= 0; j< 3; j++ )
-			random_colors[i][j]= leaf_color[j] + randomizer.RandF(0.15f);
+			random_colors[i][j]= base_color[j] + randomizer.RandF( color_delta );
 	
 	float* data= tex->GetData();
 	for( unsigned int i= 0; i< tex->SizeX() * tex->SizeY(); i++, data+= 4 )
@@ -709,6 +708,18 @@ void GenOakLeafsTexture( mf_Texture* tex )
 	tex->Mul( &circle );
 }
 
+void GenOakLeafsTexture( mf_Texture* tex )
+{
+	static const float leaf_color[]= { 0.28f, 0.45f, 0.09f, 1.0f };
+	GenLeafs( tex, leaf_color, 0.2f );
+}
+
+void GenBirchLeafsTexture( mf_Texture* tex )
+{
+	static const float leaf_color[]= { 0.18f, 0.42f, 0.09f, 1.0f };
+	GenLeafs( tex, leaf_color, 0.15f );
+}
+
 void GenSpruceTexture( mf_Texture* tex )
 {
 	static const float bark_color[]= { 0.356f, 0.18f, 0.03f, 1.0f };
@@ -724,7 +735,7 @@ void GenSpruceBranch_r( mf_Texture* tex, float size, float ang, float* pos, int 
 {
 	mf_Rand randomizer;
 
-	static const float color[]= { 0.392f, 0.235f, 0.039f, 1.0f };
+	static const float color[]= { 0.492f, 0.335f, 0.139f, 1.0f };
 	static const float needle_color[]= { 0.019f, 0.3137f, 0.019f, 1.0f };
 	float final_color[4];
 	final_color[3]= 1.0f;
@@ -929,7 +940,8 @@ void (* const static_level_object_texture_gen_func[LastStaticLevelObjectTexture]
 	GenOakLeafsTexture,
 	GenSpruceTexture,
 	GenSpruceBranch,
-	GenBirchBarkTexture
+	GenBirchBarkTexture,
+	GenBirchLeafsTexture
 };
 
 void (* const particles_texture_gen_func[LastParticleTexture])(mf_Texture* t)=
