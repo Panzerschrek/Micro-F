@@ -31,6 +31,8 @@ public:
 	void UniformMat3Array( const char* name, unsigned int count, const float* mat );
 	void UniformVec3 ( const char* name, const float* v );
 	void UniformVec3Array( const char* name, unsigned int count, const float* v );
+	void UniformVec4 ( const char* name, const float* v );
+	void UniformVec4Array( const char* name, unsigned int count, const float* v );
 	void UniformFloat( const char* name, float f );
 	void UniformFloatArray( const char* name, unsigned int count, const float* f );
 

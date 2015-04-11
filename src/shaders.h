@@ -61,10 +61,12 @@ extern const char* const particles_shader_f;
 
 extern const char* const tonemapping_shader_v;
 extern const char* const tonemapping_shader_f;
-extern const char* const brightness_fetch_shader_v;
-extern const char* const brightness_fetch_shader_f;
-extern const char* const brightness_history_write_shader_v;
-extern const char* const brightness_history_write_shader_f;
+extern const char* const histogram_fetch_shader_v;
+extern const char* const histogram_fetch_shader_f;
+extern const char* const histogram_write_shader_v;
+extern const char* const histogram_write_shader_f;
+extern const char* const brightness_computing_shader_v;
+extern const char* const brightness_computing_shader_f;
 
 extern const char* const clouds_gen_shader_v;
 extern const char* const clouds_gen_shader_f;

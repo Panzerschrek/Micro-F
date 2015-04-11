@@ -388,8 +388,6 @@ void GenOak( mf_DrawingModel* model )
 	{
 		float radius= 4.0f;
 
-		float angle= randomizer.RandF( MF_2PI );
-
 		float rot_vec[3];
 		float rot_mat[16];
 		for( unsigned int j= 0; j< 3; j++ )

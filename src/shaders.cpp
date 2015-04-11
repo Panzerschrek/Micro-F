@@ -716,7 +716,7 @@ const char* const tonemapping_shader_f=
 	"c_=vec4(c,1.0);"
 "}";
 
-const char* const brightness_fetch_shader_v=
+const char* const histogram_fetch_shader_v=
 "#version 330\n"
 "const vec2 coord[6]=vec2[6]"
 "("
@@ -730,18 +730,26 @@ const char* const brightness_fetch_shader_v=
 	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
 "}";
 
-const char* const brightness_fetch_shader_f=
+const char* const histogram_fetch_shader_f=
 "#version 330\n"
 "uniform sampler2D tex;"
+"uniform vec4 pin[2];" // min and max values of pins
 "in vec2 ftc;"
 "out vec4 c_;"
 "void main()"
 "{"
-	"vec3 c= texture(tex,ftc).xyz;"
-	"c_=vec4((c.x+c.y+c.z)*0.33333,0.0,0.0,1.0);"
+	"float c=dot(texture(tex,ftc).xyz,vec3(0.3333,0.3333,0.3333));"
+	"vec4 cv= vec4(c,c,c,c);"
+	"vec4 cc;"
+	/*"cc.x=step(pin[0].x,c)*step(c,pin[1].x);"
+	"cc.y=step(pin[0].y,c)*step(c,pin[1].y);"
+	"cc.z=step(pin[0].z,c)*step(c,pin[1].z);"
+	"cc.w=step(pin[0].w,c)*step(c,pin[1].w);"
+	"c_=cc;"*/
+	"c_=step(pin[0],cv)*step(cv,pin[1]);"
 "}";
 
-const char* const brightness_history_write_shader_v=
+const char* const histogram_write_shader_v=
 "#version 330\n"
 "uniform float p;" // position to write
 "void main()"
@@ -749,13 +757,43 @@ const char* const brightness_history_write_shader_v=
 	"gl_Position=vec4(p,0.0,0.0,1.0);"
 "}";
 
-const char* const brightness_history_write_shader_f=
+const char* const histogram_write_shader_f=
 "#version 330\n"
-"uniform sampler2D tex;" // input lowres texture with scene brightness
+"uniform sampler2D tex;" // input texture with histogram from one frame
 "out vec4 c_;"
 "void main()"
 "{"
 	"c_=texelFetch(tex,ivec2(0,0),6);"
+"}";
+
+const char* const brightness_computing_shader_v=
+"#version 330\n"
+"uniform float p;" // position to write
+"void main()"
+"{"
+	"gl_Position=vec4(p,0.0,0.0,1.0);"
+"}";
+
+const char* const brightness_computing_shader_f=
+"#version 330\n"
+"uniform sampler2D tex;" // input texture with full histogram
+"uniform float pins[20];" // borders for pins
+"out vec4 c_;"
+"void main()"
+"{"
+	"float sum_brightness= (0.0 + pins[0])*0.5 * texelFetch(tex,ivec2(0,0),0).x;"
+	"const vec4 component_mask[4]= vec4[4]"
+	"("
+		"vec4(1.0,0.0,0.0,0.0),"
+		"vec4(0.0,1.0,0.0,0.0),"
+		"vec4(0.0,0.0,1.0,0.0),"
+		"vec4(0.0,0.0,0.0,1.0)"
+		");"
+	"for(int i=1;i<20;i++)"
+	"{"
+		"sum_brightness+= (pins[i-1] + pins[i]) * 0.5 * dot(texelFetch(tex,ivec2(i/4,0),0), component_mask[i&3]);"
+	"}"
+	"c_=vec4(sum_brightness,sum_brightness,sum_brightness,sum_brightness);"
 "}";
 
 const char* const clouds_gen_shader_v=
