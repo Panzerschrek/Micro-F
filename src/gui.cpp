@@ -261,48 +261,50 @@ void mf_Gui::MouseHover( unsigned int x, unsigned int y )
 
 void mf_Gui::Draw()
 {
-	const mf_Aircraft* aircraft= player_->GetAircraft();
+	if( current_menu_ == &menus_[ InGame ] )
+	{
+		const mf_Aircraft* aircraft= player_->GetAircraft();
 
-	{ // aircraft parameters
-	#ifdef MF_DEBUG
-		char str[256];
-		sprintf( str, "angle of attack: %+2.3f\nlift force k: %+2.3f\npitch/yaw/roll factors: %+1.2f %+1.2f %+1.2f",
-			aircraft->debug_angle_of_attack_deg_, aircraft->debug_cyk_,
-			aircraft->debug_pitch_control_factor_, aircraft->debug_yaw_control_factor_, aircraft->debug_roll_control_factor_ );
-		text_->AddText( 1, 9, 1, mf_Text::default_color, str );
-	#endif
+		{ // aircraft parameters
+		#ifdef MF_DEBUG
+			char str[256];
+			sprintf( str, "angle of attack: %+2.3f\nlift force k: %+2.3f\npitch/yaw/roll factors: %+1.2f %+1.2f %+1.2f",
+				aircraft->debug_angle_of_attack_deg_, aircraft->debug_cyk_,
+				aircraft->debug_pitch_control_factor_, aircraft->debug_yaw_control_factor_, aircraft->debug_roll_control_factor_ );
+			text_->AddText( 1, 9, 1, mf_Text::default_color, str );
+		#endif
+		}
+
+		{ // hp, score
+			unsigned int bottom_row= main_loop_->ViewportHeight() / MF_LETTER_HEIGHT;
+			unsigned int right_column= main_loop_->ViewportWidth() / MF_LETTER_WIDTH;
+			static const unsigned char c_hp_color[3][4]=
+			{
+				{ 64, 220, 64, 0  },
+				{ 220, 220, 64, 0 },
+				{ 220, 64, 64, 0  }
+			};
+			static const unsigned char c_score_color[4]= { 240, 230, 220, 0 };
+
+			unsigned int color_index;
+			if( aircraft->HP() >= 600 ) color_index= 0;
+			else if( aircraft->HP() >= 200 ) color_index= 1;
+			else color_index= 2;
+
+			char hp_str[]= "HP: sdddd";
+			IntToStr( aircraft->HP(), hp_str+4, 4 );
+			text_->AddText( right_column - 20, bottom_row - 2, 2, c_hp_color[color_index], hp_str );
+
+			char score_str[]= "Score: sdddd";
+			IntToStr( player_->Score(), score_str+7, 4 );
+			text_->AddText( right_column - 26, bottom_row - 4, 2, c_score_color, score_str );
+		}
+
+		DrawControlPanel();
+		DrawNaviball();
+		DrawNaviballGlass();
 	}
-
-	{ // hp, score
-		unsigned int bottom_row= main_loop_->ViewportHeight() / MF_LETTER_HEIGHT;
-		unsigned int right_column= main_loop_->ViewportWidth() / MF_LETTER_WIDTH;
-		static const unsigned char c_hp_color[3][4]=
-		{
-			{ 64, 220, 64, 0  },
-			{ 220, 220, 64, 0 },
-			{ 220, 64, 64, 0  }
-		};
-		static const unsigned char c_score_color[4]= { 240, 230, 220, 0 };
-
-		unsigned int color_index;
-		if( aircraft->HP() >= 600 ) color_index= 0;
-		else if( aircraft->HP() >= 200 ) color_index= 1;
-		else color_index= 2;
-
-		char hp_str[]= "HP: sdddd";
-		IntToStr( aircraft->HP(), hp_str+4, 4 );
-		text_->AddText( right_column - 20, bottom_row - 2, 2, c_hp_color[color_index], hp_str );
-
-		char score_str[]= "Score: sdddd";
-		IntToStr( player_->Score(), score_str+7, 4 );
-		text_->AddText( right_column - 26, bottom_row - 4, 2, c_score_color, score_str );
-	}
-
-	DrawControlPanel();
-	DrawNaviball();
-	DrawNaviballGlass();
-	if( current_menu_ != NULL )
-		DrawMenu( current_menu_ );
+	DrawMenu( current_menu_ );
 	DrawCursor();
 }
 
@@ -546,6 +548,14 @@ void mf_Gui::PrepareMenus()
 	button->callback= &mf_Gui::OnSettingsBackButton;
 	button->user_data= 0;
 	menu->button_count++;
+
+	/*
+	INGAME MENU
+	*/
+	menu= &menus_[ InGame ];
+	menu->button_count= 0;
+	menu->text_count= 0;
+	menu->has_backgound= false;
 }
 
 void mf_Gui::DrawControlPanel()
@@ -1045,6 +1055,7 @@ void mf_Gui::OnPlayButton()
 	settings.clouds_intensity= mf_Settings::CloudsIntensity( menus_[ SettingsMenu ].buttons[2].user_data );
 
 	main_loop_->Play( &settings );
+	current_menu_= &menus_[ InGame ];
 }
 
 void mf_Gui::OnSettingsButton()
