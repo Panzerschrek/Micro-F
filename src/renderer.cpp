@@ -936,10 +936,11 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 	hdr_data_.current_histogram_bin= 0;
 
 	unsigned char startup_histogram_data[ MF_HDR_HISTOGRAM_BINS ];
+	const float c_max_light= 2.5f;
 	for( unsigned int i= 0; i< MF_HDR_HISTOGRAM_BINS; i++ )
 	{
 		startup_histogram_data[i]= (unsigned char)( 255 / MF_HDR_HISTOGRAM_BINS );
-		hdr_data_.histogram_edges[i]= 1.0f * float(i) / float(MF_HDR_HISTOGRAM_BINS);
+		hdr_data_.histogram_edges[i]=c_max_light * mf_Math::pow( float(i) / float(MF_HDR_HISTOGRAM_BINS), 1.5f );
 	}
 
 	glGenTextures( 1, &hdr_data_.histogram_tex_id );

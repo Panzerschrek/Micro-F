@@ -837,7 +837,7 @@ const char* const histogram_show_shader_f=
 "void main()"
 "{"
 	"int ts=textureSize(tex,0).x;"
-	"int tcx= int(float(ts)*4.0*ftc.x);"
+	"int tcx= int(float(ts)*4.0*pow(ftc.x,1.5));"
 	"const vec4 component_mask[4]= vec4[4]"
 	"("
 		"vec4(1.0,0.0,0.0,0.0),"
