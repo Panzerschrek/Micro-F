@@ -599,6 +599,16 @@ void GenPowerupGlowParticle( mf_Texture* tex )
 	tex->RadialGradient( tex->SizeX()/2, tex->SizeX()/2, tex->SizeX()/2 - 2, center_color, border_color );
 }
 
+void GenPlasmaBallParticle( mf_Texture* tex )
+{
+	MF_ASSERT( tex->SizeXLog2() == tex->SizeYLog2() );
+
+	static const float color[]= { 1.0f, 0.5f, 0.3f, -0.4f };
+	static const float bright_color[]= { 1.0f*2.0f, 0.5f*2.0f, 0.3f*2.0f, 2.0f };
+	tex->RadialGradient( tex->SizeX()/2, tex->SizeX()/2, tex->SizeX()/2, bright_color, color );
+	tex->FillEllipse( tex->SizeX(), tex->SizeX(), tex->SizeX()/2, g_invisible_color );
+}
+
 void GenForcefieldTexture( mf_Texture* tex )
 {
 	tex->GenHexagonalGrid( float(tex->SizeX()) * (0.5f/1.5f), 2.0f * 1.0f / mf_Math::sqrt(3.0f) );
@@ -949,5 +959,6 @@ void (* const particles_texture_gen_func[LastParticleTexture])(mf_Texture* t)=
 	GenSmokeParticle,
 	GenEngineFireParticle,
 	GenEnginePlasmaParticle,
-	GenPowerupGlowParticle
+	GenPowerupGlowParticle,
+	GenPlasmaBallParticle
 };

@@ -9,7 +9,8 @@ class mf_Enemy;
 class mf_SoundSource;
 
 #define MF_MAX_POWERUPS 128
-#define MF_MAX_BULLETS 1024
+#define MF_MAX_BULLETS 256
+#define MF_MAX_ROCKETS 128
 #define MF_MAX_ENEMIES 32
 
 struct mf_Powerup
@@ -43,6 +44,22 @@ struct mf_Bullet
 	float velocity; // can be INF
 };
 
+struct mf_Rocket
+{
+	enum Type
+	{
+		PlasmaBall,
+		LastType
+	};
+	Type type;
+	float pos[3];
+	float dir[3];
+	float velocity;
+	float spawn_time;
+	mf_Aircraft* owner;
+	mf_Aircraft* target;
+};
+
 class mf_GameLogic
 {
 public:
@@ -51,6 +68,7 @@ public:
 
 	void Tick( float dt );
 	void PlayerShot( const float* dir );
+	void PlayerRocketShot( const float* dir );
 
 	const mf_Level* GetLevel() const;
 	const mf_ParticlesManager* GetParticlesManager() const;
@@ -75,6 +93,9 @@ private:
 
 	mf_Bullet bullets_[ MF_MAX_BULLETS ];
 	unsigned int bullets_count_;
+
+	mf_Rocket rockets_[ MF_MAX_ROCKETS ];
+	unsigned int rocket_count_;
 
 	mf_Enemy* enemies_[ MF_MAX_ENEMIES ];
 	mf_SoundSource* enemies_sounds_[ MF_MAX_ENEMIES ];

@@ -113,6 +113,20 @@ void mf_ParticlesManager::AddPowerupGlow( const float* pos, float glow_factor )
 	particle_count_++;
 }
 
+void mf_ParticlesManager::AddPlasmaBall( const float* pos )
+{
+	Particle* particle= particles_ + particle_count_;
+
+	VEC3_CPY( particle->pos, pos );
+	particle->velocity= 0.0f;
+	particle->acceleration= 0.0f;
+	particle->type= Particle::PlasmaBall;
+	particle->spawn_time= current_tick_time_;
+	particle->life_time= 0.0f;
+
+	particle_count_++;
+}
+
 void mf_ParticlesManager::PrepareParticlesVertices( mf_ParticleVertex* out_vertices ) const
 {
 	const Particle* particle= particles_;
@@ -157,6 +171,15 @@ void mf_ParticlesManager::PrepareParticlesVertices( mf_ParticleVertex* out_verti
 				vertex->t_dt_lt_r[0]= 0;
 				vertex->t_dt_lt_r[1]= 0;
 				vertex->t_dt_lt_r[2]= TexturePowerupGlow;
+			}
+			break;
+		case Particle::PlasmaBall:
+			{
+				vertex->pos_size[3]= 1.6f;
+				vertex->luminance= 1.0f;
+				vertex->t_dt_lt_r[0]= 0;
+				vertex->t_dt_lt_r[1]= 0;
+				vertex->t_dt_lt_r[2]= TexturePlasmaBall;
 			}
 			break;
 		default: break;

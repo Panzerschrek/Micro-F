@@ -297,7 +297,13 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 		instance->FocusChange( HWND(wParam) == instance->hwnd_ );
 		break;
 	case WM_LBUTTONDOWN:
-		instance->Shot( lParam&65535, lParam>>16 );
+		instance->Shot( lParam&65535, lParam>>16, 0 );
+		break;
+	case WM_RBUTTONDOWN:
+		instance->Shot( lParam&65535, lParam>>16, 1 );
+		break;
+	case WM_MBUTTONDOWN:
+		instance->Shot( lParam&65535, lParam>>16, 2 );
 		break;
 	case WM_LBUTTONUP:
 		instance->gui_->MouseClick( lParam&65535, lParam>>16 );
@@ -465,13 +471,22 @@ void mf_MainLoop::CaptureMouse()
 	}
 }
 
-void mf_MainLoop::Shot( unsigned int x, unsigned int y )
+void mf_MainLoop::Shot( unsigned int x, unsigned int y, unsigned int button )
 {
 	if( game_logic_ != NULL )
 	{
-		float dir[3];
-		player_.ScreenPointToWorldSpaceVec( x, y, dir );
-		game_logic_->PlayerShot( dir );
+		if( button == 0 )
+		{
+			float dir[3];
+			player_.ScreenPointToWorldSpaceVec( x, y, dir );
+			game_logic_->PlayerShot( dir );
+		}
+		else
+		{
+			float dir[3];
+			player_.ScreenPointToWorldSpaceVec( x, y, dir );
+			game_logic_->PlayerRocketShot( dir );
+		}
 	}
 }
 

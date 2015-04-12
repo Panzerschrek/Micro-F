@@ -46,7 +46,7 @@ private:
 	void Resize();
 	void FocusChange( bool focus_in );
 	void CaptureMouse();
-	void Shot( unsigned int x, unsigned int y );
+	void Shot( unsigned int x, unsigned int y, unsigned int button );
 
 	void CalculateFPS();
 

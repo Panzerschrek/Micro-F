@@ -1,5 +1,6 @@
 #include "micro-f.h"
 #include "game_logic.h"
+#include "main_loop.h"
 #include "sound_engine.h"
 #include "../models/models.h"
 
@@ -8,6 +9,8 @@
 #include "enemy.h"
 
 #define MF_FORCEFIELD_DAMAGE_RADIUS 8.0f
+#define MF_ROCKET_LIFETIME 12.0f
+#define MF_ROCKET_HIT_DISTANCE 10.0f
 
 namespace PowerupsTables
 {
@@ -74,7 +77,7 @@ mf_GameLogic::mf_GameLogic(mf_Player* player)
 	: level_()
 	, particles_manager_()
 	, player_(player)
-	, powerup_count_(0), bullets_count_(0), enemies_count_(0)
+	, powerup_count_(0), bullets_count_(0), rocket_count_(0), enemies_count_(0)
 	, player_sound_(NULL)
 {
 	for( unsigned int i= 0; i< mf_Aircraft::LastType; i++ )
@@ -93,6 +96,8 @@ mf_GameLogic::~mf_GameLogic()
 
 void mf_GameLogic::Tick( float dt )
 {
+	const float current_time= mf_MainLoop::Instance()->CurrentTime();
+
 	for( unsigned int i= 0; i< enemies_count_; i++ )
 		enemies_[i]->Tick(dt);
 
@@ -100,6 +105,7 @@ void mf_GameLogic::Tick( float dt )
 
 	const float c_powerup_pick_distance2= 16.0f * 16.0f;
 
+	// bullets
 	for( unsigned int i= 0; i< bullets_count_; )
 	{
 		mf_Bullet* bullet= bullets_ + i;
@@ -126,6 +132,7 @@ void mf_GameLogic::Tick( float dt )
 
 			if( aircrafts_models_[enemy_aircraft->GetType()].BeamIntersectModel( aircraft_space_pos, aircraft_space_dir, bullet_travle_distance, aircraft_space_hit_pos ) )
 			{
+				//TODO: add damage to targe, score to owner
 				for( unsigned int j= 0; j< 3; j++ )
 					intersection_pos[j]=
 						enemy_aircraft->AxisVec(0)[j] * aircraft_space_hit_pos[0] +
@@ -153,6 +160,54 @@ void mf_GameLogic::Tick( float dt )
 		i++;
 	}
 
+	// rockets
+	for( unsigned int i= 0; i< rocket_count_; )
+	{
+		mf_Rocket* rocket= rockets_ + i;
+
+		float vec_to_target[3];
+		if( current_time - rocket->spawn_time > 0.4f ) // turn rocket if we are far from owner aircraft
+		{
+			Vec3Sub( rocket->target->Pos(), rocket->pos, vec_to_target );
+			Vec3Normalize( vec_to_target );
+			float angle_to_target_cos= Vec3Dot( vec_to_target, rocket->dir );
+			if( angle_to_target_cos < 0.9999f )
+			{
+				float rotation_vec[3];
+				Vec3Cross( vec_to_target, rocket->dir, rotation_vec );
+				float rot_mat[16];
+				const float rotation_speed= 3.0f * MF_PI4; // radians per second
+				float d_angle= min( rotation_speed * dt, mf_Math::acos(angle_to_target_cos) );
+				Mat4RotateAroundVector( rot_mat, rotation_vec, -d_angle );
+
+				Vec3Mat4Mul( rocket->dir, rot_mat );
+				Vec3Normalize( rocket->dir );
+			}
+		}
+
+		float pos_add[3];
+		Vec3Mul( rocket->dir, dt * rocket->velocity, pos_add );
+		Vec3Add( rocket->pos, pos_add );
+
+		bool is_rocket_dead= false;
+		if( Distance( rocket->pos, rocket->target->Pos() ) < MF_ROCKET_HIT_DISTANCE )
+		{
+			//TODO: add damage to target, score to owner
+			particles_manager_.AddBulletTerrainHit( rocket->pos );
+			is_rocket_dead= true;
+		}
+
+		if( is_rocket_dead || current_time > rocket->spawn_time + MF_ROCKET_LIFETIME )
+		{
+			if( i!= rocket_count_ - 1 )
+				rockets_[i]= rockets_[ rocket_count_ - 1 ];
+			rocket_count_--;
+			continue;
+		}
+		i++;
+	}
+
+	// powerups
 	for( unsigned int i= 0; i< powerup_count_; i++ )
 	{
 		float vec_to_powerup[3];
@@ -171,6 +226,7 @@ void mf_GameLogic::Tick( float dt )
 		}
 	}
 
+	// check collision of player with terrain
 	if( level_.SphereIntersectTerrain( player_aircraft->Pos(), 4.0f ) )
 	{
 		float pos[3];
@@ -202,6 +258,8 @@ void mf_GameLogic::Tick( float dt )
 		glow_factor= mf_Math::clamp( 0.0f, 1.0f, glow_factor );
 		particles_manager_.AddPowerupGlow( powerups_[i].pos , glow_factor );
 	}
+	for( unsigned int i= 0; i< rocket_count_; i++ )
+		particles_manager_.AddPlasmaBall( rockets_[i].pos );
 
 	// sound
 	for( unsigned int i= 0; i< enemies_count_ + 1; i++ )
@@ -239,6 +297,20 @@ void mf_GameLogic::PlayerShot( const float* dir )
 	bullets_count_++;
 
 	mf_SoundEngine::Instance()->AddSingleSound( SoundMachinegunShot, 1.0f, 1.0f, NULL );
+}
+
+void mf_GameLogic::PlayerRocketShot( const float* dir )
+{
+	mf_Rocket* rocket= rockets_ + rocket_count_;
+
+	VEC3_CPY( rocket->dir, dir );
+	VEC3_CPY( rocket->pos, player_->GetAircraft()->Pos() );
+	rocket->velocity= 100.0f;
+	rocket->owner= player_->GetAircraft();
+	rocket->target= enemies_[0]->GetAircraft();
+	rocket->spawn_time= mf_MainLoop::Instance()->CurrentTime();
+
+	rocket_count_++;
 }
 
 void mf_GameLogic::PlacePowerups()
