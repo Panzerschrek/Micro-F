@@ -14,6 +14,9 @@ class mf_GameLogic;
 
 #define MF_MAX_AIRCRAFT_MODELS 32
 
+// if it schanged, it must be changed int shaders.cpp too
+#define MF_HDR_HISTOGRAM_BINS 20
+
 class mf_Renderer
 {
 public:
@@ -27,7 +30,7 @@ private:
 	void CreateWaterReflectionFramebuffer();
 	void CreateShadowmapFramebuffer();
 	void CreateHDRFramebuffer();
-	void CreateBrightnessFetchFramebuffer();
+	void CreateHDRAdditionalFramebuffers();
 
 	void GenClouds();
 	void GenTerrainMesh();
@@ -101,18 +104,33 @@ private:
 		GLuint main_framebuffer_color_tex_id;
 		GLuint main_framebuffer_depth_tex_id;
 
-		GLuint brightness_fetch_framebuffer_id;
-		GLuint brightness_fetch_color_tex_id;
-		unsigned int brightness_fetch_texture_size_log2;
+		// buffer for calculating of histogram bins values
+		GLuint histogram_fetch_framebuffer_id;
+		GLuint histogram_fetch_color_tex_id; // format - rgba8
+		unsigned int histogram_fetch_texture_size_log2;
+		float histogram_edges[ MF_HDR_HISTOGRAM_BINS ]; // max values of histogram bins
 
-		GLuint brightness_history_framebiffer_id;
-		GLuint brightness_history_color_tex_id;
-		unsigned int brightness_history_tex_width;
-		unsigned int current_brightness_history_pixel;
-	
-		mf_GLSLProgram brightness_fetch_shader;
-		mf_GLSLProgram brightness_history_shader;
-		mf_GLSLProgram tonemapping_shader;
+		// framebuffer and texture with main histogram data
+		GLuint histogram_framebuffer_id;
+		GLuint histogram_tex_id; // format - rgba8
+		unsigned int current_histogram_bin;
+
+		GLuint tonemapping_factor_framebuffer_id;
+		GLuint tonemapping_factor_tex_id; // format - r16f
+
+		GLuint tonemapping_factor_accumulate_framebuffer_id;
+		GLuint tonemapping_factor_accumulate_tex_id; // format - r16f
+
+		mf_GLSLProgram histogram_fetch_shader; // downscale main frame to one pixel
+		mf_GLSLProgram histogram_write_shader; // write this pixel to histogram data
+		mf_GLSLProgram brightness_computing_shader; // compute tonemapping factor - write to history
+		mf_GLSLProgram tonemapping_factor_accumulate_shader_shader; // bled with previous value
+		mf_GLSLProgram tonemapping_shader; // draw fullscreen quad
+
+#ifdef MF_DEBUG
+		mf_GLSLProgram histogram_show_shader;
+		mf_GLSLProgram histogram_buffer_show_shader;
+#endif
 	} hdr_data_;
 
 	struct

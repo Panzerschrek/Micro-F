@@ -112,22 +112,42 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	, text_(text)
 	, settings_(*settings)
 {
+	if( settings_.use_hdr )
+	{
+		// tonemapping shader
+		hdr_data_.tonemapping_shader.Create( mf_Shaders::tonemapping_shader_v, mf_Shaders::tonemapping_shader_f );
+		hdr_data_.tonemapping_shader.FindUniform( "tex" );
+		hdr_data_.tonemapping_shader.FindUniform( "ck" );
+		hdr_data_.tonemapping_shader.FindUniform( "btex" );
 
-	// tonemapping shader
-	hdr_data_.tonemapping_shader.Create( mf_Shaders::tonemapping_shader_v, mf_Shaders::tonemapping_shader_f );
-	hdr_data_.tonemapping_shader.FindUniform( "tex" );
-	hdr_data_.tonemapping_shader.FindUniform( "ck" );
-	hdr_data_.tonemapping_shader.FindUniform( "bhn" );
-	hdr_data_.tonemapping_shader.FindUniform( "btex" );
+		// histogram fetch shader
+		hdr_data_.histogram_fetch_shader.Create( mf_Shaders::histogram_fetch_shader_v, mf_Shaders::histogram_fetch_shader_f );
+		hdr_data_.histogram_fetch_shader.FindUniform( "tex" );
+		hdr_data_.histogram_fetch_shader.FindUniform( "pin" );
 
-	// brightness fetch shader
-	hdr_data_.brightness_fetch_shader.Create( mf_Shaders::brightness_fetch_shader_v, mf_Shaders::brightness_fetch_shader_f );
-	hdr_data_.brightness_fetch_shader.FindUniform( "tex" );
+		// histogram write shader
+		hdr_data_.histogram_write_shader.Create( mf_Shaders::histogram_write_shader_v, mf_Shaders::histogram_write_shader_f );
+		hdr_data_.histogram_write_shader.FindUniform( "tex" ); // texture with histogram values from previous pass
+		hdr_data_.histogram_write_shader.FindUniform( "p" ); // input position
 
-	// brightness history shader
-	hdr_data_.brightness_history_shader.Create( mf_Shaders::brightness_history_write_shader_v, mf_Shaders::brightness_history_write_shader_f );
-	hdr_data_.brightness_history_shader.FindUniform( "tex" ); // brightness texture from previous pass
-	hdr_data_.brightness_history_shader.FindUniform( "p" ); // input position
+		// brightness compute shader
+		hdr_data_.brightness_computing_shader.Create( mf_Shaders::brightness_computing_shader_v, mf_Shaders::brightness_computing_shader_f );
+		hdr_data_.brightness_computing_shader.FindUniform( "tex" ); // texture with histogram
+		hdr_data_.brightness_computing_shader.FindUniform( "pins" ); // pins values of histogram
+
+		// shader for mixing brightness
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.Create( mf_Shaders::tonemapping_factor_accumulate_shader_v, mf_Shaders::tonemapping_factor_accumulate_shader_f );
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.FindUniform( "tex" );
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.FindUniform( "a" );
+
+#ifdef MF_DEBUG
+		hdr_data_.histogram_show_shader.Create( mf_Shaders::histogram_show_shader_v, mf_Shaders::histogram_show_shader_f );
+		hdr_data_.histogram_show_shader.FindUniform( "tex" );
+
+		hdr_data_.histogram_buffer_show_shader.Create( mf_Shaders::histogram_buffer_show_shader_v, mf_Shaders::histogram_buffer_show_shader_f );
+		hdr_data_.histogram_buffer_show_shader.FindUniform( "tex" );
+#endif
+	}
 
 	// prepare terrain shader
 	terrain_shader_.SetAttribLocation( "p", 0 );
@@ -218,7 +238,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		char frag_shader[512];
 		// select different color konvertion k for hdr and ldr
 		sprintf( frag_shader, mf_Shaders::sky_shader_f, settings_.use_hdr
-			? "clrYxy[0]=clrYxy [0]/100.0;"
+			? "clrYxy[0]=clrYxy [0]/50.0;"
 			: "clrYxy[0]=1.0-exp(-clrYxy[0]/25.0);" );
 
 		sky_shader_.SetAttribLocation( "p", 0 );
@@ -264,6 +284,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	sky_clouds_data_.clouds_shader.SetAttribLocation( "p", 0 );
 	sky_clouds_data_.clouds_shader.Create( mf_Shaders::clouds_shader_v, mf_Shaders::clouds_shader_f );
 	sky_clouds_data_.clouds_shader.FindUniform( "tex" );
+	sky_clouds_data_.clouds_shader.FindUniform( "l" );
 	sky_clouds_data_.clouds_shader.FindUniform( "mat" );
 
 	GenTerrainMesh();
@@ -572,7 +593,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	if( settings_.use_hdr )
 	{
 		CreateHDRFramebuffer();
-		CreateBrightnessFetchFramebuffer();
+		CreateHDRAdditionalFramebuffers();
 	}
 
 	/*{
@@ -664,35 +685,85 @@ void mf_Renderer::DrawFrame()
 
 	if( settings_.use_hdr )
 	{
-		// make brightness fetch
-		glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_fetch_framebuffer_id );
-		glViewport( 0, 0, 1 << hdr_data_.brightness_fetch_texture_size_log2, 1 << hdr_data_.brightness_fetch_texture_size_log2 );
+		// make histogram fetch
+		glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.histogram_fetch_framebuffer_id );
+		glViewport( 0, 0, 1 << hdr_data_.histogram_fetch_texture_size_log2, 1 << hdr_data_.histogram_fetch_texture_size_log2 );
 
-		hdr_data_.brightness_fetch_shader.Bind();
+		hdr_data_.histogram_fetch_shader.Bind();
+		float edges_min_max[8];
+		for( unsigned int i= 0; i< 4; i++ )
+		{
+			edges_min_max[i]= ( hdr_data_.current_histogram_bin + i ) == 0 ?
+				0.0f :
+				hdr_data_.histogram_edges[ hdr_data_.current_histogram_bin + i - 1 ];
+			edges_min_max[4+i]= hdr_data_.histogram_edges[ hdr_data_.current_histogram_bin + i ];
+		}
+		hdr_data_.histogram_fetch_shader.UniformVec4Array( "pin", 2, edges_min_max );
 
 		glActiveTexture( GL_TEXTURE0 );
 		glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_color_tex_id );
-		hdr_data_.brightness_fetch_shader.UniformInt( "tex", 0 );
+		hdr_data_.histogram_fetch_shader.UniformInt( "tex", 0 );
 
 		glDisable( GL_DEPTH_TEST );
 		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
 		glEnable( GL_DEPTH_TEST );
 
-		// write brightness to history
-		glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_history_framebiffer_id );
-		glViewport( 0, 0, hdr_data_.brightness_history_tex_width, 1 );
+		// write histogram
+		glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.histogram_framebuffer_id );
+		glViewport( 0, 0, MF_HDR_HISTOGRAM_BINS / 4, 1 );
 
-		hdr_data_.brightness_history_shader.Bind();
-		hdr_data_.brightness_history_shader.UniformFloat( "p",
-			(float(hdr_data_.current_brightness_history_pixel)+0.5f) / float(hdr_data_.brightness_history_tex_width) * 2.0f - 1.0f );
+		hdr_data_.histogram_write_shader.Bind();
+		hdr_data_.histogram_write_shader.UniformFloat( "p",
+			(float(hdr_data_.current_histogram_bin/4)+0.5f) / float(MF_HDR_HISTOGRAM_BINS/4) * 2.0f - 1.0f );
 
 		glActiveTexture( GL_TEXTURE1 );
-		glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_fetch_color_tex_id );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_fetch_color_tex_id );
 		glGenerateMipmap( GL_TEXTURE_2D );
-		hdr_data_.brightness_history_shader.UniformInt( "tex", 1 );
+		hdr_data_.histogram_write_shader.UniformInt( "tex", 1 );
 
 		glDisable( GL_DEPTH_TEST );
 		glDrawArrays( GL_POINTS, 0, 1 );
+		glEnable( GL_DEPTH_TEST );
+
+		// write brightness to history
+		if( hdr_data_.current_histogram_bin == MF_HDR_HISTOGRAM_BINS - 4 )
+		{
+			glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.tonemapping_factor_framebuffer_id );
+			glViewport( 0, 0, 1, 1 );
+
+			hdr_data_.brightness_computing_shader.Bind();
+			//hdr_data_.brightness_computing_shader.UniformFloat( "p", 0.0f );
+
+			glActiveTexture( GL_TEXTURE1 );
+			glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_tex_id );
+			glGenerateMipmap( GL_TEXTURE_2D );
+			hdr_data_.brightness_computing_shader.UniformInt( "tex", 1 );
+
+			hdr_data_.brightness_computing_shader.UniformFloatArray( "pins", MF_HDR_HISTOGRAM_BINS, hdr_data_.histogram_edges );
+
+			glDisable( GL_DEPTH_TEST );
+			glDrawArrays( GL_POINTS, 0, 1 );
+			glEnable( GL_DEPTH_TEST );
+
+			hdr_data_.current_histogram_bin= 0;
+		}
+		else hdr_data_.current_histogram_bin+= 4;
+
+		// blend tonemapping factor with previous
+		glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.tonemapping_factor_accumulate_framebuffer_id );
+		glViewport( 0, 0, 1, 1 );
+
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.Bind();
+		glActiveTexture( GL_TEXTURE1 );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_tex_id );
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.UniformInt( "tex", 1 );
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.UniformFloat( "a", 0.125f * 30.0f / float(main_loop->FPS()) );
+
+		glDisable( GL_DEPTH_TEST );
+		glEnable( GL_BLEND );
+		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+		glDrawArrays( GL_POINTS, 0, 1 );
+		glDisable( GL_BLEND );
 		glEnable( GL_DEPTH_TEST );
 
 		// make tonemapping
@@ -705,19 +776,35 @@ void mf_Renderer::DrawFrame()
 		glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_color_tex_id );
 		hdr_data_.tonemapping_shader.UniformInt( "tex", 0 );
 
-		hdr_data_.tonemapping_shader.UniformInt( "bhn", hdr_data_.current_brightness_history_pixel + 4 * hdr_data_.brightness_history_tex_width );
-		hdr_data_.current_brightness_history_pixel++;
-		hdr_data_.current_brightness_history_pixel%= hdr_data_.brightness_history_tex_width;
-
-		hdr_data_.tonemapping_shader.UniformFloat( "ck", -2.0f );
-
 		glActiveTexture( GL_TEXTURE1 );
-		glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_history_color_tex_id );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_accumulate_tex_id );
 		hdr_data_.tonemapping_shader.UniformInt( "btex", 1 );
+
+		hdr_data_.tonemapping_shader.UniformFloat( "ck", settings_.daytime == mf_Settings::DaytimeNight ? 0.5f : 1.0f );
 
 		glDisable( GL_DEPTH_TEST );
 		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
 		glEnable( GL_DEPTH_TEST );
+
+#ifdef MF_DEBUG
+		// draw histogram
+		hdr_data_.histogram_show_shader.Bind();
+		glActiveTexture( GL_TEXTURE1 );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_tex_id );
+		hdr_data_.histogram_show_shader.UniformInt( "tex", 1 );
+		glDisable( GL_DEPTH_TEST );
+		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
+		glEnable( GL_DEPTH_TEST );
+
+		//draw histogram buffer
+		hdr_data_.histogram_buffer_show_shader.Bind();
+		glActiveTexture( GL_TEXTURE1 );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_fetch_color_tex_id );
+		hdr_data_.histogram_buffer_show_shader.UniformInt( "tex", 1 );
+		glDisable( GL_DEPTH_TEST );
+		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
+		glEnable( GL_DEPTH_TEST );
+#endif
 	}
 
 #ifdef MF_DEBUG
@@ -854,58 +941,102 @@ void mf_Renderer::CreateHDRFramebuffer()
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 }
 
-void mf_Renderer::CreateBrightnessFetchFramebuffer()
+void mf_Renderer::CreateHDRAdditionalFramebuffers()
 {
-	hdr_data_.brightness_fetch_texture_size_log2= 7;
-	unsigned int size_x= 1 << hdr_data_.brightness_fetch_texture_size_log2;
-	unsigned int size_y= 1 << hdr_data_.brightness_fetch_texture_size_log2;
+	/*
+	HISTOGRAM FETCH
+	*/
+	hdr_data_.histogram_fetch_texture_size_log2= 7;
+	unsigned int size_x= 1 << hdr_data_.histogram_fetch_texture_size_log2;
+	unsigned int size_y= 1 << hdr_data_.histogram_fetch_texture_size_log2;
 
-	// color texture
-	glGenTextures( 1, &hdr_data_.brightness_fetch_color_tex_id );
-	glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_fetch_color_tex_id );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_R16F,
+	glGenTextures( 1, &hdr_data_.histogram_fetch_color_tex_id );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_fetch_color_tex_id );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
 		size_x, size_y,
-		0, GL_RED, GL_FLOAT, NULL );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
-	glGenFramebuffers( 1, &hdr_data_.brightness_fetch_framebuffer_id );
-	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_fetch_framebuffer_id );
-	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.brightness_fetch_color_tex_id, 0 );
+	glGenFramebuffers( 1, &hdr_data_.histogram_fetch_framebuffer_id );
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.histogram_fetch_framebuffer_id );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.histogram_fetch_color_tex_id, 0 );
 	GLuint color_attachment= GL_COLOR_ATTACHMENT0;
 	glDrawBuffers( 1, &color_attachment );
-
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	/*
-	BRIGHTNESS HISTORY
+	HISTOGRAM DATA
 	*/
-	hdr_data_.brightness_history_tex_width= 128;
-	hdr_data_.current_brightness_history_pixel= 0;
+	hdr_data_.current_histogram_bin= 0;
 
-	float history_values[ 128 ];
-	for( unsigned int i= 0; i< 128; i++ ) history_values[i]= 1.0f;
+	unsigned char startup_histogram_data[ MF_HDR_HISTOGRAM_BINS ];
+	const float c_max_light= 2.5f;
+	for( unsigned int i= 0; i< MF_HDR_HISTOGRAM_BINS; i++ )
+	{
+		startup_histogram_data[i]= (unsigned char)( 255 / MF_HDR_HISTOGRAM_BINS );
+		hdr_data_.histogram_edges[i]=c_max_light * mf_Math::pow( float(i) / float(MF_HDR_HISTOGRAM_BINS), 1.5f );
+	}
 
-	// color texture
-	glGenTextures( 1, &hdr_data_.brightness_history_color_tex_id );
-	glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_history_color_tex_id );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_R16F,
-		hdr_data_.brightness_history_tex_width, 1,
-		0, GL_RED, GL_FLOAT, history_values );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glGenTextures( 1, &hdr_data_.histogram_tex_id );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_tex_id );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
+		MF_HDR_HISTOGRAM_BINS / 4, 1,
+		0, GL_RGBA, GL_UNSIGNED_BYTE, startup_histogram_data );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
-	glGenFramebuffers( 1, &hdr_data_.brightness_history_framebiffer_id );
-	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_history_framebiffer_id );
-	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.brightness_history_color_tex_id, 0 );
+	glGenFramebuffers( 1, &hdr_data_.histogram_framebuffer_id );
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.histogram_framebuffer_id );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.histogram_tex_id, 0 );
 	color_attachment= GL_COLOR_ATTACHMENT0;
 	glDrawBuffers( 1, &color_attachment );
-
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	/*
+	TONEMAPPING FACTOR
+	*/
+	glGenTextures( 1, &hdr_data_.tonemapping_factor_tex_id );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_tex_id );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R16F,
+		1, 1,
+		0, GL_RED, GL_FLOAT, NULL );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+
+	glGenFramebuffers( 1, &hdr_data_.tonemapping_factor_framebuffer_id );
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.tonemapping_factor_framebuffer_id );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.tonemapping_factor_tex_id, 0 );
+	color_attachment= GL_COLOR_ATTACHMENT0;
+	glDrawBuffers( 1, &color_attachment );
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	/*
+	TONEMAPPING ACCUMULATE FACTOR
+	*/
+	glGenTextures( 1, &hdr_data_.tonemapping_factor_accumulate_tex_id );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_accumulate_tex_id );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R16F,
+		1, 1,
+		0, GL_RED, GL_FLOAT, NULL );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+
+	glGenFramebuffers( 1, &hdr_data_.tonemapping_factor_accumulate_framebuffer_id );
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.tonemapping_factor_accumulate_framebuffer_id );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.tonemapping_factor_accumulate_tex_id, 0 );
+	color_attachment= GL_COLOR_ATTACHMENT0;
+	glDrawBuffers( 1, &color_attachment );
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
 }
 
 void mf_Renderer::GenClouds()
@@ -1885,7 +2016,7 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	glBindTexture( GL_TEXTURE_2D, sun_texture_ );
 	sun_shader_.UniformInt( "tex", 0 );
 
-	sun_shader_.UniformFloat( "i", 4.0f ); // sun light intencity
+	sun_shader_.UniformFloat( "i", settings_.use_hdr ? 8.0f : 4.0f ); // sun light intencity
 
 	glEnable( GL_PROGRAM_POINT_SIZE );
 	glEnable( GL_BLEND );
@@ -1912,6 +2043,8 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 		glActiveTexture( GL_TEXTURE0 );
 		glBindTexture( GL_TEXTURE_CUBE_MAP, sky_clouds_data_.clouds_cubemap_tex_id );
 		sky_clouds_data_.clouds_shader.UniformInt( "tex", 0 );
+
+		sky_clouds_data_.clouds_shader.UniformFloat( "l", settings_.use_hdr ? 2.0f : 1.0f );
 
 		glEnable( GL_BLEND );
 		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );

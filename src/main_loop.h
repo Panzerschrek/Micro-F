@@ -25,6 +25,7 @@ public:
 	static void DeleteInstance();
 
 	float CurrentTime() const;
+	unsigned int FPS() const;
 	void Loop();
 	unsigned int ViewportWidth();
 	unsigned int ViewportHeight();
@@ -105,6 +106,11 @@ private:
 inline float mf_MainLoop::CurrentTime() const
 {
 	return game_time_;
+}
+
+inline unsigned int mf_MainLoop::FPS() const
+{
+	return fps_calc_.frame_count_to_show;
 }
 
 inline unsigned int mf_MainLoop::ViewportWidth()
