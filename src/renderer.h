@@ -30,7 +30,7 @@ private:
 	void CreateWaterReflectionFramebuffer();
 	void CreateShadowmapFramebuffer();
 	void CreateHDRFramebuffer();
-	void CreateBrightnessFetchFramebuffer();
+	void CreateHDRAdditionalFramebuffers();
 
 	void GenClouds();
 	void GenTerrainMesh();
@@ -127,9 +127,10 @@ private:
 		mf_GLSLProgram tonemapping_factor_accumulate_shader_shader; // bled with previous value
 		mf_GLSLProgram tonemapping_shader; // draw fullscreen quad
 
-		// for debugging
+#ifdef MF_DEBUG
 		mf_GLSLProgram histogram_show_shader;
 		mf_GLSLProgram histogram_buffer_show_shader;
+#endif
 	} hdr_data_;
 
 	struct

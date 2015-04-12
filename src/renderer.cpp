@@ -112,36 +112,42 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	, text_(text)
 	, settings_(*settings)
 {
-	// tonemapping shader
-	hdr_data_.tonemapping_shader.Create( mf_Shaders::tonemapping_shader_v, mf_Shaders::tonemapping_shader_f );
-	hdr_data_.tonemapping_shader.FindUniform( "tex" );
-	hdr_data_.tonemapping_shader.FindUniform( "ck" );
-	hdr_data_.tonemapping_shader.FindUniform( "bhn" );
-	hdr_data_.tonemapping_shader.FindUniform( "btex" );
+	if( settings_.use_hdr )
+	{
+		// tonemapping shader
+		hdr_data_.tonemapping_shader.Create( mf_Shaders::tonemapping_shader_v, mf_Shaders::tonemapping_shader_f );
+		hdr_data_.tonemapping_shader.FindUniform( "tex" );
+		hdr_data_.tonemapping_shader.FindUniform( "ck" );
+		hdr_data_.tonemapping_shader.FindUniform( "btex" );
 
-	// histogram fetch shader
-	hdr_data_.histogram_fetch_shader.Create( mf_Shaders::histogram_fetch_shader_v, mf_Shaders::histogram_fetch_shader_f );
-	hdr_data_.histogram_fetch_shader.FindUniform( "tex" );
-	hdr_data_.histogram_fetch_shader.FindUniform( "pin" );
+		// histogram fetch shader
+		hdr_data_.histogram_fetch_shader.Create( mf_Shaders::histogram_fetch_shader_v, mf_Shaders::histogram_fetch_shader_f );
+		hdr_data_.histogram_fetch_shader.FindUniform( "tex" );
+		hdr_data_.histogram_fetch_shader.FindUniform( "pin" );
 
-	// histogram write shader
-	hdr_data_.histogram_write_shader.Create( mf_Shaders::histogram_write_shader_v, mf_Shaders::histogram_write_shader_f );
-	hdr_data_.histogram_write_shader.FindUniform( "tex" ); // texture with histogram values from previous pass
-	hdr_data_.histogram_write_shader.FindUniform( "p" ); // input position
+		// histogram write shader
+		hdr_data_.histogram_write_shader.Create( mf_Shaders::histogram_write_shader_v, mf_Shaders::histogram_write_shader_f );
+		hdr_data_.histogram_write_shader.FindUniform( "tex" ); // texture with histogram values from previous pass
+		hdr_data_.histogram_write_shader.FindUniform( "p" ); // input position
 
-	// brightness compute shader
-	hdr_data_.brightness_computing_shader.Create( mf_Shaders::brightness_computing_shader_v, mf_Shaders::brightness_computing_shader_f );
-	hdr_data_.brightness_computing_shader.FindUniform( "tex" ); // texture with histogram
-	hdr_data_.brightness_computing_shader.FindUniform( "pins" ); // pins values of histogram
+		// brightness compute shader
+		hdr_data_.brightness_computing_shader.Create( mf_Shaders::brightness_computing_shader_v, mf_Shaders::brightness_computing_shader_f );
+		hdr_data_.brightness_computing_shader.FindUniform( "tex" ); // texture with histogram
+		hdr_data_.brightness_computing_shader.FindUniform( "pins" ); // pins values of histogram
 
-	hdr_data_.tonemapping_factor_accumulate_shader_shader.Create( mf_Shaders::tonemapping_factor_accumulate_shader_v, mf_Shaders::tonemapping_factor_accumulate_shader_f );
-	hdr_data_.tonemapping_factor_accumulate_shader_shader.FindUniform( "tex" );
+		// shader for mixing brightness
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.Create( mf_Shaders::tonemapping_factor_accumulate_shader_v, mf_Shaders::tonemapping_factor_accumulate_shader_f );
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.FindUniform( "tex" );
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.FindUniform( "a" );
 
-	hdr_data_.histogram_show_shader.Create( mf_Shaders::histogram_show_shader_v, mf_Shaders::histogram_show_shader_f );
-	hdr_data_.histogram_show_shader.FindUniform( "tex" );
+#ifdef MF_DEBUG
+		hdr_data_.histogram_show_shader.Create( mf_Shaders::histogram_show_shader_v, mf_Shaders::histogram_show_shader_f );
+		hdr_data_.histogram_show_shader.FindUniform( "tex" );
 
-	hdr_data_.histogram_buffer_show_shader.Create( mf_Shaders::histogram_buffer_show_shader_v, mf_Shaders::histogram_buffer_show_shader_f );
-	hdr_data_.histogram_buffer_show_shader.FindUniform( "tex" );
+		hdr_data_.histogram_buffer_show_shader.Create( mf_Shaders::histogram_buffer_show_shader_v, mf_Shaders::histogram_buffer_show_shader_f );
+		hdr_data_.histogram_buffer_show_shader.FindUniform( "tex" );
+#endif
+	}
 
 	// prepare terrain shader
 	terrain_shader_.SetAttribLocation( "p", 0 );
@@ -583,7 +589,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	if( settings_.use_hdr )
 	{
 		CreateHDRFramebuffer();
-		CreateBrightnessFetchFramebuffer();
+		CreateHDRAdditionalFramebuffers();
 	}
 
 	/*{
@@ -747,6 +753,7 @@ void mf_Renderer::DrawFrame()
 		glActiveTexture( GL_TEXTURE1 );
 		glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_tex_id );
 		hdr_data_.tonemapping_factor_accumulate_shader_shader.UniformInt( "tex", 1 );
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.UniformFloat( "a", 0.125f * 30.0f / float(main_loop->FPS()) );
 
 		glDisable( GL_DEPTH_TEST );
 		glEnable( GL_BLEND );
@@ -769,11 +776,13 @@ void mf_Renderer::DrawFrame()
 		glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_accumulate_tex_id );
 		hdr_data_.tonemapping_shader.UniformInt( "btex", 1 );
 
+		hdr_data_.tonemapping_shader.UniformFloat( "ck", settings_.daytime == mf_Settings::DaytimeNight ? 0.5f : 1.0f );
+
 		glDisable( GL_DEPTH_TEST );
 		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
 		glEnable( GL_DEPTH_TEST );
 
-
+#ifdef MF_DEBUG
 		// draw histogram
 		hdr_data_.histogram_show_shader.Bind();
 		glActiveTexture( GL_TEXTURE1 );
@@ -791,6 +800,7 @@ void mf_Renderer::DrawFrame()
 		glDisable( GL_DEPTH_TEST );
 		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
 		glEnable( GL_DEPTH_TEST );
+#endif
 	}
 
 #ifdef MF_DEBUG
@@ -927,7 +937,7 @@ void mf_Renderer::CreateHDRFramebuffer()
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 }
 
-void mf_Renderer::CreateBrightnessFetchFramebuffer()
+void mf_Renderer::CreateHDRAdditionalFramebuffers()
 {
 	/*
 	HISTOGRAM FETCH
