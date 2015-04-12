@@ -702,8 +702,7 @@ const char* const tonemapping_shader_v=
 
 	//"int ts=textureSize(btex,0).x;"
 	//"b=log(0.5)*clamp(1.0/texelFetch(btex,ivec2((bhn)%ts,0),0).x,0.0005,20.0);"
-	"int ts=textureSize(btex,0).x;"
-	"b=-texelFetch(btex,ivec2((bhn)%ts,0),0).x;"
+	"b=-texelFetch(btex,ivec2(0,0),0).x;"
 
 	"ftc=coord[gl_VertexID];"
 	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
@@ -775,17 +774,16 @@ const char* const histogram_write_shader_f=
 
 const char* const brightness_computing_shader_v=
 "#version 330\n"
-"uniform float p;" // position to write
 "void main()"
 "{"
-	"gl_Position=vec4(p,0.0,0.0,1.0);"
+	"gl_Position=vec4(0.0,0.0,0.0,1.0);"
 "}";
 
 const char* const brightness_computing_shader_f=
 "#version 330\n"
 "uniform sampler2D tex;" // input texture with full histogram
-"const int MF_HDR_HISTOGRAM_BINS= 20;"
-"uniform float pins[MF_HDR_HISTOGRAM_BINS];" // borders for pins
+"const int HISTOGRAM_BINS= 20;"
+"uniform float pins[HISTOGRAM_BINS];" // borders for pins
 "out vec4 c_;"
 "void main()"
 "{"
@@ -797,11 +795,11 @@ const char* const brightness_computing_shader_f=
 		"vec4(0.0,0.0,0.0,1.0)"
 	");"
 	"float full_sum= pins[0] * texelFetch(tex,ivec2(0,0),0).x;" // full_sum - is max brightness
-	"for(int i=1;i<MF_HDR_HISTOGRAM_BINS;i++)"
+	"for(int i=1;i<HISTOGRAM_BINS;i++)"
 		"full_sum+=(pins[i] - pins[i-1]) * dot(texelFetch(tex,ivec2(i/4,0),0), component_mask[i&3]);"
 	"float portion_sum= pins[0]/full_sum * texelFetch(tex,ivec2(0,0),0).x;"
-	"float brightness_95=pins[MF_HDR_HISTOGRAM_BINS-1];"
-	"for(int i=1;i<MF_HDR_HISTOGRAM_BINS;i++)"
+	"float brightness_95=pins[HISTOGRAM_BINS-1];"
+	"for(int i=1;i<HISTOGRAM_BINS;i++)"
 	"{"
 		"float sum_add= (pins[i] - pins[i-1]) / full_sum * dot(texelFetch(tex,ivec2(i/4,0),0), component_mask[i&3]);"
 		"if( sum_add + portion_sum >= 0.95 )"
@@ -811,9 +809,25 @@ const char* const brightness_computing_shader_f=
 		"}"
 		"portion_sum+= sum_add;"
 	"}"
-	"if( brightness_95 > full_sum * 4.0 ) brightness_95= full_sum * 4.0;"
+	"if(brightness_95 > full_sum * 4.0) brightness_95= full_sum * 4.0;"
 	"float k = -log(0.5) / brightness_95;"
 	"c_=vec4(k,k,k,k);"
+"}";
+
+const char* const tonemapping_factor_accumulate_shader_v=
+"#version 330\n"
+"void main()"
+"{"
+	"gl_Position=vec4(0.0,0.0,0.0,1.0);"
+"}";
+
+const char* const tonemapping_factor_accumulate_shader_f=
+"#version 330\n"
+"uniform sampler2D tex;"
+"out vec4 c_;"
+"void main()"
+"{"
+	"c_=vec4(texelFetch(tex,ivec2(0,0),0).xyz,0.125);"
 "}";
 
 const char* const histogram_show_shader_v=

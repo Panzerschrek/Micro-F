@@ -115,14 +115,16 @@ private:
 		GLuint histogram_tex_id; // format - rgba8
 		unsigned int current_histogram_bin;
 
-		GLuint brightness_history_framebuffer_id;
-		GLuint brightness_history_tex_id; // format - r16f
-		unsigned int brightness_history_tex_size;
-		unsigned int current_brightness_history_pixel;
+		GLuint tonemapping_factor_framebuffer_id;
+		GLuint tonemapping_factor_tex_id; // format - r16f
+
+		GLuint tonemapping_factor_accumulate_framebuffer_id;
+		GLuint tonemapping_factor_accumulate_tex_id; // format - r16f
 
 		mf_GLSLProgram histogram_fetch_shader; // downscale main frame to one pixel
 		mf_GLSLProgram histogram_write_shader; // write this pixel to histogram data
-		mf_GLSLProgram brightness_computing_shader; // compute brightness - write to history
+		mf_GLSLProgram brightness_computing_shader; // compute tonemapping factor - write to history
+		mf_GLSLProgram tonemapping_factor_accumulate_shader_shader; // bled with previous value
 		mf_GLSLProgram tonemapping_shader; // draw fullscreen quad
 
 		// for debugging

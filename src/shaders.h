@@ -67,6 +67,8 @@ extern const char* const histogram_write_shader_v;
 extern const char* const histogram_write_shader_f;
 extern const char* const brightness_computing_shader_v;
 extern const char* const brightness_computing_shader_f;
+extern const char* const tonemapping_factor_accumulate_shader_v;
+extern const char* const tonemapping_factor_accumulate_shader_f;
 extern const char* const histogram_show_shader_f;
 extern const char* const histogram_show_shader_v;
 extern const char* const histogram_buffer_show_shader_v;

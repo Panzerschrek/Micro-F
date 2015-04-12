@@ -133,7 +133,9 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	hdr_data_.brightness_computing_shader.Create( mf_Shaders::brightness_computing_shader_v, mf_Shaders::brightness_computing_shader_f );
 	hdr_data_.brightness_computing_shader.FindUniform( "tex" ); // texture with histogram
 	hdr_data_.brightness_computing_shader.FindUniform( "pins" ); // pins values of histogram
-	hdr_data_.brightness_computing_shader.FindUniform( "p" ); // input position
+
+	hdr_data_.tonemapping_factor_accumulate_shader_shader.Create( mf_Shaders::tonemapping_factor_accumulate_shader_v, mf_Shaders::tonemapping_factor_accumulate_shader_f );
+	hdr_data_.tonemapping_factor_accumulate_shader_shader.FindUniform( "tex" );
 
 	hdr_data_.histogram_show_shader.Create( mf_Shaders::histogram_show_shader_v, mf_Shaders::histogram_show_shader_f );
 	hdr_data_.histogram_show_shader.FindUniform( "tex" );
@@ -716,12 +718,11 @@ void mf_Renderer::DrawFrame()
 		// write brightness to history
 		if( hdr_data_.current_histogram_bin == MF_HDR_HISTOGRAM_BINS - 4 )
 		{
-			glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_history_framebuffer_id );
-			glViewport( 0, 0, hdr_data_.brightness_history_tex_size, 1 );
+			glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.tonemapping_factor_framebuffer_id );
+			glViewport( 0, 0, 1, 1 );
 
 			hdr_data_.brightness_computing_shader.Bind();
-			hdr_data_.brightness_computing_shader.UniformFloat( "p",
-				(float(hdr_data_.current_brightness_history_pixel)+0.5f) / float(hdr_data_.brightness_history_tex_size) * 2.0f - 1.0f );
+			//hdr_data_.brightness_computing_shader.UniformFloat( "p", 0.0f );
 
 			glActiveTexture( GL_TEXTURE1 );
 			glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_tex_id );
@@ -735,10 +736,24 @@ void mf_Renderer::DrawFrame()
 			glEnable( GL_DEPTH_TEST );
 
 			hdr_data_.current_histogram_bin= 0;
-			hdr_data_.current_brightness_history_pixel++;
-			hdr_data_.current_brightness_history_pixel%= hdr_data_.brightness_history_tex_size;
 		}
 		else hdr_data_.current_histogram_bin+= 4;
+
+		// blend tonemapping factor with previous
+		glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.tonemapping_factor_accumulate_framebuffer_id );
+		glViewport( 0, 0, 1, 1 );
+
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.Bind();
+		glActiveTexture( GL_TEXTURE1 );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_tex_id );
+		hdr_data_.tonemapping_factor_accumulate_shader_shader.UniformInt( "tex", 1 );
+
+		glDisable( GL_DEPTH_TEST );
+		glEnable( GL_BLEND );
+		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+		glDrawArrays( GL_POINTS, 0, 1 );
+		glDisable( GL_BLEND );
+		glEnable( GL_DEPTH_TEST );
 
 		// make tonemapping
 		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -750,12 +765,8 @@ void mf_Renderer::DrawFrame()
 		glBindTexture( GL_TEXTURE_2D, hdr_data_.main_framebuffer_color_tex_id );
 		hdr_data_.tonemapping_shader.UniformInt( "tex", 0 );
 
-		hdr_data_.tonemapping_shader.UniformInt( "bhn", hdr_data_.current_brightness_history_pixel + 4 * hdr_data_.brightness_history_tex_size );
-
-		hdr_data_.tonemapping_shader.UniformFloat( "ck", -2.0f );
-
 		glActiveTexture( GL_TEXTURE1 );
-		glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_history_tex_id );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_accumulate_tex_id );
 		hdr_data_.tonemapping_shader.UniformInt( "btex", 1 );
 
 		glDisable( GL_DEPTH_TEST );
@@ -774,7 +785,6 @@ void mf_Renderer::DrawFrame()
 
 		//draw histogram buffer
 		hdr_data_.histogram_buffer_show_shader.Bind();
-
 		glActiveTexture( GL_TEXTURE1 );
 		glBindTexture( GL_TEXTURE_2D, hdr_data_.histogram_fetch_color_tex_id );
 		hdr_data_.histogram_buffer_show_shader.UniformInt( "tex", 1 );
@@ -931,8 +941,8 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
 		size_x, size_y,
 		0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
@@ -961,8 +971,8 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
 		MF_HDR_HISTOGRAM_BINS / 4, 1,
 		0, GL_RGBA, GL_UNSIGNED_BYTE, startup_histogram_data );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
@@ -974,24 +984,41 @@ void mf_Renderer::CreateBrightnessFetchFramebuffer()
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	/*
-	BRIGHTNESS HISTORY
+	TONEMAPPING FACTOR
 	*/
-	hdr_data_.brightness_history_tex_size= 2;
-	hdr_data_.current_brightness_history_pixel= 0;
-
-	glGenTextures( 1, &hdr_data_.brightness_history_tex_id );
-	glBindTexture( GL_TEXTURE_2D, hdr_data_.brightness_history_tex_id );
+	glGenTextures( 1, &hdr_data_.tonemapping_factor_tex_id );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_tex_id );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_R16F,
-		hdr_data_.brightness_history_tex_size, 1,
+		1, 1,
 		0, GL_RED, GL_FLOAT, NULL );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
-	glGenFramebuffers( 1, &hdr_data_.brightness_history_framebuffer_id );
-	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.brightness_history_framebuffer_id );
-	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.brightness_history_tex_id, 0 );
+	glGenFramebuffers( 1, &hdr_data_.tonemapping_factor_framebuffer_id );
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.tonemapping_factor_framebuffer_id );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.tonemapping_factor_tex_id, 0 );
+	color_attachment= GL_COLOR_ATTACHMENT0;
+	glDrawBuffers( 1, &color_attachment );
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	/*
+	TONEMAPPING ACCUMULATE FACTOR
+	*/
+	glGenTextures( 1, &hdr_data_.tonemapping_factor_accumulate_tex_id );
+	glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_accumulate_tex_id );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R16F,
+		1, 1,
+		0, GL_RED, GL_FLOAT, NULL );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+
+	glGenFramebuffers( 1, &hdr_data_.tonemapping_factor_accumulate_framebuffer_id );
+	glBindFramebuffer( GL_FRAMEBUFFER, hdr_data_.tonemapping_factor_accumulate_framebuffer_id );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, hdr_data_.tonemapping_factor_accumulate_tex_id, 0 );
 	color_attachment= GL_COLOR_ATTACHMENT0;
 	glDrawBuffers( 1, &color_attachment );
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
