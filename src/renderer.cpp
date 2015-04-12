@@ -112,6 +112,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	, text_(text)
 	, settings_(*settings)
 {
+	mf_MainLoop::Instance()->DrawLoadingFrame( "compiling shaders" );
 	if( settings_.use_hdr )
 	{
 		// tonemapping shader
@@ -287,6 +288,8 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	sky_clouds_data_.clouds_shader.FindUniform( "l" );
 	sky_clouds_data_.clouds_shader.FindUniform( "mat" );
 
+	mf_MainLoop::Instance()->DrawLoadingFrame( "generating models" );
+
 	GenTerrainMesh();
 	GenWaterMesh();
 	PrepareAircraftModels();
@@ -447,6 +450,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		level_static_objects_shadowmap_shader_.UniformBlockBinding( mat_block_index, mat_binding );
 	}
 
+	mf_MainLoop::Instance()->DrawLoadingFrame( "generating textures" );
 	{
 		// terrain heightmap
 		glGenTextures( 1, &terrain_heightmap_texture_ );
@@ -588,8 +592,10 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	CreateWaterReflectionFramebuffer();
 	CreateShadowmapFramebuffer();
 	if( settings_.clouds_intensity != mf_Settings::CloudsDisabled )
+	{
+		mf_MainLoop::Instance()->DrawLoadingFrame( "generating sky" );
 		GenClouds();
-
+	}
 	if( settings_.use_hdr )
 	{
 		CreateHDRFramebuffer();

@@ -3,6 +3,7 @@
 
 #include "mf_math.h"
 #include "textures_generation.h"
+#include "main_loop.h"
 
 #define MF_MAX_VALLEY_WAY_POINTS 1024
 
@@ -202,6 +203,8 @@ bool mf_Level::BeamIntersectTerrain( const float* in_pos, const float* dir, floa
 
 void mf_Level::GenTarrain()
 {
+	mf_MainLoop::Instance()->DrawLoadingFrame( "generating terrain" );
+
 	unsigned short* primary_terrain_data= new unsigned short[ terrain_size_[0] * terrain_size_[1] ];
 
 	// first gen
@@ -324,6 +327,7 @@ void mf_Level::GenTarrain()
 
 void mf_Level::GenValleyWayPoints()
 {
+	mf_MainLoop::Instance()->DrawLoadingFrame( "generating river" );
 	mf_Rand randomizer;
 
 	const float y_range[]= {96.0f * 2.0f, 128.0f * 2.5f };
@@ -476,6 +480,7 @@ struct mf_GridCell
 
 void mf_Level::PlaceStaticObjects()
 {
+	mf_MainLoop::Instance()->DrawLoadingFrame( "planting forest" );
 	mf_Rand randomizer;
 
 	const unsigned int grid_cell_size= 3;

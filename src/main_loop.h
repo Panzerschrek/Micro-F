@@ -30,6 +30,8 @@ public:
 	unsigned int ViewportWidth();
 	unsigned int ViewportHeight();
 
+	void DrawLoadingFrame( const char* text );
+
 	void Play( const mf_Settings* settings );
 	void Quit();
 

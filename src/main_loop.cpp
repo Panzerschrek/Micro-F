@@ -113,7 +113,30 @@ void mf_MainLoop::Loop()
 	} // while !quit
 }
 
-void mf_MainLoop::Play(  const mf_Settings* settings )
+void mf_MainLoop::DrawLoadingFrame( const char* text )
+{
+	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
+	glClear( GL_COLOR_BUFFER_BIT );
+
+	static const char* const c_loading_text= "---LOADING---";
+
+	unsigned int center_column= viewport_width_ / ( 2 * MF_LETTER_WIDTH );
+	unsigned int center_row= viewport_height_ / ( 2 * MF_LETTER_HEIGHT ) + 1;
+
+	text_->AddText(
+		center_column - strlen(c_loading_text),
+		center_row - 3,
+		2, mf_Text::default_color, c_loading_text );
+	text_->AddText(
+		center_column - strlen(text),
+		center_row,
+		2, mf_Text::default_color, text );
+
+	text_->Draw();
+	SwapBuffers( hdc_ );
+}
+
+void mf_MainLoop::Play( const mf_Settings* settings )
 {
 	game_logic_= new mf_GameLogic( &player_ );
 
