@@ -14,12 +14,17 @@ namespace PowerupsTables
 
 int stars_bonus_table[mf_Powerup::LastType]=
 {
-	1, 0
+	1, 0, 0
 };
 
 int health_bonus_table[mf_Powerup::LastType]=
 {
-	0, 200
+	0, 200, 0
+};
+
+int rockets_bonus_table[mf_Powerup::LastType]=
+{
+	0, 0, 3
 };
 
 } // namespace PowerupsTables
@@ -249,6 +254,7 @@ void mf_GameLogic::PlacePowerups()
 		powerups_[powerup_count_].type= type;
 		powerups_[powerup_count_].stars_bonus= PowerupsTables::stars_bonus_table[type];
 		powerups_[powerup_count_].health_bonus= PowerupsTables::health_bonus_table[type];
+		powerups_[powerup_count_].rockets_bonus = PowerupsTables::rockets_bonus_table[type];
 		powerups_[powerup_count_].pos[0]= level_.GetValleyCenterX( y );
 		powerups_[powerup_count_].pos[1]= y;
 		powerups_[powerup_count_].pos[2]= level_.TerrainWaterLevel() + 0.25f * randomizer_.RandF( 5.0f, level_.TerrainAmplitude() );

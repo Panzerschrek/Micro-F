@@ -21,6 +21,9 @@ const unsigned char star[]=
 const unsigned char wrench_hammer[]=
 #include "wrench-hammer.h"
 ;
+const unsigned char rockets[]=
+#include "rockets.h"
+;
 
 const unsigned char cube[]=
 #include "cube.h"
@@ -44,7 +47,8 @@ const unsigned char* aircraft_models[ mf_Aircraft::LastType ]=
 const unsigned char* powerups_models[ mf_Powerup::LastType ]=
 {
 	star,
-	wrench_hammer
+	wrench_hammer,
+	rockets
 };
 
 } // namespace mf_Models

@@ -18,12 +18,14 @@ struct mf_Powerup
 	{
 		Star,
 		MiddleHealth,
+		Rockets,
 		LastType
 	};
 	Type type;
 	float pos[3];
 	int stars_bonus;
 	int health_bonus;
+	int rockets_bonus;
 };
 
 struct mf_Bullet
