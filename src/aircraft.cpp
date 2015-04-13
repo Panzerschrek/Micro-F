@@ -36,7 +36,7 @@ mf_Aircraft::mf_Aircraft( Type type, int hp )
 	, yaw_factor_  (0.0f)
 	, roll_factor_ (0.0f)
 	, throttle_(1.0f)
-	, hp_(hp)
+	, hp_(hp), rockets_count_(3)
 {
 	axis_[0][0]= 1.0f;
 	axis_[0][1]= 0.0f;

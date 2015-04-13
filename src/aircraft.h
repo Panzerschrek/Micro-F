@@ -31,6 +31,9 @@ public:
 	int HP() const;
 	void AddHP( int hp_bonus );
 
+	int RocketsCount() const;
+	void AddRockets( int rocket_bonus );
+
 	void SetType( Type type );
 
 	void SetPos( const float* pos );
@@ -62,6 +65,7 @@ private:
 	float throttle_;
 
 	int hp_;
+	int rockets_count_;
 
 	float max_engines_trust_; // N
 	float wings_area_; // m^2
@@ -134,6 +138,16 @@ inline int mf_Aircraft::HP() const
 inline void mf_Aircraft::AddHP( int hp_bonus )
 {
 	hp_+= hp_bonus;
+}
+
+inline int mf_Aircraft::RocketsCount() const
+{
+	return rockets_count_;
+}
+
+inline void mf_Aircraft::AddRockets( int rocket_bonus )
+{
+	rockets_count_+= rocket_bonus;
 }
 
 inline void mf_Aircraft::SetType( Type type )

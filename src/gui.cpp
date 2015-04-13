@@ -285,6 +285,7 @@ void mf_Gui::Draw()
 				{ 220, 64, 64, 0  }
 			};
 			static const unsigned char c_score_color[4]= { 240, 230, 220, 0 };
+			static const unsigned char c_rockets_color[4]= { 160, 160, 255, 0 };
 
 			unsigned int color_index;
 			if( aircraft->HP() >= 600 ) color_index= 0;
@@ -298,6 +299,10 @@ void mf_Gui::Draw()
 			char score_str[]= "Score: sdddd";
 			IntToStr( player_->Score(), score_str+7, 4 );
 			text_->AddText( right_column - 26, bottom_row - 4, 2, c_score_color, score_str );
+
+			char rockets_str[32];
+			sprintf( rockets_str, "Rockets: %d", aircraft->RocketsCount() );
+			text_->AddText( 2, bottom_row - 2, 2, c_rockets_color, rockets_str );
 		}
 
 		DrawControlPanel();

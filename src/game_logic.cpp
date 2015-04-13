@@ -216,6 +216,7 @@ void mf_GameLogic::Tick( float dt )
 		if( dst2 < c_powerup_pick_distance2 )
 		{
 			player_aircraft->AddHP( powerups_[i].health_bonus );
+			player_aircraft->AddRockets( powerups_[i].rockets_bonus );
 			player_->AddScorePoints( powerups_[i].stars_bonus );
 			mf_SoundEngine::Instance()->AddSingleSound( SoundPowerupPickup, 1.0f, 1.0f, NULL );
 
@@ -301,16 +302,21 @@ void mf_GameLogic::PlayerShot( const float* dir )
 
 void mf_GameLogic::PlayerRocketShot( const float* dir )
 {
-	mf_Rocket* rocket= rockets_ + rocket_count_;
+	mf_Aircraft* aircraft= player_->GetAircraft();
+	if( aircraft->RocketsCount() > 0 )
+	{
+		mf_Rocket* rocket= rockets_ + rocket_count_;
 
-	VEC3_CPY( rocket->dir, dir );
-	VEC3_CPY( rocket->pos, player_->GetAircraft()->Pos() );
-	rocket->velocity= 100.0f;
-	rocket->owner= player_->GetAircraft();
-	rocket->target= enemies_[0]->GetAircraft();
-	rocket->spawn_time= mf_MainLoop::Instance()->CurrentTime();
+		VEC3_CPY( rocket->dir, dir );
+		VEC3_CPY( rocket->pos, player_->GetAircraft()->Pos() );
+		rocket->velocity= 100.0f;
+		rocket->owner= player_->GetAircraft();
+		rocket->target= enemies_[0]->GetAircraft();
+		rocket->spawn_time= mf_MainLoop::Instance()->CurrentTime();
 
-	rocket_count_++;
+		aircraft->AddRockets( -1 );
+		rocket_count_++;
+	}
 }
 
 void mf_GameLogic::PlacePowerups()
