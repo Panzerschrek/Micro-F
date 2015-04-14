@@ -13,15 +13,26 @@ public:
 		ModeAircraftControl
 	};
 
+	enum ViewMode
+	{
+		ViewThirdperson,
+		ViewInsideCockpit
+	};
+
 	mf_Player();
 	~mf_Player();
 
-	void SetControlMode( ControlMode mode );
 	void Tick( float dt );
 
 	const float* Pos() const;
 	const float* Angle() const;
 	const float Fov() const;
+
+	void SetControlMode( ControlMode mode );
+	ControlMode GetControlMode() const;
+	void SetViewMode( ViewMode mode );
+	void ToggleViewMode();
+	ViewMode GetViewMode() const;
 
 	void ScreenPointToWorldSpaceVec( unsigned int x, unsigned int y, float* out_vec ) const;
 
@@ -73,6 +84,7 @@ private:
 
 private:
 	ControlMode control_mode_;
+	ViewMode view_mode_;
 	mf_Aircraft aircraft_;
 	mf_Autopilot autopilot_;
 
@@ -95,11 +107,6 @@ private:
 
 	unsigned int score_;
 };
-
-inline void mf_Player::SetControlMode( ControlMode mode )
-{
-	control_mode_= mode;
-}
 
 inline const float* mf_Player::Pos() const
 {
@@ -139,6 +146,32 @@ inline const float* mf_Player::Angle() const
 inline const float mf_Player::Fov() const
 {
 	return fov_;
+}
+
+inline void mf_Player::SetControlMode( ControlMode mode )
+{
+	control_mode_= mode;
+}
+
+inline mf_Player::ControlMode mf_Player::GetControlMode() const
+{
+	return control_mode_;
+}
+
+inline void mf_Player::ToggleViewMode()
+{
+	if( view_mode_ == ViewThirdperson ) view_mode_= ViewInsideCockpit;
+	else view_mode_= ViewThirdperson;
+}
+
+inline void mf_Player::SetViewMode( ViewMode mode )
+{
+	view_mode_= mode;
+}
+
+inline mf_Player::ViewMode mf_Player::GetViewMode() const
+{
+	return view_mode_;
 }
 
 inline void mf_Player::SetPos( float x, float y, float z )

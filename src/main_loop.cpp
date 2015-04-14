@@ -105,6 +105,8 @@ void mf_MainLoop::Loop()
 			text_->AddText( 0, 0, 1, mf_Text::default_color, fps_str );
 		}
 
+		if( mouse_captured_ )
+			gui_->SetCursor( viewport_width_ / 2, viewport_height_ / 2 );
 		gui_->Draw();
 		text_->Draw();
 
@@ -377,6 +379,8 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 			instance->player_.RotateClockwiseReleased(); break;
 		case KEY('E'):
 			instance->player_.RotateAnticlockwiseReleased(); break;
+		case VK_F1:
+			instance->player_.ToggleViewMode(); break;
 		default:
 			break;
 		}

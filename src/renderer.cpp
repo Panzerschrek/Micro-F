@@ -2069,10 +2069,14 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 void mf_Renderer::DrawAircrafts()
 {
 	const mf_Aircraft* aircrafts[64];
-	for( unsigned int i= 0; i< game_logic_->GetEnemiesCount(); i++ )
+	unsigned int aircrafts_count= game_logic_->GetEnemiesCount();
+	for( unsigned int i= 0; i< aircrafts_count; i++ )
 		aircrafts[i]= game_logic_->GetEnemies()[i]->GetAircraft();
-	aircrafts[ game_logic_->GetEnemiesCount() ]= player_->GetAircraft();
-	unsigned int aircrafts_count= game_logic_->GetEnemiesCount() + 1;
+	if( player_->GetViewMode() == mf_Player::ViewThirdperson )
+	{
+		aircrafts[ aircrafts_count ]= player_->GetAircraft();
+		aircrafts_count++;
+	}
 
 	aircrafts_data_.vbo.Bind();
 	glActiveTexture( GL_TEXTURE0 );

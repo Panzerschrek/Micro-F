@@ -126,12 +126,13 @@ void SphericalCoordinatesToVec( float longitude, float latitude, float* out_vec 
 
 void VecToSphericalCoordinates( const float* vec, float* out_longitude, float* out_latitude )
 {
-	*out_latitude= mf_Math::asin(vec[2]);
+	static const float c_almost_one= 0.9999998f;
+	*out_latitude= mf_Math::asin( mf_Math::clamp( -c_almost_one, c_almost_one, vec[2]) );
 
-	float lat_cos2= 1.0f - vec[2] * vec[2];
+	float lat_cos2= 1.0f - mf_Math::clamp( -c_almost_one, c_almost_one, vec[2] * vec[2] );
 	float vec_y= vec[1] / mf_Math::sqrt(lat_cos2);
 
-	*out_longitude= mf_Math::acos(vec_y);
+	*out_longitude= mf_Math::acos( mf_Math::clamp( -c_almost_one, c_almost_one, vec_y) );
 	if ( vec[0] > 0.0f ) *out_longitude= MF_2PI - *out_longitude;
 }
 

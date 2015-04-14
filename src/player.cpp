@@ -14,7 +14,7 @@
 #define MF_INITIAL_FOV (MF_PI2 - MF_FOV_STEP)
 
 mf_Player::mf_Player()
-	: control_mode_(ModeAircraftControl)
+	: control_mode_(ModeAircraftControl), view_mode_(/*ViewThirdperson*/ViewInsideCockpit)
 	, aircraft_(mf_Aircraft::V1)
 	, autopilot_(&aircraft_)
 	, cam_radius_(10.0f)
@@ -114,11 +114,31 @@ void mf_Player::Tick( float dt )
 		aircraft_.SetYawFactor  ( yaw_factor   );
 		aircraft_.Tick( dt );
 
-		float cam_vec[3];
-		SphericalCoordinatesToVec( angle_[2], angle_[0], cam_vec );
-		Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
-		Vec3Mul( cam_vec, -cam_radius_ );
-		Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
+		if( view_mode_ == ViewThirdperson )
+		{
+			float cam_vec[3];
+			SphericalCoordinatesToVec( angle_[2], angle_[0], cam_vec );
+			Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
+			Vec3Mul( cam_vec, -cam_radius_ );
+			Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
+		}
+		else
+		{
+			VEC3_CPY( pos_, aircraft_.Pos() );
+			VecToSphericalCoordinates( aircraft_.AxisVec(1), &angle_[2], &angle_[0] );
+
+			float rot_x_mat[16];
+			float rot_z_mat[16];
+			float rot_mat[16];
+			Mat4RotateX( rot_x_mat, -angle_[0] );
+			Mat4RotateZ( rot_z_mat, -angle_[2] );
+			Mat4Mul( rot_z_mat, rot_x_mat, rot_mat );
+
+			float x_vec[3];
+			Vec3Mat4Mul( aircraft_.AxisVec(0), rot_mat, x_vec );
+			angle_[1]= - atan2( x_vec[2], x_vec[0] );
+
+		}
 	}
 }
 
