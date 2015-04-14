@@ -391,11 +391,11 @@ void GenV1Texture( mf_Texture* tex )
 
 void GenSunTexture( mf_Texture* tex )
 {
-	unsigned int size_x= 1 << tex->SizeXLog2();
-	unsigned int size_y= 1 << tex->SizeYLog2();
+	MF_ASSERT( tex->SizeXLog2() == tex->SizeYLog2() );
+
 	static const float sun_color0[]= { 1.0f, 0.95f, 0.9f, 1.0f };
 	static const float sun_color1[]= { 1.0f, 0.9f, 0.85f, 0.0f };
-	tex->RadialGradient( size_x / 2, size_y / 2, size_x/2, sun_color0, sun_color1 );
+	tex->RadialGradient( tex->SizeX() / 2, tex->SizeX() / 2, tex->SizeX() / 2 - 2, sun_color0, sun_color1 );
 
 	tex->Pow( 0.7f );
 }
