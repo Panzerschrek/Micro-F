@@ -810,6 +810,19 @@ void mf_Renderer::DrawFrame()
 		glDisable( GL_DEPTH_TEST );
 		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
 		glEnable( GL_DEPTH_TEST );
+
+
+		// Warning! this operation is very expensve (CPU-GPU synchronization) and used only in debug mode.
+		float brightness[2];
+		glActiveTexture( GL_TEXTURE0 );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_tex_id );
+		glGetTexImage( GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, &brightness[0] );
+		glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_accumulate_tex_id );
+		glGetTexImage( GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, &brightness[1] );
+
+		char str[128];
+		sprintf( str, "raw brightness for tonemapping: %f\naccumulated brightness: %f", 1.0f / brightness[0], 1.0f / brightness[1] );
+		text_->AddText( 0, 6, 1, mf_Text::default_color, str );
 #endif
 	}
 

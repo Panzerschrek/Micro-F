@@ -693,7 +693,7 @@ const char* const tonemapping_shader_v=
 "noperspective out float b;"
 "void main()"
 "{"
-	"b=-texelFetch(btex,ivec2(0,0),0).x*ck;"
+	"b=ck*log(0.5)*texelFetch(btex,ivec2(0,0),0).x;"
 	"ftc=coord[gl_VertexID];"
 	"gl_Position=vec4(coord[gl_VertexID]*2.0-vec2(1.0,1.0),0.0,1.0);"
 "}";
@@ -793,8 +793,7 @@ const char* const brightness_computing_shader_f=
 		"}"
 		"portion_sum+= sum_add;"
 	"}"
-	"if(b95>full_sum*4.0)b95=full_sum*4.0;"
-	"float k=-log(0.5)/b95;"
+	"float k=1.0/min(b95,full_sum*4.0);"
 	"c_=vec4(k,k,k,k);"
 "}";
 
