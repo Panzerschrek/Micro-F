@@ -121,6 +121,7 @@ void mf_Player::Tick( float dt )
 			Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
 			Vec3Mul( cam_vec, -cam_radius_ );
 			Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
+			angle_[1]= 0.0f;
 		}
 		else
 		{
