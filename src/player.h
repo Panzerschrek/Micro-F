@@ -28,6 +28,8 @@ public:
 	const float* Angle() const;
 	const float Fov() const;
 
+	float GetMachinegunCircleRadius() const;
+
 	void SetControlMode( ControlMode mode );
 	ControlMode GetControlMode() const;
 	void SetViewMode( ViewMode mode );

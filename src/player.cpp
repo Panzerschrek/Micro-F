@@ -143,6 +143,15 @@ void mf_Player::Tick( float dt )
 	}
 }
 
+float mf_Player::GetMachinegunCircleRadius() const
+{
+	const float c_machinegun_angle= MF_PI6;
+	return 0.5f *
+		float(mf_MainLoop::Instance()->ViewportHeight()) *
+		mf_Math::tan( c_machinegun_angle * 0.5f ) /
+		mf_Math::tan( fov_ * 0.5f );
+}
+
 void mf_Player::RotateX( float pixel_delta )
 {
 	angle_[0]+= pixel_delta * 0.01f * mf_Math::sqrt( mf_Math::tan( fov_ * 0.5f ) );

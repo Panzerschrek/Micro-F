@@ -86,6 +86,29 @@ void mf_MainLoop::Loop()
 					player_.RotateX( float( prev_cursor_pos_.y - new_cursor_pos.y ) * mouse_speed_y_ );
 					SetCursorPos( prev_cursor_pos_.x, prev_cursor_pos_.y );
 				}
+				else if( player_.GetViewMode() == mf_Player::ViewInsideCockpit )
+				{
+					POINT new_cursor_pos;
+					GetCursorPos( &new_cursor_pos );
+					MapWindowPoints( 0, hwnd_, &new_cursor_pos, 1 );
+
+					int dx= new_cursor_pos.x - viewport_width_  / 2;
+					int dy= new_cursor_pos.y - viewport_height_ / 2;
+					float r2= float( dx * dx + dy * dy );
+					float max_r= player_.GetMachinegunCircleRadius();
+					if( r2 > max_r * max_r )
+					{
+						float k= max_r / mf_Math::sqrt(r2);
+						new_cursor_pos.x= int( float(dx) * k ) + viewport_width_  / 2;
+						new_cursor_pos.y= int( float(dy) * k ) + viewport_height_ / 2;
+
+						POINT global_point= new_cursor_pos;
+						MapWindowPoints( hwnd_, 0, &global_point, 1 );
+						SetCursorPos( global_point.x, global_point.y );
+					}
+					gui_->SetCursor( new_cursor_pos.x, new_cursor_pos.y );
+				}
+
 				player_.Tick(prev_tick_dt_);
 				game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
 
