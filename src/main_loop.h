@@ -68,6 +68,7 @@ private:
 
 	POINT prev_cursor_pos_;
 	bool mouse_captured_;
+	bool shot_button_pressed_;
 
 	mf_Text* text_;
 

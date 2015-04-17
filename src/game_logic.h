@@ -67,7 +67,8 @@ public:
 	~mf_GameLogic();
 
 	void Tick( float dt );
-	void PlayerShot( const float* dir );
+	void PlayerShotBegin();
+	void PlayerShotContinue( const float* dir, bool first_shot= false );
 	void PlayerRocketShot( const float* dir );
 
 	const mf_Level* GetLevel() const;
@@ -104,6 +105,8 @@ private:
 	mf_SoundSource* player_sound_;
 
 	mf_DrawingModel aircrafts_models_[ mf_Aircraft::LastType ];
+
+	float player_last_shot_time_;
 };
 
 inline const mf_Level* mf_GameLogic::GetLevel() const

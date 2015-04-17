@@ -84,17 +84,17 @@ void mf_ParticlesManager::AddEnginesTrail( const mf_Aircraft* aircraft )
 void mf_ParticlesManager::AddBulletTerrainHit( const float* pos )
 {
 	Particle* particle= particles_ + particle_count_;
-	for( unsigned int i= 0; i< 128; i++, particle++ )
+	for( unsigned int i= 0; i< 32; i++, particle++ )
 	{
 		VEC3_CPY( particle->pos, pos );
 		for( unsigned int j= 0; j< 3; j++ )
 			particle->direction[j]= randomizer_.RandF( -1.0f, 1.0f );
 		Vec3Normalize( particle->direction );
 		particle->velocity= 20.0f;
-		particle->acceleration= -5.0f;
+		particle->acceleration= -10.0f;
 		particle->type= Particle::JetEngineTrail;
 		particle->spawn_time= current_tick_time_;
-		particle->life_time= MF_SMOKE_MAX_LIFETIME;
+		particle->life_time= MF_SMOKE_MAX_LIFETIME * 0.5f;
 	}
 	particle_count_+= 128;
 }

@@ -78,6 +78,7 @@ void mf_MainLoop::Loop()
 			{
 				prev_game_tick_= tick;
 
+				unsigned int cursor_xy[2]= { viewport_width_ / 2, viewport_height_ / 2 };
 				if( mouse_captured_ )
 				{
 					POINT new_cursor_pos;
@@ -106,12 +107,20 @@ void mf_MainLoop::Loop()
 						MapWindowPoints( hwnd_, 0, &global_point, 1 );
 						SetCursorPos( global_point.x, global_point.y );
 					}
+					cursor_xy[0]= new_cursor_pos.x;
+					cursor_xy[1]= new_cursor_pos.y;
 					gui_->SetCursor( new_cursor_pos.x, new_cursor_pos.y );
 				}
 
 				player_.Tick(prev_tick_dt_);
 				game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
 
+				if( shot_button_pressed_ )
+				{
+					float dir[3];
+					player_.ScreenPointToWorldSpaceVec( cursor_xy[0], cursor_xy[1], dir );
+					game_logic_->PlayerShotContinue( dir );
+				}
 				game_logic_->Tick( prev_tick_dt_ );
 			}// if normal dt
 
@@ -190,7 +199,7 @@ mf_MainLoop::mf_MainLoop(
 	, fullscreen_(fullscreen)
 	, vsync_(vsync)
 	, quit_(false)
-	, prev_cursor_pos_(), mouse_captured_(false)
+	, prev_cursor_pos_(), mouse_captured_(false), shot_button_pressed_(false)
 	, game_logic_(NULL), renderer_(NULL), sound_engine_(NULL), music_engine_(NULL), gui_(NULL)
 	, mode_(ModeMainMenu)
 {
@@ -346,6 +355,7 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 		break;
 	case WM_LBUTTONDOWN:
 		instance->Shot( lParam&65535, lParam>>16, 0 );
+		instance->shot_button_pressed_= true;
 		break;
 	case WM_RBUTTONDOWN:
 		instance->Shot( lParam&65535, lParam>>16, 1 );
@@ -355,6 +365,7 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 		break;
 	case WM_LBUTTONUP:
 		instance->gui_->MouseClick( lParam&65535, lParam>>16 );
+		instance->shot_button_pressed_= false;
 		break;
 	case WM_MOUSEMOVE:
 		instance->gui_->MouseHover( lParam&65535, lParam>>16 );
@@ -529,7 +540,8 @@ void mf_MainLoop::Shot( unsigned int x, unsigned int y, unsigned int button )
 		{
 			float dir[3];
 			player_.ScreenPointToWorldSpaceVec( x, y, dir );
-			game_logic_->PlayerShot( dir );
+			game_logic_->PlayerShotBegin();
+			game_logic_->PlayerShotContinue( dir, true );
 		}
 		else
 		{

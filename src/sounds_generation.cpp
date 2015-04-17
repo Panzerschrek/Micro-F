@@ -140,7 +140,18 @@ short* GenMachinegunShotSound( unsigned int sample_rate, unsigned int* out_sampl
 	for( unsigned int i= 0; i< sample_count; i++ )
 	{
 		float t= float(i) / sample_rate_f;
-		float a= Noise1Final( t * 1536.0f, 4 ) * 2.0f * mf_Math::exp(-t*10.0f);
+		float a= Noise1Final( t * 1536.0f - t * t * 512.0f, 4 ) * 2.0f * mf_Math::exp(-t*12.0f);
+
+		if( t > c_length * 0.5f )
+		{
+			const float c_base_freq= 1834.0f;
+			float sin_sum=
+				0.5f * mf_Math::sin( c_base_freq * MF_2PI * t ) +
+				0.1f * mf_Math::sin( c_base_freq* MF_2PI * t * 2.0f ) +
+				0.05f * mf_Math::sin( c_base_freq * MF_2PI * t * 3.0f ) +
+				0.05f * mf_Math::sin( c_base_freq * MF_2PI * t * 4.0f );
+			a+= 0.25f * sin_sum * mf_Math::exp( -15.0f * ( t - c_length * 0.5f ) );
+		}
 		data[i]= AmplitudeFloatToShort( a );
 	}
 
