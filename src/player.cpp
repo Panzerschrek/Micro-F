@@ -33,6 +33,8 @@ mf_Player::mf_Player()
 	CalculateCamRadius();
 
 	autopilot_.SetMode( mf_Autopilot::ModeKillRotation );
+	//autopilot_.SetMode( mf_Autopilot::ModeTurnToAzimuth );
+	//autopilot_.SetTargetAzimuth( -MF_PI4 );
 }
 
 mf_Player::~mf_Player()

@@ -3,7 +3,7 @@
 
 #include "mf_math.h"
 
-static const float g_roll_rotate_speed=  0.0625f;
+static const float g_roll_rotate_speed=  0.2f;
 static const float g_pitch_rotate_speed= 0.125f;
 static const float g_yaw_rotate_speed=   0.0625f;
 
