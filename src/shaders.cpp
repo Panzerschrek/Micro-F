@@ -195,8 +195,8 @@ const char* const water_shader_v=
 "void main()"
 "{"
 	"vec3 p3=vec3(p*tcs.xy,wl);"
-	"fp=p3.xy;"
-	"p3.z+=(sin(p.x*om+ph)+sin(p.y*om+ph)-2.08)*0.2;" // sub values for prevent reflection artefacts (like sky pixels near coast )
+	"fp=0.0625*p3.xy;"
+	"p3.z+=(sin(p.x*om+ph)+sin(p.y*om+ph)-2.9)*0.2;" // sub values for prevent reflection artefacts (like sky pixels near coast )
 	"fvtc=cp-p3;"
 	"gl_Position=mat*vec4(p3,1.0);"
 "}"
@@ -205,6 +205,7 @@ const char* const water_shader_v=
 const char* const water_shader_f=
 "#version 330\n"
 "uniform sampler2D tex;" // reflection texture
+"uniform sampler3D ntex;" // normalmap
 "uniform vec3 its;" // invert texture size
 "uniform float ph;" // sin phase
 "in vec3 fvtc;" // vec to camera
@@ -212,9 +213,13 @@ const char* const water_shader_f=
 "out vec4 c_;" // out color
 "void main()"
 "{"
-	"float s=0.005*sin(fp.x*1.7+ph*2.8);"
-	"float c=0.005*cos(fp.y*1.5+ph*2.7);"
-	"float a=pow(1.0-normalize(fvtc).z,5.0);"
+	"vec4 t=0.2*(texture(ntex,vec3(fp,ph))+2.0*texture(ntex,vec3(fp*0.5,0.5*ph))+4.0*texture(ntex,vec3(fp*0.25,0.25*ph)));"
+	"vec3 n=normalize(t.xyz*2.0-vec3(1.0,1.0,1.0));"
+	"float ndot=max(0.0,normalize(fvtc).z);"
+	"float l=0.4*inversesqrt(length(fvtc));"
+	"float s=min(0.5,n.x*l);"
+	"float c=min(0.5,ndot*n.y*l);"
+	"float a=pow(1.0-ndot,5.0);"
 	"c_=vec4(texture(tex,(gl_FragCoord.xy*its.xy)+vec2(s,c)).xyz,clamp(a,0.1,0.9));"
 "}"
 ;

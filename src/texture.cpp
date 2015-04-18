@@ -270,6 +270,8 @@ void mf_Texture::GenNormalMap()
 
 			d[0]= dx;
 			d[1]= dy;
+			d[2]= 1.0f;
+			Vec3Normalize(d);
 		}
 }
 

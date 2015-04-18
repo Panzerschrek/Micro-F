@@ -97,6 +97,7 @@ private:
 		GLuint depth_tex_id;
 	} water_reflection_fbo_;
 	mf_GLSLProgram water_shader_;
+	GLuint water_waves_texure_id_;
 
 	struct
 	{

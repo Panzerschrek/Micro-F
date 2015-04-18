@@ -168,7 +168,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 	//water shader preparing
 	water_shader_.SetAttribLocation( "p", 0 );
 	water_shader_.Create( mf_Shaders::water_shader_v, mf_Shaders::water_shader_f );
-	static const char* const water_shader_uniforms[]= { "mat", "wl", "tcs", "tex", "its", "cp", "ph" };
+	static const char* const water_shader_uniforms[]= { "mat", "wl", "tcs", "tex", "ntex", "its", "cp", "ph" };
 	water_shader_.FindUniforms( water_shader_uniforms,
 		sizeof(water_shader_uniforms) / sizeof(char*) );
 
@@ -587,6 +587,42 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+	}
+	{ // water normalmap texture
+		const unsigned int c_layers_count= 8;
+		mf_Texture tex( 7, 7 );
+
+		glGenTextures( 1, &water_waves_texure_id_ );
+		glBindTexture( GL_TEXTURE_3D, water_waves_texure_id_ );
+		glTexImage3D( GL_TEXTURE_3D, 0, GL_RGBA8,
+			tex.SizeX(), tex.SizeY(), c_layers_count,
+			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+		for( unsigned int i= 0; i< c_layers_count; i++ )
+		{
+			tex.PoissonDiskPoints( 16, i );
+			tex.Mul( &tex );
+			float* tex_data= tex.GetData();
+			for( unsigned int xy= 0; xy< tex.SizeX() * tex.SizeY(); xy++, tex_data+= 4 )
+				tex_data[3]= 1.0f - tex_data[0] * tex_data[0] * 64.0f;
+			tex.GenNormalMap();
+			tex.SinWaveDeformX( 4.0f, 1.0f / 32.0f, 0.0f );
+			tex.SinWaveDeformY( 4.0f, 1.0f / 32.0f, 0.0f );
+
+			static const float c_add_color[]= { 1.0f, 1.0f, 1.0f, 0.0f };
+			static const float c_mul_color[]= { 0.5f, 0.5f, 0.5f, 1.0f };
+			tex.Add( c_add_color );
+			tex.Mul( c_mul_color );
+			tex.LinearNormalization( 1.0f );
+
+			glTexSubImage3D( GL_TEXTURE_3D, 0,
+				0, 0, i,
+				tex.SizeX(), tex.SizeY(), 1,
+				GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
+		}
+		glTexParameteri( GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_MAX_LOD, 1.0f );
+		glGenerateMipmap( GL_TEXTURE_3D );
 	}
 
 	CreateWaterReflectionFramebuffer();
@@ -2409,6 +2445,10 @@ void mf_Renderer::DrawWater()
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, water_reflection_fbo_.tex_id );
 	water_shader_.UniformInt( "tex", 0 );
+
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_3D, water_waves_texure_id_ );
+	water_shader_.UniformInt( "ntex", 1 );
 
 	mf_MainLoop* main_loop= mf_MainLoop::Instance();
 
