@@ -29,7 +29,7 @@ void mf_Autopilot::GetControlResult( float* in_out_pitch_factor, float* in_out_y
 		float elevation= mf_Math::asin( mf_Math::clamp( -c_almost_one, c_almost_one, aircraft_->AxisVec(1)[2] ) );
 		float angle[3];
 		{
-			VecToSphericalCoordinates( aircraft_->AxisVec(1), &angle[0], &angle[2] );
+			VecToSphericalCoordinates( aircraft_->AxisVec(1), &angle[2], &angle[0] );
 
 			float rot_x_mat[16];
 			float rot_z_mat[16];
@@ -56,23 +56,27 @@ void mf_Autopilot::GetControlResult( float* in_out_pitch_factor, float* in_out_y
 		Vec3Cross( target_azimuth_vec, course_vec, azimuth_course_cross );
 		float course_angle_delta= mf_Math::asin( mf_Math::clamp(-c_almost_one, c_almost_one, azimuth_course_cross[2] ) );
 		if( mf_Math::fabs(course_angle_delta) < MF_2PI * 0.003f ) course_angle_delta= 0.0f;
-		printf( "z_rot_speed: %f\n", z_rot_speed );
+		printf( "angle[1]: %f\n", angle[1] );
 
 		// target roll
-		float target_y_angle= mf_Math::clamp( -c_max_y_angle, c_max_y_angle, 1.0f * course_angle_delta );
-
+		float target_y_angle= mf_Math::clamp( -c_max_y_angle, c_max_y_angle, 1.5f * mf_Math::sign(course_angle_delta) * mf_Math::sqrt(mf_Math::fabs(course_angle_delta)) );
 		float y_angle_delta= target_y_angle - angle[1];
 		*in_out_roll_factor= mf_Math::clamp( -1.0f, 1.0f,
-			+0.5f * y_angle_delta +
-			-0.3f * aircraft_->AngularSpeed()[1]
+			+5.0f * y_angle_delta +
+			-8.0f * aircraft_->AngularSpeed()[1]
 			);
-/*
+
 		*in_out_pitch_factor= mf_Math::clamp( -1.0f, 1.0f,
 			mf_Math::fabs(course_angle_delta) *
-			max( 0.0f, ( c_max_y_angle - 3.0f * mf_Math::fabs(y_angle_delta) ) / c_max_y_angle ) *
-			1.0f *
+			max( 0.0f, ( c_max_y_angle - 2.0f * mf_Math::fabs(y_angle_delta) ) / c_max_y_angle ) *
+			0.5f * 
 			mf_Math::fabs(mf_Math::sin(angle[1]))
-			+ mf_Math::cos(angle[1]) * ( -elevation * 2.0f + 2.0f * aircraft_->AngularSpeed()[0] ) );*/
+			+ mf_Math::cos(angle[1]) * ( -elevation * 2.0f + 3.0f * aircraft_->AngularSpeed()[0] ));
+
+		*in_out_pitch_factor+= mf_Math::cos(angle[1]) * mf_Math::clamp( -0.1f, 0.1f, (target_altitude_ - aircraft_->Pos()[2]) * 0.003f - (aircraft_->Velocity()[2]) * 0.008f );
+		*in_out_pitch_factor= mf_Math::clamp( -1.0f, 1.0f, *in_out_pitch_factor );
+
+		*in_out_yaw_factor= mf_Math::clamp( -1.0f, 1.0f, -40.0f * aircraft_->AngularSpeed()[2] );
 	}
 	else if( mode_ == ModeReachAltitude )
 	{

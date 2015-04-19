@@ -34,7 +34,8 @@ mf_Player::mf_Player()
 
 	autopilot_.SetMode( mf_Autopilot::ModeKillRotation );
 	//autopilot_.SetMode( mf_Autopilot::ModeTurnToAzimuth );
-	//autopilot_.SetTargetAzimuth( -MF_PI4 );
+	//autopilot_.SetTargetAzimuth( -MF_PI2 );
+	//autopilot_.SetTargetAltitude( aircraft_.Pos()[2] );
 }
 
 mf_Player::~mf_Player()
