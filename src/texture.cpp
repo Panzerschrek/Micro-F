@@ -249,7 +249,7 @@ void mf_Texture::GenNormalMap()
 	for( unsigned int y= 0; y< size_[1]; y++ )
 		for( unsigned int x= 0; x< size_[0]; x++, d+= 4 )
 		{
-			float val[8];
+			float val[9];
 			unsigned int ys= ((y-1)&(size_y1)) << size_log2_[0];
 			val[0]= data_[ 3+ ( ( ((x-1)&size_x1) + ys ) << 2 ) ];
 			val[1]= data_[ 3+ ( (   x             + ys ) << 2 ) ];
