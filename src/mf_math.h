@@ -144,14 +144,16 @@ inline float log( float a )
 
 inline float fabs( float x )
 {
-	float r;
+	/*float r;
 	__asm
 	{
 		fld x
 		fabs
 		fstp r
 	}
-	return r;
+	return r;*/
+	if( x >= 0.0f ) return x;
+	return -x;
 }
 
 inline float sign( float a )

@@ -59,19 +59,20 @@ void mf_Autopilot::GetControlResult( float* in_out_pitch_factor, float* in_out_y
 		printf( "z_rot_speed: %f\n", z_rot_speed );
 
 		// target roll
-		float target_y_angle= mf_Math::clamp( -c_max_y_angle, c_max_y_angle, 0.5f * course_angle_delta );
+		float target_y_angle= mf_Math::clamp( -c_max_y_angle, c_max_y_angle, 1.0f * course_angle_delta );
 
 		float y_angle_delta= target_y_angle - angle[1];
 		*in_out_roll_factor= mf_Math::clamp( -1.0f, 1.0f,
-			+8.0f * y_angle_delta * y_angle_delta * y_angle_delta
-			- 0.5f * aircraft_->AngularSpeed()[1]
+			+0.5f * y_angle_delta +
+			-0.3f * aircraft_->AngularSpeed()[1]
 			);
-
+/*
 		*in_out_pitch_factor= mf_Math::clamp( -1.0f, 1.0f,
 			mf_Math::fabs(course_angle_delta) *
-			0.3f *
+			max( 0.0f, ( c_max_y_angle - 3.0f * mf_Math::fabs(y_angle_delta) ) / c_max_y_angle ) *
+			1.0f *
 			mf_Math::fabs(mf_Math::sin(angle[1]))
-			- elevation * 2.0f + 2.0f * aircraft_->AngularSpeed()[0] );
+			+ mf_Math::cos(angle[1]) * ( -elevation * 2.0f + 2.0f * aircraft_->AngularSpeed()[0] ) );*/
 	}
 	else if( mode_ == ModeReachAltitude )
 	{
