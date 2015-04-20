@@ -3,7 +3,7 @@
 
 #include "mf_math.h"
 
-static const float g_roll_rotate_speed=  0.0625f;
+static const float g_roll_rotate_speed=  0.2f;
 static const float g_pitch_rotate_speed= 0.125f;
 static const float g_yaw_rotate_speed=   0.0625f;
 
@@ -258,6 +258,22 @@ void mf_Aircraft::Tick( float dt )
 		debug_roll_control_factor_= roll_factor_;
 #endif
 	}
+}
+
+void mf_Aircraft::CalculateAngles( float* out_angles ) const
+{
+	VecToSphericalCoordinates( axis_[1], &out_angles[2], &out_angles[0] );
+
+	float rot_x_mat[16];
+	float rot_z_mat[16];
+	float rot_mat[16];
+	Mat4RotateX( rot_x_mat, -out_angles[0] );
+	Mat4RotateZ( rot_z_mat, -out_angles[2] );
+	Mat4Mul( rot_z_mat, rot_x_mat, rot_mat );
+
+	float x_vec[3];
+	Vec3Mat4Mul( axis_[0], rot_mat, x_vec );
+	out_angles[1]= - atan2( x_vec[2], x_vec[0] );
 }
 
 void mf_Aircraft::ThrottleUp( float dt )

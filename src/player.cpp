@@ -33,6 +33,9 @@ mf_Player::mf_Player()
 	CalculateCamRadius();
 
 	autopilot_.SetMode( mf_Autopilot::ModeKillRotation );
+	//autopilot_.SetMode( mf_Autopilot::ModeTurnToAzimuth );
+	//autopilot_.SetTargetAzimuth( -MF_PI2 );
+	//autopilot_.SetTargetAltitude( /*aircraft_.Pos()[2]*/70.0f );
 }
 
 mf_Player::~mf_Player()
@@ -126,19 +129,7 @@ void mf_Player::Tick( float dt )
 		else
 		{
 			VEC3_CPY( pos_, aircraft_.Pos() );
-			VecToSphericalCoordinates( aircraft_.AxisVec(1), &angle_[2], &angle_[0] );
-
-			float rot_x_mat[16];
-			float rot_z_mat[16];
-			float rot_mat[16];
-			Mat4RotateX( rot_x_mat, -angle_[0] );
-			Mat4RotateZ( rot_z_mat, -angle_[2] );
-			Mat4Mul( rot_z_mat, rot_x_mat, rot_mat );
-
-			float x_vec[3];
-			Vec3Mat4Mul( aircraft_.AxisVec(0), rot_mat, x_vec );
-			angle_[1]= - atan2( x_vec[2], x_vec[0] );
-
+			aircraft_.CalculateAngles( angle_ );
 		}
 	}
 }

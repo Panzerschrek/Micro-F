@@ -26,6 +26,8 @@ public:
 	const float* AngularSpeed() const;
 	const float* AngularAcceleration() const;
 
+	void CalculateAngles( float* out_angles ) const;
+
 	float Throttle() const;
 
 	int HP() const;
