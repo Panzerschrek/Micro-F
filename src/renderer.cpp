@@ -2585,9 +2585,13 @@ void mf_Renderer::DrawShadows()
 		aircraft_shadowmap_shader_.Bind();
 		aircrafts_data_.vbo.Bind();
 
-		const mf_Aircraft* aircrafts[1];
-		unsigned int aircraft_count= 1;
-		aircrafts[0]= player_->GetAircraft();
+		const mf_Aircraft* aircrafts[32];
+		unsigned int aircraft_count= game_logic_->GetEnemiesCount();
+		for( unsigned int i= 0; i< aircraft_count; i++ )
+			aircrafts[i]= game_logic_->GetEnemies()[i]->GetAircraft();
+		aircrafts[ aircraft_count ]= player_->GetAircraft();
+		aircraft_count++;
+
 		for( unsigned int i= 0; i< aircraft_count; i++ )
 		{
 			const mf_Aircraft* aircraft= aircrafts[i];
