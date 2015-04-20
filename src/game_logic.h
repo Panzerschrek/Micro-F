@@ -34,6 +34,7 @@ struct mf_Bullet
 	enum Type
 	{
 		ChaingunBullet,
+		AutomaticCannonShell,
 		PlasmaShell,
 		LastType
 	};

@@ -12,6 +12,8 @@ enum mf_SoundType
 	SoundPlasmajetEngine,
 	SoundPowerupPickup,
 	SoundMachinegunShot,
+	SoundAutomaticCannonShot,
+	SoundPlasmagunShot,
 	LastSound
 };
 

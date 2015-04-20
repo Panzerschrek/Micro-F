@@ -15,7 +15,7 @@
 
 mf_Player::mf_Player()
 	: control_mode_(ModeAircraftControl), view_mode_(ViewThirdperson)
-	, aircraft_(mf_Aircraft::V1)
+	, aircraft_(mf_Aircraft::F2XXX)
 	, autopilot_(&aircraft_)
 	, cam_radius_(10.0f)
 	, aspect_(1.0f), fov_(MF_INITIAL_FOV), target_fov_(MF_INITIAL_FOV)

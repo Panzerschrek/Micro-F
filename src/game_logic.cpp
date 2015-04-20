@@ -15,23 +15,37 @@
 namespace PowerupsTables
 {
 
-int stars_bonus_table[mf_Powerup::LastType]=
+static const int stars_bonus_table[mf_Powerup::LastType]=
 {
 	1, 0, 0
 };
 
-int health_bonus_table[mf_Powerup::LastType]=
+static const int health_bonus_table[mf_Powerup::LastType]=
 {
 	0, 200, 0
 };
 
-int rockets_bonus_table[mf_Powerup::LastType]=
+static const int rockets_bonus_table[mf_Powerup::LastType]=
 {
 	0, 0, 3
 };
 
 } // namespace PowerupsTables
 
+namespace Tables
+{
+
+static const int bullets_damage_table[ mf_Bullet::LastType ]=
+{
+	10, 20, 15
+};
+
+static const float aircraft_primary_weapon_freq[ mf_Aircraft::LastType ]=
+{
+	8.0f, 7.0f, 10.0f
+};
+
+} // namespace Tables
 
 static mf_SoundType AircraftTypeToEngineSoundType( mf_Aircraft::Type type )
 {
@@ -112,6 +126,7 @@ void mf_GameLogic::Tick( float dt )
 		float intersection_pos[3];
 		float bullet_travle_distance= dt * bullet->velocity;
 		bool is_intersection= level_.BeamIntersectTerrain( bullet->pos, bullet->dir, bullet_travle_distance, false, intersection_pos );
+		mf_Aircraft* hited_target= NULL;
 
 		// search intersection with enemies
 		for( unsigned int e= 0; e< enemies_count_; e++ )
@@ -140,11 +155,16 @@ void mf_GameLogic::Tick( float dt )
 						enemy_aircraft->AxisVec(2)[j] * aircraft_space_hit_pos[2] +
 						enemy_aircraft->Pos()[j];
 				is_intersection= true;
+				hited_target= enemy_aircraft;
 			}
 		}
 
 		if( is_intersection )
+		{
+			if( hited_target != NULL )
+				hited_target->AddHP( - Tables::bullets_damage_table[ bullet->type ] );
 			particles_manager_.AddBulletTerrainHit( intersection_pos );
+		}
 
 		if( is_intersection || bullet->velocity == mfInf() || IsBulletOutsideWorld(bullet->pos) )
 		{
@@ -293,7 +313,7 @@ void mf_GameLogic::PlayerShotBegin()
 
 void mf_GameLogic::PlayerShotContinue( const float* dir, bool first_shot )
 {
-	const float c_machinegun_freq= 10.0f;
+	const float c_machinegun_freq= Tables::aircraft_primary_weapon_freq[ player_->GetAircraft()->GetType() ];
 
 	float dt= mf_MainLoop::Instance()->CurrentTime() - player_last_shot_time_;
 	if( dt * c_machinegun_freq >= 1.0f || first_shot )
@@ -301,15 +321,33 @@ void mf_GameLogic::PlayerShotContinue( const float* dir, bool first_shot )
 		float unused;
 		player_last_shot_time_= mf_MainLoop::Instance()->CurrentTime() - modf( dt * c_machinegun_freq, &unused ) / c_machinegun_freq;
 
+		mf_Bullet::Type bullet_type;
+		mf_SoundType sound_type;
+		switch( player_->GetAircraft()->GetType() )
+		{
+			case mf_Aircraft::F1949:
+				bullet_type= mf_Bullet::AutomaticCannonShell; sound_type= SoundMachinegunShot;
+			break;
+			case mf_Aircraft::F2XXX:
+				bullet_type= mf_Bullet::PlasmaShell; sound_type= SoundPlasmagunShot;
+			break;
+			case mf_Aircraft::V1:
+				bullet_type= mf_Bullet::ChaingunBullet; sound_type= SoundMachinegunShot;
+			break;
+			default:
+				bullet_type= mf_Bullet::ChaingunBullet; sound_type= SoundMachinegunShot; MF_ASSERT(false);
+			break;
+		};
+
 		mf_Bullet* bullet= &bullets_[ bullets_count_ ];
-		bullet->type= mf_Bullet::ChaingunBullet;
+		bullet->type= bullet_type;
 		bullet->owner= player_->GetAircraft();
 		VEC3_CPY( bullet->pos, bullet->owner->Pos() );
 		Vec3Normalize( dir, bullet->dir );
 		bullet->velocity= mfInf();
 
 		bullets_count_++;
-		mf_SoundEngine::Instance()->AddSingleSound( SoundMachinegunShot, 1.0f, 1.0f, NULL );
+		mf_SoundEngine::Instance()->AddSingleSound( sound_type, 1.0f, 1.0f, NULL );
 	}
 }
 

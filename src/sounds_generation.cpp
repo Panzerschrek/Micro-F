@@ -159,10 +159,31 @@ short* GenMachinegunShotSound( unsigned int sample_rate, unsigned int* out_sampl
 	return data;
 }
 
+short* GenPlasmagunSound( unsigned int sample_rate, unsigned int* out_samples_count )
+{
+	const float c_length= 0.2f;
+
+	unsigned int sample_count= (unsigned int) ( float(sample_rate) * c_length );
+	short* data= new short[ sample_count ];
+
+	float sample_rate_f= float(sample_rate);
+	for( unsigned int i= 0; i< sample_count; i++ )
+	{
+		float t= float(i) / sample_rate_f;
+		float a= 1.5f * mf_Math::sin( MF_2PI * t * ( 800.0f - t * (400.0f/c_length) ) ) * mf_Math::exp( -t * 10.0f );
+		data[i]= AmplitudeFloatToShort( a );
+	}
+
+	*out_samples_count= sample_count;
+	return data;
+}
+
 short* (* const sound_gen_func[LastSound])(unsigned int sample_rate, unsigned int* out_samples_count)=
 {
 	GenPulsejetSound,
 	GenPlasmajetSound,
 	GenPowerupPickupSound,
-	GenMachinegunShotSound
+	GenMachinegunShotSound,
+	GenMachinegunShotSound, // TODO: automatic cannon sound
+	GenPlasmagunSound  // TODO: plasmagun sound
 };
