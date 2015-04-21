@@ -2117,7 +2117,7 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 
 void mf_Renderer::DrawAircrafts()
 {
-	const mf_Aircraft* aircrafts[64];
+	const mf_Aircraft* aircrafts[ MF_MAX_ENEMIES + 1 ];
 	unsigned int aircrafts_count= game_logic_->GetEnemiesCount();
 	for( unsigned int i= 0; i< aircrafts_count; i++ )
 		aircrafts[i]= game_logic_->GetEnemies()[i]->GetAircraft();
@@ -2585,7 +2585,7 @@ void mf_Renderer::DrawShadows()
 		aircraft_shadowmap_shader_.Bind();
 		aircrafts_data_.vbo.Bind();
 
-		const mf_Aircraft* aircrafts[32];
+		const mf_Aircraft* aircrafts[ MF_MAX_ENEMIES + 1 ];
 		unsigned int aircraft_count= game_logic_->GetEnemiesCount();
 		for( unsigned int i= 0; i< aircraft_count; i++ )
 			aircrafts[i]= game_logic_->GetEnemies()[i]->GetAircraft();

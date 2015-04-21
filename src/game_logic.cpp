@@ -402,4 +402,6 @@ void mf_GameLogic::SpawnEnemy()
 	enemies_sounds_[ enemies_count_ ]= mf_SoundEngine::Instance()->CreateSoundSource( AircraftTypeToEngineSoundType( enemy->GetAircraft()->GetType() ) );
 	enemies_sounds_[ enemies_count_ ]->Play();
 	enemies_count_++;
+
+	player_->AddEnemyAircraft( enemy->GetAircraft() );
 }

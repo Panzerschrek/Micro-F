@@ -41,6 +41,8 @@ public:
 	{
 		IconSpeed,
 		IconAntiSpeed,
+		IconEnemyDirection,
+		IconEnemyAntiDirection,
 		LastIcon
 	};
 

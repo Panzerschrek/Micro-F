@@ -24,6 +24,7 @@ mf_Player::mf_Player()
 	, rotate_up_pressed_(false), rotate_down_pressed_(false), rotate_left_pressed_(false), rotate_right_pressed_(false)
 	, rotate_clockwise_pressed_(false), rotate_anticlockwise_pressed_(false)
 	, score_(0)
+	, enemies_count_(0)
 {
 	pos_[0]= pos_[1]= pos_[2]= 0.0f;
 	angle_[0]= angle_[1]= angle_[2]= 0.0f;
@@ -173,6 +174,20 @@ void mf_Player::ScreenPointToWorldSpaceVec( unsigned int x, unsigned int y,  flo
 	Mat4RotateZ( rot_z_mat, angle_[2] );
 	Mat4Mul( rot_x_mat, rot_z_mat, mat );
 	Vec3Mat4Mul( vec, mat, out_vec );
+}
+
+void mf_Player::AddEnemyAircraft( mf_Aircraft* aircraft )
+{
+	enemies_aircrafts_[ enemies_count_++ ]= aircraft;
+}
+
+void mf_Player::RemoveEnemyAircraft( mf_Aircraft* aircraft )
+{
+	for( unsigned int i= 0; i< enemies_count_; i++ )
+		if( enemies_aircrafts_[i] == aircraft && i < enemies_count_ - 1 )
+			enemies_aircrafts_[i]= enemies_aircrafts_[ enemies_count_ - 1 ];
+
+	enemies_count_--;
 }
 
 void mf_Player::ZoomIn()

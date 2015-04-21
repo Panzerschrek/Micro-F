@@ -20,6 +20,10 @@ static const unsigned char icons_data[mf_Gui::LastIcon][ MF_GUI_ICON_SIZE * MF_G
 #include "../textures/front_speed.h"
 ,
 #include "../textures/back_speed.h"
+,
+#include "../textures/enemy_front.h"
+,
+#include "../textures/enemy_back.h"
 };
 
 #define MF_CURSOR_SIZE 32
@@ -819,8 +823,8 @@ void mf_Gui::DrawNaviball()
 	}
 	{// naviball icons
 
-		static const float direction_color[3]= { 0.4f, 0.3f, 0.05f };
-		static const float speed_colord[3]= { 0.3f, 1.0f, 0.3f };
+		static const float c_speed_color[3]= { 0.3f, 1.0f, 0.3f };
+		static const float c_enemy_color[3]= { 1.0f, 0.3f, 0.3f };
 		const unsigned int max_icons= 16;
 
 		NaviBallIcons icons_type[ max_icons ];
@@ -838,7 +842,7 @@ void mf_Gui::DrawNaviball()
 		icons_pos[0][1]= speed_vec[1];
 		icons_pos[0][2]= speed_vec[2];
 		icons_type[0]= IconSpeed;
-		icons_color[0]= speed_colord;
+		icons_color[0]= c_speed_color;
 
 		VEC3_CPY( speed_vec, aircraft->Velocity() );
 		Vec3Normalize( speed_vec );
@@ -849,7 +853,32 @@ void mf_Gui::DrawNaviball()
 		icons_pos[1][1]= speed_vec[1];
 		icons_pos[1][2]= speed_vec[2];
 		icons_type[1]= IconAntiSpeed;
-		icons_color[1]= speed_colord;
+		icons_color[1]= c_speed_color;
+
+		for( unsigned int j= 0; j< player_->EnemiesAircraftsCount(); j++ )
+		{
+			float dir_to_aircraft[3];
+			float transformed_pos[3];
+			Vec3Sub( player_->GetAircraft()->Pos(), player_->GetEnemiesAircrafts()[j]->Pos(), dir_to_aircraft );
+			Vec3Normalize( dir_to_aircraft );
+
+			Vec3Mat4Mul( dir_to_aircraft, rot_mat_for_space_vectors, transformed_pos );
+			icons_pos[icon_count][0]= transformed_pos[0];
+			icons_pos[icon_count][1]= transformed_pos[1];
+			icons_pos[icon_count][2]= transformed_pos[2];
+			icons_type[icon_count]= IconEnemyAntiDirection;
+			icons_color[icon_count]= c_enemy_color;
+			icon_count++;
+
+			Vec3Mul( dir_to_aircraft, -1.0f );
+			Vec3Mat4Mul( dir_to_aircraft, rot_mat_for_space_vectors, transformed_pos );
+			icons_pos[icon_count][0]= transformed_pos[0];
+			icons_pos[icon_count][1]= transformed_pos[1];
+			icons_pos[icon_count][2]= transformed_pos[2];
+			icons_type[icon_count]= IconEnemyDirection;
+			icons_color[icon_count]= c_enemy_color;
+			icon_count++;
+		}
 
 		naviball_icons_shader_.Bind();
 

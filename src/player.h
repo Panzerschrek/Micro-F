@@ -2,6 +2,7 @@
 #include "micro-f.h"
 #include "aircraft.h"
 #include "autopilot.h"
+#include "game_logic.h"
 
 class mf_Player
 {
@@ -48,6 +49,11 @@ public:
 	unsigned int Score() const;
 	void AddScorePoints( unsigned int points );
 	void ResetScore();
+
+	void AddEnemyAircraft( mf_Aircraft* aircraft );
+	void RemoveEnemyAircraft( mf_Aircraft* aircraft );
+	const mf_Aircraft* const* GetEnemiesAircrafts() const;
+	unsigned int EnemiesAircraftsCount() const;
 
 	void ForwardPressed();
 	void BackwardPressed();
@@ -108,6 +114,9 @@ private:
 	bool rotate_clockwise_pressed_, rotate_anticlockwise_pressed_;
 
 	unsigned int score_;
+
+	mf_Aircraft* enemies_aircrafts_[ MF_MAX_ENEMIES ];
+	unsigned int enemies_count_;
 };
 
 inline const float* mf_Player::Pos() const
@@ -138,6 +147,16 @@ inline void mf_Player::AddScorePoints( unsigned int points )
 inline void mf_Player::ResetScore()
 {
 	score_= 0;
+}
+
+inline const mf_Aircraft* const* mf_Player::GetEnemiesAircrafts() const
+{
+	return enemies_aircrafts_;
+}
+
+inline unsigned int mf_Player::EnemiesAircraftsCount() const
+{
+	return enemies_count_;
 }
 
 inline const float* mf_Player::Angle() const
