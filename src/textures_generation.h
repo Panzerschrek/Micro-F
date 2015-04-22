@@ -24,6 +24,7 @@ enum mf_GuiTexture
 	TextureNaviballGlass,
 	TextureGuiButton,
 	TextureMenuBackgound,
+	TextureTargetAircraft,
 	LastGuiTexture
 };
 

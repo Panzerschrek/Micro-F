@@ -175,7 +175,8 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 		4, 9, // numbers
 		8, 8, // naviball glass
 		3, 3, // gui button
-		9, 9  // backgound
+		9, 9, // backgound
+		8, 8  // target aircraft
 	};
 	for( unsigned int i= 0; i< LastGuiTexture; i++ )
 	{
@@ -183,8 +184,8 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 		gui_texture_gen_func[i]( &tex );
 		tex.LinearNormalization( 1.0f );
 
-		glGenTextures( 1, &textures[i] );
-		glBindTexture( GL_TEXTURE_2D, textures[i] );
+		glGenTextures( 1, &textures_[i] );
+		glBindTexture( GL_TEXTURE_2D, textures_[i] );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
 			tex.SizeX(), tex.SizeY(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.GetNormalizedData() );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
@@ -309,6 +310,7 @@ void mf_Gui::Draw()
 			text_->AddText( 2, bottom_row - 2, 2, c_rockets_color, rockets_str );
 		}
 
+		DrawTargetAircraftAim();
 		DrawControlPanel();
 		DrawNaviball();
 		DrawNaviballGlass();
@@ -579,7 +581,7 @@ void mf_Gui::DrawControlPanel()
 	for( unsigned int i= TextureControlPanel; i<= TextureNumbers; i++ )
 	{
 		glActiveTexture( GL_TEXTURE0 + i );
-		glBindTexture( GL_TEXTURE_2D, textures[i] );
+		glBindTexture( GL_TEXTURE_2D, textures_[i] );
 		textures_id[i]= i;
 	}
 	gui_shader_.UniformIntArray( "tex", LastGuiTexture, textures_id );
@@ -763,7 +765,7 @@ void mf_Gui::DrawNaviball()
 		naviball_shader_.Bind();
 
 		glActiveTexture( GL_TEXTURE0 );
-		glBindTexture( GL_TEXTURE_2D, textures[TextureNaviball] );
+		glBindTexture( GL_TEXTURE_2D, textures_[TextureNaviball] );
 		naviball_shader_.UniformInt( "tex", 0 );
 
 		float tmp_mat[16];
@@ -929,7 +931,7 @@ void mf_Gui::DrawNaviballGlass()
 
 	gui_shader_.Bind();
 	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, textures[TextureNaviballGlass] );
+	glBindTexture( GL_TEXTURE_2D, textures_[TextureNaviballGlass] );
 	gui_shader_.UniformInt( "tex", 0 );
 
 	common_vbo_.Bind();
@@ -1005,9 +1007,9 @@ void mf_Gui::DrawMenu( const GuiMenu* menu )
 	gui_shader_.Bind();
 
 	glActiveTexture( GL_TEXTURE0 + 0 );
-	glBindTexture( GL_TEXTURE_2D, textures[TextureGuiButton] );
+	glBindTexture( GL_TEXTURE_2D, textures_[TextureGuiButton] );
 	glActiveTexture( GL_TEXTURE0 + 1 );
-	glBindTexture( GL_TEXTURE_2D, textures[TextureMenuBackgound] );
+	glBindTexture( GL_TEXTURE_2D, textures_[TextureMenuBackgound] );
 	int textures_binding[]={ 0, 1 };
 	gui_shader_.UniformIntArray( "tex", 2, textures_binding );
 
@@ -1062,6 +1064,99 @@ void mf_Gui::DrawCursor()
 
 	glActiveTexture( GL_TEXTURE0 + 0 );
 	glBindTexture( GL_TEXTURE_2D, cursor_texture_ );
+	gui_shader_.UniformInt( "tex", 0 );
+
+	common_vbo_.Bind();
+	common_vbo_.VertexSubData( vertices, 6 * sizeof(mf_GuiVertex), 0 );
+
+	glDisable( GL_DEPTH_TEST );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+	glDrawArrays( GL_TRIANGLES, 0, 6 );
+
+	glDisable( GL_BLEND );
+	glEnable( GL_DEPTH_TEST );
+}
+
+void mf_Gui::DrawTargetAircraftAim()
+{
+	const mf_Aircraft* aircraft= player_->TargetAircraft();
+	if( aircraft == NULL ) return;
+
+	float aspect= float(main_loop_->ViewportWidth())/ float(main_loop_->ViewportHeight());
+	float transform_mtarix[16];
+	{
+		float pers_mat[16];
+		float rot_z_mat[16];
+		float rot_x_mat[16];
+		float rot_y_mat[16];
+		float basis_change_mat[16];
+		float translate_mat[16];
+
+		float translate_vec[3];
+
+		Vec3Mul( player_->Pos(), -1.0f, translate_vec );
+		Mat4Translate( translate_mat, translate_vec );
+
+		Mat4Perspective( pers_mat, aspect, player_->Fov(), 0.5f, 2048.0f );
+
+		Mat4RotateZ( rot_z_mat, -player_->Angle()[2] );
+		Mat4RotateX( rot_x_mat, -player_->Angle()[0] );
+		Mat4RotateY( rot_y_mat, -player_->Angle()[1] );
+		{
+			Mat4RotateX( basis_change_mat, -MF_PI2 );
+			float tmp_mat[16];
+			Mat4Identity( tmp_mat );
+			tmp_mat[10]= -1.0f;
+			Mat4Mul( basis_change_mat, tmp_mat );
+		}
+
+		Mat4Mul( translate_mat, rot_z_mat, transform_mtarix );
+		Mat4Mul( transform_mtarix, rot_x_mat );
+		Mat4Mul( transform_mtarix, rot_y_mat );
+		Mat4Mul( transform_mtarix, basis_change_mat );
+		Mat4Mul( transform_mtarix, pers_mat );
+	}
+	float target_vec[4];
+	VEC3_CPY( target_vec, aircraft->Pos() ); target_vec[3]= 1.0f;
+	float view_space_target_vec[4];
+	Vec4Mat4Mul( target_vec, transform_mtarix, view_space_target_vec );
+	Vec3Mul( view_space_target_vec, 1.0f / view_space_target_vec[3] );
+
+	if( view_space_target_vec[3] < -1.0f ) return;
+
+	mf_GuiVertex vertices[6];
+	const float c_sprite_radius= 0.08f;
+	vertices[0].pos[0]= -c_sprite_radius;
+	vertices[0].pos[1]= -c_sprite_radius;
+	vertices[1].pos[0]= +c_sprite_radius;
+	vertices[1].pos[1]= -c_sprite_radius;
+	vertices[2].pos[0]= +c_sprite_radius;
+	vertices[2].pos[1]= +c_sprite_radius;
+	vertices[3].pos[0]= -c_sprite_radius;
+	vertices[3].pos[1]= +c_sprite_radius;
+
+	float rot_mat[16];
+	Mat4RotateZ( rot_mat, main_loop_->CurrentTime() );
+	for( unsigned int i= 0; i< 4; i++ )
+	{
+		float pos[3];
+		pos[0]= vertices[i].pos[0];
+		pos[1]= vertices[i].pos[1];
+		Vec3Mat4Mul( pos, rot_mat );
+		vertices[i].pos[0]= pos[0] + view_space_target_vec[0];
+		vertices[i].pos[1]= pos[1] * aspect + view_space_target_vec[1];
+	}
+
+	GenGuiQuadTextureCoords( vertices, mf_GuiTexture(0) );
+	vertices[4]= vertices[0];
+	vertices[5]= vertices[2];
+
+	gui_shader_.Bind();
+
+	glActiveTexture( GL_TEXTURE0 + 0 );
+	glBindTexture( GL_TEXTURE_2D, textures_[TextureTargetAircraft] );
 	gui_shader_.UniformInt( "tex", 0 );
 
 	common_vbo_.Bind();

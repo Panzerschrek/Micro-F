@@ -110,6 +110,12 @@ mf_GameLogic::~mf_GameLogic()
 
 void mf_GameLogic::Tick( float dt )
 {
+	//TODO : select enemy
+	if( enemies_count_ != 0 )
+		player_->SetTargetAircraft( enemies_[0]->GetAircraft() );
+	else
+		player_->SetTargetAircraft( NULL );
+
 	const float current_time= mf_MainLoop::Instance()->CurrentTime();
 
 	for( unsigned int i= 0; i< enemies_count_; i++ )

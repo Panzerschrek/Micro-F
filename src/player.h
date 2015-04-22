@@ -54,6 +54,8 @@ public:
 	void RemoveEnemyAircraft( mf_Aircraft* aircraft );
 	const mf_Aircraft* const* GetEnemiesAircrafts() const;
 	unsigned int EnemiesAircraftsCount() const;
+	void SetTargetAircraft( mf_Aircraft* aircraft );
+	const mf_Aircraft* TargetAircraft() const;
 
 	void ForwardPressed();
 	void BackwardPressed();
@@ -117,6 +119,8 @@ private:
 
 	mf_Aircraft* enemies_aircrafts_[ MF_MAX_ENEMIES ];
 	unsigned int enemies_count_;
+
+	mf_Aircraft* target_aircraft_;
 };
 
 inline const float* mf_Player::Pos() const
@@ -198,6 +202,16 @@ inline mf_Player::ViewMode mf_Player::GetViewMode() const
 inline void mf_Player::SetPos( float x, float y, float z )
 {
 	pos_[0]= x; pos_[1]= y; pos_[2]= z;
+}
+
+inline void mf_Player::SetTargetAircraft( mf_Aircraft* aircraft )
+{
+	target_aircraft_= aircraft;
+}
+
+inline const mf_Aircraft* mf_Player::TargetAircraft() const
+{
+	return target_aircraft_;
 }
 
 inline void mf_Player::ForwardPressed()

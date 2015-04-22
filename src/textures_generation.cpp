@@ -245,6 +245,42 @@ void GenMenuBackgroundTexture( mf_Texture* tex )
 	SetAlphaToOne( tex );
 }
 
+void GenTargetAircraftTexture( mf_Texture* tex )
+{
+	MF_ASSERT( tex->SizeX() == tex->SizeY() );
+
+	static const float c_white_invisible_color[]= { 1.0f, 1.0f, 1.0f, 0.0f };
+	static const float c_white_color[]= { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	tex->Fill( c_white_invisible_color );
+
+	float radius= float( tex->SizeX()/2 - 2 );
+	for( unsigned int i= 0; i< 3; i++ )
+	{
+		float vertices[6];
+		float angle= float(i) * MF_2PI / 3.0f;
+		vertices[0]= vertices[1]= float(tex->SizeX() / 2 );
+		vertices[2]= vertices[0] + mf_Math::cos( angle ) * radius;
+		vertices[3]= vertices[1] + mf_Math::sin( angle ) * radius;
+		angle+= MF_PI3;
+		vertices[4]= vertices[0] + mf_Math::cos( angle ) * radius;
+		vertices[5]= vertices[1] + mf_Math::sin( angle ) * radius;
+
+		tex->FillTriangle( vertices, c_white_color );
+	}
+
+	mf_Texture circle( tex->SizeXLog2(), tex->SizeYLog2() );
+	circle.Fill( c_white_invisible_color );
+	circle.FillEllipse( tex->SizeX()/2, tex->SizeX()/2, tex->SizeX()/2 - tex->SizeY()/8, c_white_color );
+	circle.FillEllipse( tex->SizeX()/2, tex->SizeX()/2, tex->SizeX()/4, c_white_invisible_color );
+	tex->Mul( &circle );
+
+	static const float gradient_color0[]= { 1.0f, 1.0f, 1.0f, -0.5f };
+	static const float gradient_color1[]= { 1.0f, 1.0f, 1.0f, 0.8f };
+	circle.RadialGradient( tex->SizeX()/2, tex->SizeX()/2, tex->SizeX()/2 - tex->SizeY()/8, gradient_color0, gradient_color1 );
+	tex->Mul( &circle );
+}
+
 void GenNaviballGlassTexture( mf_Texture* tex )
 {
 	MF_ASSERT(tex->SizeX() == tex->SizeY());
@@ -940,7 +976,8 @@ void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 	GenNumbersTexture,
 	GenNaviballGlassTexture,
 	GenGuiButtonTexture,
-	GenMenuBackgroundTexture
+	GenMenuBackgroundTexture,
+	GenTargetAircraftTexture
 };
 
 void (* const static_level_object_texture_gen_func[LastStaticLevelObjectTexture])(mf_Texture* t)=

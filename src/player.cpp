@@ -25,6 +25,7 @@ mf_Player::mf_Player()
 	, rotate_clockwise_pressed_(false), rotate_anticlockwise_pressed_(false)
 	, score_(0)
 	, enemies_count_(0)
+	, target_aircraft_(NULL)
 {
 	pos_[0]= pos_[1]= pos_[2]= 0.0f;
 	angle_[0]= angle_[1]= angle_[2]= 0.0f;

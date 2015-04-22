@@ -83,6 +83,7 @@ private:
 	void DrawNaviballGlass();
 	void DrawMenu( const GuiMenu* menu );
 	void DrawCursor();
+	void DrawTargetAircraftAim();
 
 	void OnPlayButton();
 	void OnSettingsButton();
@@ -111,7 +112,7 @@ private:
 	mf_GLSLProgram gui_shader_;
 	mf_VertexBuffer common_vbo_;
 
-	GLuint textures[LastGuiTexture];
+	GLuint textures_[LastGuiTexture];
 	GLuint cursor_texture_;
 
 	//GuiMenu main_menu_;
