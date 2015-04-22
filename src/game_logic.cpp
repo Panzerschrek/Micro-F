@@ -168,7 +168,10 @@ void mf_GameLogic::Tick( float dt )
 		if( is_intersection )
 		{
 			if( hited_target != NULL )
+			{
 				hited_target->AddHP( - Tables::bullets_damage_table[ bullet->type ] );
+				if( hited_target->HP() <= 0 ) hited_target->SetThrottle( 0.0f );
+			}
 			particles_manager_.AddBulletTerrainHit( intersection_pos );
 		}
 
@@ -261,6 +264,16 @@ void mf_GameLogic::Tick( float dt )
 		pos[2]+= 4.0f;
 		player_aircraft->AddHP( - ( player_aircraft->HP() + 100 ) );
 	}
+	// check collision of enemies with terrain
+	for( unsigned int i= 0; i< enemies_count_; )
+	{
+		if( level_.SphereIntersectTerrain( enemies_[i]->GetAircraft()->Pos(), 4.0f ) )
+		{
+			DespawnEnemy( enemies_[i] );
+			continue;
+		}
+		i++;
+	}
 
 	{ // calculate collision with forcefield
 		float vec_to_forcefield[3];
@@ -310,6 +323,10 @@ void mf_GameLogic::Tick( float dt )
 		source->SetPitch( ThrottleToEngineSoundPitch( aircraft->Throttle() ) );
 		source->SetVolume( volume_scaler * ThrottleToEngineSoundVolumeScaler( aircraft->Throttle() ) );
 	}
+
+	// spawn new enemies
+	if( enemies_count_ == 0 )
+		SpawnEnemy();
 }
 
 void mf_GameLogic::PlayerShotBegin()
@@ -410,4 +427,30 @@ void mf_GameLogic::SpawnEnemy()
 	enemies_count_++;
 
 	player_->AddEnemyAircraft( enemy->GetAircraft() );
+}
+
+void mf_GameLogic::DespawnEnemy( mf_Enemy* enemy )
+{
+	if( enemy->GetAircraft() == player_->TargetAircraft() )
+	{
+		player_->SetTargetAircraft( NULL );
+	}
+	player_->RemoveEnemyAircraft( enemy->GetAircraft() );
+
+	unsigned int ind= 0;
+	for( unsigned int i= 0; i< enemies_count_; i++ )
+		if( enemies_[i] == enemy )
+		{
+			ind= i; break;
+		}
+
+	mf_SoundEngine::Instance()->DestroySoundSource( enemies_sounds_[ind] );
+	delete enemy;
+
+	if( ind != enemies_count_ - 1 )
+	{
+		enemies_sounds_[ind]= enemies_sounds_[ enemies_count_ - 1 ];
+		enemies_[ind]= enemies_[ enemies_count_ - 1 ];
+	}
+	enemies_count_--;
 }

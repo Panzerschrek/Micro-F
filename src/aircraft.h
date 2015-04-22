@@ -28,6 +28,7 @@ public:
 
 	void CalculateAngles( float* out_angles ) const;
 
+	void SetThrottle( float throttle );
 	float Throttle() const;
 
 	int HP() const;
@@ -110,6 +111,11 @@ inline const float* mf_Aircraft::Angle() const
 inline const float* mf_Aircraft::AxisVec( unsigned int vec ) const
 {
 	return axis_[vec];
+}
+
+inline void mf_Aircraft::SetThrottle( float throttle )
+{
+	throttle_= throttle;
 }
 
 inline float mf_Aircraft::Throttle() const

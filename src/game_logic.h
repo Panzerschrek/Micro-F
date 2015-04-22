@@ -82,6 +82,7 @@ public:
 private:
 	void PlacePowerups();
 	void SpawnEnemy();
+	void DespawnEnemy( mf_Enemy* enemy );
 
 private:
 	mf_Level level_;

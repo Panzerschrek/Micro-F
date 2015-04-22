@@ -26,7 +26,6 @@ void mf_Autopilot::GetControlResult( float* in_out_pitch_factor, float* in_out_y
 		const float c_max_y_angle= MF_PI2 - MF_PI12;
 		const float c_almost_one= 0.9999999f;
 
-		float elevation= mf_Math::asin( mf_Math::clamp( -c_almost_one, c_almost_one, aircraft_->AxisVec(1)[2] ) );
 		float angle[3];
 		aircraft_->CalculateAngles( angle );
 
