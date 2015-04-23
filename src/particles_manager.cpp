@@ -5,6 +5,7 @@
 
 #define MF_SMOKE_MAX_LIFETIME 7.0f
 #define MF_PLASMA_ENGINE_PARTICEL_LIFETIME 0.5f
+#define MF_BLAST_FIRE_LIFETIME 1.0f
 
 static void TransformAircraftPoint( const mf_Aircraft* aircraft, const float* in_pos, float* out_pos )
 {
@@ -83,20 +84,42 @@ void mf_ParticlesManager::AddEnginesTrail( const mf_Aircraft* aircraft )
 
 void mf_ParticlesManager::AddBulletTerrainHit( const float* pos )
 {
+	const unsigned int c_particles_count= 32;
+
 	Particle* particle= particles_ + particle_count_;
-	for( unsigned int i= 0; i< 32; i++, particle++ )
+	for( unsigned int i= 0; i< c_particles_count; i++, particle++ )
 	{
 		VEC3_CPY( particle->pos, pos );
 		for( unsigned int j= 0; j< 3; j++ )
 			particle->direction[j]= randomizer_.RandF( -1.0f, 1.0f );
 		Vec3Normalize( particle->direction );
 		particle->velocity= 20.0f;
-		particle->acceleration= -10.0f;
+		particle->acceleration= 0.0f;
 		particle->type= Particle::JetEngineTrail;
 		particle->spawn_time= current_tick_time_;
 		particle->life_time= MF_SMOKE_MAX_LIFETIME * 0.5f;
 	}
-	particle_count_+= 128;
+	particle_count_+= c_particles_count;
+}
+
+void mf_ParticlesManager::AddBlast( const float* pos )
+{
+	const unsigned int c_particles_count= 80;
+
+	Particle* particle= particles_ + particle_count_;
+	for( unsigned int i= 0; i< c_particles_count; i++, particle++ )
+	{
+		VEC3_CPY( particle->pos, pos );
+		for( unsigned int j= 0; j< 3; j++ )
+			particle->direction[j]= randomizer_.RandF( -1.0f, 1.0f );
+		Vec3Normalize( particle->direction );
+		particle->velocity= 40.0f;
+		particle->acceleration= -30.0f;
+		particle->type= Particle::BlastFire;
+		particle->spawn_time= current_tick_time_;
+		particle->life_time= MF_BLAST_FIRE_LIFETIME;
+	}
+	particle_count_+= c_particles_count;
 }
 
 void mf_ParticlesManager::AddPowerupGlow( const float* pos, float glow_factor )
@@ -182,11 +205,24 @@ void mf_ParticlesManager::PrepareParticlesVertices( mf_ParticleVertex* out_verti
 				vertex->t_dt_lt_r[2]= TexturePlasmaBall;
 			}
 			break;
+		case Particle::BlastFire:
+			{
+				float lifetime_k= ( current_tick_time_ - particle->spawn_time ) * ( 1.0f / MF_BLAST_FIRE_LIFETIME );
+				vertex->pos_size[3]= 1.0f + 9.0f * lifetime_k;
+
+				vertex->luminance= 0.5f * ( 1.0f - 1.5f * lifetime_k );
+				if( vertex->luminance < 0.0f ) vertex->luminance= 0.0f;
+
+				float alpha= 0.33f * ( 1.0f - lifetime_k );
+				vertex->t_dt_lt_r[0]= (unsigned char)( alpha * 254.0f );
+				vertex->t_dt_lt_r[1]= TextureEngineSmoke;
+				vertex->t_dt_lt_r[2]= TextureFire;
+			}
+			break;
 		default: break;
 		} // switch type
 	}
 }
-
 
 void mf_ParticlesManager::AddF2XXXTrail( const mf_Aircraft* aircraft, unsigned int engine_number )
 {

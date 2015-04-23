@@ -171,8 +171,13 @@ void mf_GameLogic::Tick( float dt )
 			{
 				hited_target->AddHP( - Tables::bullets_damage_table[ bullet->type ] );
 				if( hited_target->HP() <= 0 ) hited_target->SetThrottle( 0.0f );
+
+				particles_manager_.AddBulletTerrainHit( intersection_pos );
 			}
-			particles_manager_.AddBulletTerrainHit( intersection_pos );
+			else
+			{
+				particles_manager_.AddBulletTerrainHit( intersection_pos );
+			}
 		}
 
 		if( is_intersection || bullet->velocity == mfInf() || IsBulletOutsideWorld(bullet->pos) )
@@ -269,6 +274,7 @@ void mf_GameLogic::Tick( float dt )
 	{
 		if( level_.SphereIntersectTerrain( enemies_[i]->GetAircraft()->Pos(), 4.0f ) )
 		{
+			particles_manager_.AddBlast( enemies_[i]->GetAircraft()->Pos() );
 			DespawnEnemy( enemies_[i] );
 			continue;
 		}

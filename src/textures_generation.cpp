@@ -645,6 +645,31 @@ void GenPlasmaBallParticle( mf_Texture* tex )
 	tex->FillEllipse( tex->SizeX(), tex->SizeX(), tex->SizeX()/2, g_invisible_color );
 }
 
+void GenFireParticle( mf_Texture* tex )
+{
+	MF_ASSERT( tex->SizeXLog2() == tex->SizeYLog2() );
+
+	tex->PoissonDiskPoints( 16 );
+	static const float save_red[4]= { 3.0f, 0.0f, 0.0f, 0.0f };
+	tex->Mul( save_red );
+	tex->Grayscale();
+
+	static const float red_color[4]= { 1.0f, 0.5f, 0.5f, 1.0f };
+	static const float yellow_color[4]= { 1.0f, 1.0f, 0.5f, 1.0f };
+	static const float one[4]= { 1.0f, 1.0f, 1.0f, 1.0f };
+	tex->Mix( red_color, yellow_color, one );
+
+	tex->SinWaveDeformX( 4.0f, 1.0f / 32.0f, 0.0f );
+	tex->SinWaveDeformY( 4.0f, 1.0f / 32.0f, 0.0f );
+
+	mf_Texture circle( tex->SizeXLog2(), tex->SizeYLog2() );
+	static const float center_color[4]= { 1.0f, 1.0f, 1.0f, 2.0f };
+	static const float border_color[4]= { 1.0f, 1.0f, 1.0f, 0.0f };
+	circle.RadialGradient( tex->SizeX()/2, tex->SizeX()/2, tex->SizeX()/2, center_color, border_color );
+
+	tex->Mul( &circle );
+}
+
 void GenForcefieldTexture( mf_Texture* tex )
 {
 	tex->GenHexagonalGrid( float(tex->SizeX()) * (0.5f/1.5f), 2.0f * 1.0f / mf_Math::sqrt(3.0f) );
@@ -997,5 +1022,6 @@ void (* const particles_texture_gen_func[LastParticleTexture])(mf_Texture* t)=
 	GenEngineFireParticle,
 	GenEnginePlasmaParticle,
 	GenPowerupGlowParticle,
-	GenPlasmaBallParticle
+	GenPlasmaBallParticle,
+	GenFireParticle
 };

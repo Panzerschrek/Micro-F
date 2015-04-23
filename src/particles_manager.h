@@ -56,6 +56,7 @@ private:
 			PlasmaEngineTrail,
 			PowerupGlow,
 			PlasmaBall,
+			BlastFire,
 			LastType
 		};
 		Type type;
