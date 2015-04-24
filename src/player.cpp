@@ -124,6 +124,7 @@ void mf_Player::Tick( float dt )
 			float cam_vec[3];
 			SphericalCoordinatesToVec( angle_[2], angle_[0], cam_vec );
 			Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
+			cam_vec[2]= 1.0f - 1.25f * ( 1.0f - cam_vec[2] );
 			Vec3Mul( cam_vec, -cam_radius_ );
 			Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
 			angle_[1]= 0.0f;
