@@ -56,6 +56,7 @@ public:
 	unsigned int EnemiesAircraftsCount() const;
 	void SetTargetAircraft( mf_Aircraft* aircraft );
 	const mf_Aircraft* TargetAircraft() const;
+	mf_Aircraft* TargetAircraft();
 
 	void ForwardPressed();
 	void BackwardPressed();
@@ -210,6 +211,11 @@ inline void mf_Player::SetTargetAircraft( mf_Aircraft* aircraft )
 }
 
 inline const mf_Aircraft* mf_Player::TargetAircraft() const
+{
+	return target_aircraft_;
+}
+
+inline mf_Aircraft* mf_Player::TargetAircraft()
 {
 	return target_aircraft_;
 }

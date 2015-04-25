@@ -12,6 +12,8 @@
 #define MF_ROCKET_LIFETIME 12.0f
 #define MF_ROCKET_HIT_DISTANCE 10.0f
 
+#define MF_MAX_ALIVE_ENEMIES 3
+
 namespace PowerupsTables
 {
 
@@ -98,7 +100,6 @@ mf_GameLogic::mf_GameLogic(mf_Player* player)
 		aircrafts_models_[i].LoadFromMFMD( mf_Models::aircraft_models[i] );
 
 	PlacePowerups();
-	SpawnEnemy();
 
 	player_sound_= mf_SoundEngine::Instance()->CreateSoundSource( AircraftTypeToEngineSoundType( player_->GetAircraft()->GetType() ) );
 	player_sound_->Play();
@@ -110,16 +111,43 @@ mf_GameLogic::~mf_GameLogic()
 
 void mf_GameLogic::Tick( float dt )
 {
-	//TODO : select enemy
-	if( enemies_count_ != 0 )
-		player_->SetTargetAircraft( enemies_[0]->GetAircraft() );
-	else
-		player_->SetTargetAircraft( NULL );
+	{ // try spawn new enemies
+		unsigned int alive_enemies_count= 0;
+		for( unsigned int i= 0; i< enemies_count_; i++ )
+			if( enemies_[i]->GetAircraft()->HP() > 0 )
+				alive_enemies_count++;
+		if( alive_enemies_count < MF_MAX_ALIVE_ENEMIES )
+		{
+			if( ( randomizer_.Rand() & 63 ) == 0 )
+				SpawnEnemy();
+		}
+	}
+
+	{ // select enemy
+		mf_MainLoop* main_loop= mf_MainLoop::Instance();
+		float player_view_dir[3];
+		player_->ScreenPointToWorldSpaceVec( main_loop->ViewportWidth() / 2, main_loop->ViewportHeight() / 2, player_view_dir );
+		float max_angle_cos= -1.0f;
+		unsigned int nearest_enemy_index= 0xFFFFFFFF;
+		for( unsigned int i= 0; i< enemies_count_; i++ )
+		{
+			float vec_to_enemy[3];
+			Vec3Sub( enemies_[i]->GetAircraft()->Pos(), player_->GetAircraft()->Pos(), vec_to_enemy );
+			Vec3Normalize( vec_to_enemy );
+			float angle_cos= Vec3Dot( vec_to_enemy, player_view_dir );
+			if( angle_cos > max_angle_cos )
+			{
+				max_angle_cos= angle_cos;
+				nearest_enemy_index= i;
+			}
+		}
+		if( enemies_count_ != 0 )
+			player_->SetTargetAircraft( enemies_[nearest_enemy_index]->GetAircraft() );
+		else
+			player_->SetTargetAircraft( NULL );
+	}
 
 	const float current_time= mf_MainLoop::Instance()->CurrentTime();
-
-	for( unsigned int i= 0; i< enemies_count_; i++ )
-		enemies_[i]->Tick(dt);
 
 	mf_Aircraft* player_aircraft= player_->GetAircraft();
 
@@ -200,7 +228,7 @@ void mf_GameLogic::Tick( float dt )
 		mf_Rocket* rocket= rockets_ + i;
 
 		float vec_to_target[3];
-		if( current_time - rocket->spawn_time > 0.4f ) // turn rocket if we are far from owner aircraft
+		if( current_time - rocket->spawn_time > 0.4f && rocket->target != NULL ) // turn rocket if we are far from owner aircraft
 		{
 			Vec3Sub( rocket->target->Pos(), rocket->pos, vec_to_target );
 			Vec3Normalize( vec_to_target );
@@ -293,6 +321,9 @@ void mf_GameLogic::Tick( float dt )
 			player_aircraft->AddHP( -50 );
 	}
 
+	for( unsigned int i= 0; i< enemies_count_; i++ )
+		enemies_[i]->Tick(dt);
+
 	// particels
 	particles_manager_.Tick( dt );
 	particles_manager_.AddEnginesTrail( player_->GetAircraft() );
@@ -329,10 +360,6 @@ void mf_GameLogic::Tick( float dt )
 		source->SetPitch( ThrottleToEngineSoundPitch( aircraft->Throttle() ) );
 		source->SetVolume( volume_scaler * ThrottleToEngineSoundVolumeScaler( aircraft->Throttle() ) );
 	}
-
-	// spawn new enemies
-	if( enemies_count_ == 0 )
-		SpawnEnemy();
 }
 
 void mf_GameLogic::PlayerShotBegin()
@@ -372,7 +399,12 @@ void mf_GameLogic::PlayerShotContinue( const float* dir, bool first_shot )
 		bullet->type= bullet_type;
 		bullet->owner= player_->GetAircraft();
 		VEC3_CPY( bullet->pos, bullet->owner->Pos() );
+
 		Vec3Normalize( dir, bullet->dir );
+		for( unsigned int i= 0; i< 3; i++ )
+			bullet->dir[i] += randomizer_.RandF( -0.01f, 0.01f );
+		Vec3Normalize(bullet->dir );
+
 		bullet->velocity= mfInf();
 
 		bullets_count_++;
@@ -391,7 +423,7 @@ void mf_GameLogic::PlayerRocketShot( const float* dir )
 		VEC3_CPY( rocket->pos, player_->GetAircraft()->Pos() );
 		rocket->velocity= 100.0f;
 		rocket->owner= player_->GetAircraft();
-		rocket->target= enemies_[0]->GetAircraft();
+		rocket->target= player_->TargetAircraft();
 		rocket->spawn_time= mf_MainLoop::Instance()->CurrentTime();
 
 		aircraft->AddRockets( -1 );
@@ -424,7 +456,10 @@ void mf_GameLogic::PlacePowerups()
 
 void mf_GameLogic::SpawnEnemy()
 {
-	mf_Enemy* enemy= new mf_Enemy( mf_Aircraft::F2XXX, 100, player_->GetAircraft() );
+	mf_Enemy* enemy= new mf_Enemy(
+		mf_Aircraft::Type( randomizer_.Rand() % mf_Aircraft::LastType ),
+		100,
+		player_->GetAircraft() );
 	float spawn_pos[]= { float(level_.TerrainSizeX()/2) * level_.TerrainCellSize(), 0.0f, level_.TerrainAmplitude() };
 	enemy->GetAircraft()->SetPos( spawn_pos );
 	enemies_[ enemies_count_ ]= enemy;
@@ -442,6 +477,9 @@ void mf_GameLogic::DespawnEnemy( mf_Enemy* enemy )
 		player_->SetTargetAircraft( NULL );
 	}
 	player_->RemoveEnemyAircraft( enemy->GetAircraft() );
+
+	for( unsigned int i= 0; i < rocket_count_; i++ )
+		if( rockets_[i].target == enemy->GetAircraft() ) rockets_[i].target= NULL;
 
 	unsigned int ind= 0;
 	for( unsigned int i= 0; i< enemies_count_; i++ )

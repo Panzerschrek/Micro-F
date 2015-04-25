@@ -171,10 +171,15 @@ void mf_Player::ScreenPointToWorldSpaceVec( unsigned int x, unsigned int y,  flo
 
 	float rot_x_mat[16];
 	float rot_z_mat[16];
+	float rot_y_mat[16];
 	float mat[16];
 	Mat4RotateX( rot_x_mat, angle_[0] );
 	Mat4RotateZ( rot_z_mat, angle_[2] );
-	Mat4Mul( rot_x_mat, rot_z_mat, mat );
+	Mat4RotateY( rot_y_mat, angle_[1] );
+
+	Mat4Mul( rot_y_mat, rot_x_mat, mat );
+	Mat4Mul( mat, rot_z_mat );
+
 	Vec3Mat4Mul( vec, mat, out_vec );
 }
 
