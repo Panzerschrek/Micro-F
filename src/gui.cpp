@@ -854,8 +854,8 @@ void mf_Gui::DrawNaviball()
 	}
 	{// naviball icons
 
-		static const float c_speed_color[3]= { 0.3f, 1.0f, 0.3f };
-		static const float c_enemy_color[3]= { 1.0f, 0.3f, 0.3f };
+		static const float c_speed_color[3]= { 0.4f, 1.2f, 0.4f };
+		static const float c_enemy_color[3]= { 1.2f, 0.4f, 0.4f };
 		const unsigned int max_icons= 16;
 
 		NaviBallIcons icons_type[ max_icons ];

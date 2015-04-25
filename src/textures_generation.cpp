@@ -118,8 +118,8 @@ void GenNaviballTexture( mf_Texture* tex )
 	unsigned int size= tex->SizeX();
 	unsigned int size_2= tex->SizeX()/2;
 
-	static const float sky_color[]= { 0.125f, 0.62f, 0.96f, 0.0f };
-	static const float ground_color[]= { 0.7f, 0.45f, 0.07f, 0.0f };
+	static const float sky_color[]= { 0.05f, 0.3f, 0.7f, 0.0f };
+	static const float ground_color[]= { 0.03f, 0.03f, 0.03f, 0.0f };
 	static const float line_color[]= { 0.9f, 0.9f, 0.9f, 1.0f };
 
 	tex->FillRect( 0, 0, size, size_2, ground_color );
