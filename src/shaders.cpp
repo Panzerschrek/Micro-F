@@ -96,11 +96,12 @@ const char* const gui_shader_v=
 const char* const gui_shader_f=
 "#version 330\n"
 "uniform sampler2D tex[6];"
+"uniform vec3 c;"
 "in vec3 ftc;"
 "out vec4 c_;"
 "void main()"
 "{"
-	"c_=texture(tex[uint(ftc.z)],ftc.xy);"
+	"c_=texture(tex[uint(ftc.z)],ftc.xy)*vec4(c,1.0);"
 "}";
 
 const char* const terrain_shader_v=

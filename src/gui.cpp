@@ -124,6 +124,7 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 	gui_shader_.SetAttribLocation( "tc", 1 );
 	gui_shader_.Create( mf_Shaders::gui_shader_v, mf_Shaders::gui_shader_f );
 	gui_shader_.FindUniform( "tex" );
+	gui_shader_.FindUniform( "c" );
 
 	{
 		mf_DrawingModel model;
@@ -575,6 +576,8 @@ void mf_Gui::DrawControlPanel()
 	const float tex_z_delta= 0.01f;
 
 	gui_shader_.Bind();
+	static const float c_white_color[3]= { 1.0f, 1.0f, 1.0f };
+	gui_shader_.UniformVec3( "c", c_white_color );
 
 	int textures_id[ LastGuiTexture ];
 	textures_id[0]= TextureNaviball;
@@ -930,6 +933,9 @@ void mf_Gui::DrawNaviballGlass()
 	v+= 6;
 
 	gui_shader_.Bind();
+	static const float c_white_color[3]= { 1.0f, 1.0f, 1.0f };
+	gui_shader_.UniformVec3( "c", c_white_color );
+
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, textures_[TextureNaviballGlass] );
 	gui_shader_.UniformInt( "tex", 0 );
@@ -1005,6 +1011,8 @@ void mf_Gui::DrawMenu( const GuiMenu* menu )
 	}
 
 	gui_shader_.Bind();
+	static const float c_white_color[3]= { 1.0f, 1.0f, 1.0f };
+	gui_shader_.UniformVec3( "c", c_white_color );
 
 	glActiveTexture( GL_TEXTURE0 + 0 );
 	glBindTexture( GL_TEXTURE_2D, textures_[TextureGuiButton] );
@@ -1061,6 +1069,8 @@ void mf_Gui::DrawCursor()
 	vertices[5]= vertices[2];
 
 	gui_shader_.Bind();
+	static const float c_white_color[3]= { 1.0f, 1.0f, 1.0f };
+	gui_shader_.UniformVec3( "c", c_white_color );
 
 	glActiveTexture( GL_TEXTURE0 + 0 );
 	glBindTexture( GL_TEXTURE_2D, cursor_texture_ );
@@ -1154,6 +1164,8 @@ void mf_Gui::DrawTargetAircraftAim()
 	vertices[5]= vertices[2];
 
 	gui_shader_.Bind();
+	static const float c_green_color[3]= { 0.5f, 1.0f, 0.5f };
+	gui_shader_.UniformVec3( "c", c_green_color );
 
 	glActiveTexture( GL_TEXTURE0 + 0 );
 	glBindTexture( GL_TEXTURE_2D, textures_[TextureTargetAircraft] );
