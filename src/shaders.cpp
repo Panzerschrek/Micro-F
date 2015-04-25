@@ -1,5 +1,10 @@
 ﻿#include "shaders.h"
 
+#define MF_GPSM_ADD_K 0.4
+#define MF_GPSM_MUL_K (MF_GPSM_ADD_K+1.0)
+
+#define MF_MACRO_TO_STR(X) #X
+#define MF_MACRO_VALUE_TO_STR(X) MF_MACRO_TO_STR(X)
 /*
 common attributes:
 "p" - position
@@ -129,6 +134,7 @@ const char* const terrain_shader_v=
 	"gl_Position=mat*vec4(p,1.0);"
 	"fwdk=smoothstep(0.5*wl,wl,p.z);"
 	"p=(smat*vec4(p,1.0)).xyz;"
+	"p.xy=p.xy*" MF_MACRO_VALUE_TO_STR(MF_GPSM_MUL_K) "/(abs(p.xy)+" MF_MACRO_VALUE_TO_STR(MF_GPSM_ADD_K) ");"
 	"fstc=p*0.5+vec3(0.5,0.5,0.5);"
 	"gl_ClipDistance[0]=h-wl;"
 "}"
@@ -178,7 +184,9 @@ const char* const terrain_shadowmap_shader_v=
 "{"
 	"vec2 sp=p+sh.xy;"
 	"float h=texelFetch(hm,ivec2(sp),0).x;"
-	"gl_Position=mat*vec4(sp,h,1.0);"
+	"vec4 s=mat*vec4(sp,h,1.0);"
+	"s.xy=s.xy*" MF_MACRO_VALUE_TO_STR(MF_GPSM_MUL_K) "/(abs(s.xy)+" MF_MACRO_VALUE_TO_STR(MF_GPSM_ADD_K) ");"
+	"gl_Position=s;"
 "}"
 ;
 
@@ -287,7 +295,9 @@ const char* const aircrafts_shadowmap_shader_v=
 "in vec3 p;" // position
 "void main()"
 "{"
-	"gl_Position=mat*vec4(p,1.0);"
+	"vec4 s=mat*vec4(p,1.0);"
+	"s.xy=s.xy*" MF_MACRO_VALUE_TO_STR(MF_GPSM_MUL_K) "/(abs(s.xy)+" MF_MACRO_VALUE_TO_STR(MF_GPSM_ADD_K) ");"
+	"gl_Position=s;"
 "}";
 
 const char* const aircrafts_stencil_shadow_shader_v=
@@ -352,6 +362,7 @@ const char* const static_models_shader_v=
 	"fiid=float(gl_InstanceID)+0.1;"
 	"ftc=vec3(tc,tc.x/16.0);"
 	"vec3 sp=(mat[gl_InstanceID*2+1]*vec4(p,1.0)).xyz;"
+	"sp.xy=sp.xy*" MF_MACRO_VALUE_TO_STR(MF_GPSM_MUL_K) "/(abs(sp.xy)+" MF_MACRO_VALUE_TO_STR(MF_GPSM_ADD_K) ");"
 	"fstc=sp*0.5+vec3(0.5,0.5,0.5);"
 	"gl_Position=mat[gl_InstanceID*2]*vec4(p,1.0);"
 "}";
@@ -391,7 +402,9 @@ const char* const static_models_shadowmap_shader_v=
 "void main()"
 "{"
 	"ftc=vec3(tc,tc.x/16.0);"
-	"gl_Position=mat[gl_InstanceID]*vec4(p,1.0);"
+	"vec4 s=mat[gl_InstanceID]*vec4(p,1.0);"
+	"s.xy=s.xy*" MF_MACRO_VALUE_TO_STR(MF_GPSM_MUL_K) "/(abs(s.xy)+" MF_MACRO_VALUE_TO_STR(MF_GPSM_ADD_K) ");"
+	"gl_Position=s;"
 "}";
 
 const char* const static_models_shadowmap_shader_f=
