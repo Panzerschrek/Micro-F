@@ -1920,7 +1920,7 @@ void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
 		{
 			char str[128];
 			sprintf( str, "particles: %d, sort time: %3.6f mcs", count, sort_time * 1e6 );
-			text_->AddText( 1, 5, 1, mf_Text::default_color, str );
+			text_->AddText( 1, 6, 1, mf_Text::default_color, str );
 		}
 #endif
 		particles_data_.particles_vbo.Bind();
@@ -2337,6 +2337,14 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	level_static_objects_shader_.UniformVec3( "sl", shadowmap_fbo_.sun_light_intensity );
 	level_static_objects_shader_.UniformVec3( "al", shadowmap_fbo_.ambient_sky_light_intensity );
 
+	float x_minmax[2];
+	{
+		float shift[2];
+		GetTerrainMeshShift( shift );
+		x_minmax[0]= shift[0] * level_->TerrainCellSize();
+		x_minmax[1]= x_minmax[0] + level_->TerrainCellSize() * float( MF_TERRAIN_CHUNK_SIZE_CL * MF_TERRAIN_MESH_SIZE_X_CHUNKS );
+	}
+
 	// init independent parts of main object matrix
 	float rot_z_scale_translate_mat[16];
 	rot_z_scale_translate_mat[ 2]= 0.0f;
@@ -2358,10 +2366,12 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 
 	unsigned int row_begin, row_end;
 	CalculateStaticLevelObjectsVisiblyRows( &row_begin, &row_end );
+	row_begin++;row_end--;
 
 #ifdef MF_DEBUG
 	unsigned int debug_total_objects_count= 0;
 	unsigned int debug_draw_call_count= 0;
+	unsigned int total_triangle_count= 0;
 #endif
 
 	for( unsigned int row= row_begin; row<= row_end; row++ )
@@ -2392,6 +2402,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 					(void*) ( level_static_objects_data_.models[ current_object_type ].first_index * sizeof(unsigned short) ),
 					objects_count_to_draw );
 #ifdef MF_DEBUG
+				total_triangle_count+= objects_count_to_draw * level_static_objects_data_.models[ current_object_type ].index_count / 3;
 				debug_total_objects_count+= objects_count_to_draw;
 				debug_draw_call_count++;
 #endif
@@ -2400,27 +2411,30 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 			} // if we need draw objects
 			if( i == objects_count ) break;
 
-			// fast calculating of model matrix ( without 2 full matrix multiplications )
-			float sin_z= mf_Math::sin( obj->z_angle );
-			float cos_z= mf_Math::cos( obj->z_angle );
-			rot_z_scale_translate_mat[ 0]= cos_z * obj->scale;
-			rot_z_scale_translate_mat[ 1]= sin_z * obj->scale;
-			rot_z_scale_translate_mat[ 4]= - rot_z_scale_translate_mat[1];
-			rot_z_scale_translate_mat[ 5]=   rot_z_scale_translate_mat[0];
-			rot_z_scale_translate_mat[10]= obj->scale;
-			rot_z_scale_translate_mat[12]= obj->pos[0];
-			rot_z_scale_translate_mat[13]= obj->pos[1];
-			rot_z_scale_translate_mat[14]= obj->pos[2];
-			Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[objects_count_to_draw][0] );
+			if( obj->pos[0] >= x_minmax[0] && obj->pos[0] <= x_minmax[1] )
+			{
+				// fast calculating of model matrix ( without 2 full matrix multiplications )
+				float sin_z= mf_Math::sin( obj->z_angle );
+				float cos_z= mf_Math::cos( obj->z_angle );
+				rot_z_scale_translate_mat[ 0]= cos_z * obj->scale;
+				rot_z_scale_translate_mat[ 1]= sin_z * obj->scale;
+				rot_z_scale_translate_mat[ 4]= - rot_z_scale_translate_mat[1];
+				rot_z_scale_translate_mat[ 5]=   rot_z_scale_translate_mat[0];
+				rot_z_scale_translate_mat[10]= obj->scale;
+				rot_z_scale_translate_mat[12]= obj->pos[0];
+				rot_z_scale_translate_mat[13]= obj->pos[1];
+				rot_z_scale_translate_mat[14]= obj->pos[2];
+				Mat4Mul( rot_z_scale_translate_mat, view_matrix_, mat[objects_count_to_draw][0] );
 
-			Vec3Add( rot_z_scale_translate_mat + 12, shadow_offset_vec );
-			Mat4Mul( rot_z_scale_translate_mat, common_shadow_matrix_, mat[objects_count_to_draw][1] );
+				Vec3Add( rot_z_scale_translate_mat + 12, shadow_offset_vec );
+				Mat4Mul( rot_z_scale_translate_mat, common_shadow_matrix_, mat[objects_count_to_draw][1] );
 
-			// transform sun to model spasce, instead transform normals in vertex shader
-			transformed_sun[objects_count_to_draw][0]= shadowmap_fbo_.sun_vector[0] * cos_z + shadowmap_fbo_.sun_vector[1] * sin_z;
-			transformed_sun[objects_count_to_draw][1]= shadowmap_fbo_.sun_vector[1] * cos_z - shadowmap_fbo_.sun_vector[0] * sin_z;
+				// transform sun to model spasce, instead transform normals in vertex shader
+				transformed_sun[objects_count_to_draw][0]= shadowmap_fbo_.sun_vector[0] * cos_z + shadowmap_fbo_.sun_vector[1] * sin_z;
+				transformed_sun[objects_count_to_draw][1]= shadowmap_fbo_.sun_vector[1] * cos_z - shadowmap_fbo_.sun_vector[0] * sin_z;
 
-			objects_count_to_draw++;
+				objects_count_to_draw++;
+			}
 		} // for static objects
 	} // for rows
 	glDisable( GL_CULL_FACE );
@@ -2429,7 +2443,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 	if( !draw_to_water_framebuffer )
 	{
 		char str[128];
-		sprintf( str, "draw calls for level static models: %d\ntotal models: %d", debug_draw_call_count, debug_total_objects_count );
+		sprintf( str, "draw calls for level static models: %d\ntotal models: %d\ntotal models triangles: %d", debug_draw_call_count, debug_total_objects_count, total_triangle_count );
 		text_->AddText( 1, 3, 1, mf_Text::default_color, str );
 	}
 #endif

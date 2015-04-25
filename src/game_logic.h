@@ -8,7 +8,7 @@ class mf_Player;
 class mf_Enemy;
 class mf_SoundSource;
 
-#define MF_MAX_POWERUPS 128
+#define MF_MAX_POWERUPS 512
 #define MF_MAX_BULLETS 256
 #define MF_MAX_ROCKETS 128
 #define MF_MAX_ENEMIES 32

@@ -52,8 +52,8 @@ static unsigned short FinalNoise(unsigned int x, unsigned int y)
 
 mf_Level::mf_Level()
 {
-	terrain_size_[0]= 768 * 3/2;
-	terrain_size_[1]= 2048;
+	terrain_size_[0]= 768 * 3/2; // 1536
+	terrain_size_[1]= 2048; // 8192
 	terrain_amplitude_= 144.0f * 1.3f;
 	terrain_cell_size_= 2.0f;
 	terrain_water_level_= terrain_amplitude_ / 9.0f;
@@ -485,7 +485,7 @@ void mf_Level::PlaceStaticObjects()
 
 	const unsigned int grid_cell_size= 3;
 	const float grid_cell_size_f= float(grid_cell_size);
-	const unsigned int max_radius_scaler= 8;
+	const unsigned int max_radius_scaler= 9;
 	const float max_radius_scaler_f= float(max_radius_scaler);
 	
 	const unsigned int neighbor_k= 16;
@@ -540,6 +540,7 @@ void mf_Level::PlaceStaticObjects()
 			/ float(terrain_size_[0]/2);
 		radius_scaler= mf_Math::clamp( 0.0f, 1.0f, radius_scaler );
 		radius_scaler= max_radius_scaler_f * radius_scaler + 1.0f * ( 1.0f - radius_scaler );
+		if( radius_scaler > 6.0f ) radius_scaler= 9.0f;
 
 		// try place neighbor points
 		for( unsigned int i= 0; i< neighbor_k; i++ )
