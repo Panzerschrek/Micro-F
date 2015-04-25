@@ -338,6 +338,7 @@ void mf_Gui::PrepareMenus()
 	const char* const c_hdr_text= "hdr: ";
 	const char* const c_clouds_text= "clouds: ";
 	const char* const c_sky_quality_text= "sky quality: ";
+	const char* const c_shadows_quality_text= "shadows quality: ";
 
 	const unsigned int cell_size[2]= { MF_LETTER_WIDTH, MF_LETTER_HEIGHT };
 	const unsigned int border_size= 1;
@@ -529,7 +530,7 @@ void mf_Gui::PrepareMenus()
 	menu->text_count++;
 	// sky quality button text
 	text= &menu->buttons[3].text;
-	strcpy( text->text, low_normal_height[0] );
+	strcpy( text->text, low_normal_height[1] );
 	text->size= 2;
 	text->colomn= screen_size_cl[0]/2;
 	text->row= 13;
@@ -541,18 +542,43 @@ void mf_Gui::PrepareMenus()
 	button->width=  text->size * cell_size[0] * c_settings_button_width - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnSkyQualityButton;
-	button->user_data= 0;
+	button->user_data= 1;
+	menu->button_count++;
+
+	// shadows quality
+	text= &menu->texts[4];
+	strcpy( text->text, c_shadows_quality_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 -text->size * strlen(c_shadows_quality_text);
+	text->row= 16;
+	COLOR_CPY( text->color, text_color );
+	menu->text_count++;
+	// shadows quality button text
+	text= &menu->buttons[4].text;
+	strcpy( text->text, low_normal_height[1] );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2;
+	text->row= 16;
+	COLOR_CPY( text->color, text_color );
+	// shadows quality button
+	button= &menu->buttons[4];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * c_settings_button_width - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnShadowsQualityButton;
+	button->user_data= 1;
 	menu->button_count++;
 
 	// back button text
-	text= &menu->buttons[4].text;
+	text= &menu->buttons[5].text;
 	strcpy( text->text, c_button_back );
 	text->size= 2;
 	text->colomn= 2;
 	text->row= screen_size_cl[1] - 3;
 	COLOR_CPY( text->color, text_color );
 	// back button
-	button= &menu->buttons[4];
+	button= &menu->buttons[5];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
 	button->width=  text->size * cell_size[0] * strlen(c_button_back) - border_size;
@@ -1190,7 +1216,7 @@ void mf_Gui::OnPlayButton()
 
 	mf_Settings settings;
 	settings.use_hdr= menus_[ SettingsMenu ].buttons[1].user_data == 1;
-	settings.shadows_quality= mf_Settings::QualityHeight;
+	settings.shadows_quality= mf_Settings::Quality( menus_[ SettingsMenu ].buttons[4].user_data );
 	settings.terrain_quality= mf_Settings::QualityMedium;
 	settings.sky_quality= mf_Settings::Quality( menus_[ SettingsMenu ].buttons[3].user_data );
 	settings.clouds_intensity= mf_Settings::CloudsIntensity( menus_[ SettingsMenu ].buttons[2].user_data );
@@ -1224,6 +1250,15 @@ void mf_Gui::OnCloudsButton()
 void mf_Gui::OnSkyQualityButton()
 {
 	GuiButton* button= &menus_[ SettingsMenu ].buttons[3];
+	button->user_data++;
+	if( button->user_data >= sizeof(low_normal_height) / sizeof(char*) )
+		button->user_data= 0;
+	strcpy( button->text.text, low_normal_height[ button->user_data ] );
+}
+
+void mf_Gui::OnShadowsQualityButton()
+{
+	GuiButton* button= &menus_[ SettingsMenu ].buttons[4];
 	button->user_data++;
 	if( button->user_data >= sizeof(low_normal_height) / sizeof(char*) )
 		button->user_data= 0;

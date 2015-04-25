@@ -93,6 +93,7 @@ private:
 	void OnHdrButton();
 	void OnCloudsButton();
 	void OnSkyQualityButton();
+	void OnShadowsQualityButton();
 	void OnSettingsBackButton();
 
 private:
