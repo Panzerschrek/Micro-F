@@ -231,16 +231,25 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 
 	// sun shader
 	sun_shader_.Create( mf_Shaders::sun_shader_v, mf_Shaders::sun_shader_f );
-	static const char* const sun_shader_uniforms[]= { "mat", "s", "tex", "i" };
+	static const char* const sun_shader_uniforms[]= { "mat", "s", "tex", "i", "a" };
 	sun_shader_.FindUniforms( sun_shader_uniforms, sizeof(sun_shader_uniforms) / sizeof(char*) );
 
 	// sky shader
 	{
 		char frag_shader[512];
 		// select different color konvertion k for hdr and ldr
-		sprintf( frag_shader, mf_Shaders::sky_shader_f, settings_.use_hdr
-			? "clrYxy[0]=clrYxy [0]/50.0;"
-			: "clrYxy[0]=1.0-exp(-clrYxy[0]/25.0);" );
+		const char* func_str;
+		if( settings_.use_hdr )
+		{
+			if( settings_.daytime == mf_Settings::DaytimeNight ) func_str= "clrYxy[0]=clrYxy [0]/500.0;";
+			else func_str= "clrYxy[0]=clrYxy [0]/50.0;";
+		}
+		else
+		{
+			if( settings_.daytime == mf_Settings::DaytimeNight ) func_str= "clrYxy[0]=1.0-exp(-clrYxy[0]/500.0);";
+			else func_str= "clrYxy[0]=1.0-exp(-clrYxy[0]/25.0);";
+		}
+		sprintf( frag_shader, mf_Shaders::sky_shader_f, func_str );
 
 		sky_shader_.SetAttribLocation( "p", 0 );
 		sky_shader_.Create( mf_Shaders::sky_shader_v, frag_shader );
@@ -537,8 +546,10 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
 	}
 	{ // sun texture
-		mf_Texture sun_tex( 6, 6 );
-		GenSunTexture( &sun_tex );
+		unsigned int size_log2= settings_.daytime == mf_Settings::DaytimeNight ? 8 : 6;
+		mf_Texture sun_tex( size_log2, size_log2 );
+		if( settings_.daytime == mf_Settings::DaytimeNight ) GenMoonTexture( &sun_tex );
+		else GenSunTexture( &sun_tex );
 		sun_tex.LinearNormalization(1.0f);
 
 		glGenTextures( 1, &sun_texture_ );
@@ -822,7 +833,7 @@ void mf_Renderer::DrawFrame()
 		glBindTexture( GL_TEXTURE_2D, hdr_data_.tonemapping_factor_accumulate_tex_id );
 		hdr_data_.tonemapping_shader.UniformInt( "btex", 1 );
 
-		hdr_data_.tonemapping_shader.UniformFloat( "ck", settings_.daytime == mf_Settings::DaytimeNight ? 0.5f : 1.0f );
+		hdr_data_.tonemapping_shader.UniformFloat( "ck", settings_.daytime == mf_Settings::DaytimeNight ? 0.25f : 1.0f );
 
 		glDisable( GL_DEPTH_TEST );
 		glDrawArrays( GL_TRIANGLES, 0, 3*2 );
@@ -922,14 +933,40 @@ void mf_Renderer::CreateShadowmapFramebuffer()
 
 	SphericalCoordinatesToVec( shadowmap_fbo_.sun_azimuth, shadowmap_fbo_.sun_elevation, shadowmap_fbo_.sun_vector );
 
-	shadowmap_fbo_.sun_light_intensity[0]= 0.9f;
-	shadowmap_fbo_.sun_light_intensity[1]= 0.9f;
-	shadowmap_fbo_.sun_light_intensity[2]= 0.8f;
-	shadowmap_fbo_.ambient_sky_light_intensity[0]= 0.2f;
-	shadowmap_fbo_.ambient_sky_light_intensity[1]= 0.23f;
-	shadowmap_fbo_.ambient_sky_light_intensity[2]= 0.29f;
-	if( settings_.use_hdr )
-		Vec3Mul( shadowmap_fbo_.ambient_sky_light_intensity, 0.5f );
+	if( settings_.daytime == mf_Settings::DaytimeNight )
+	{
+		if( settings_.use_hdr )
+		{
+			shadowmap_fbo_.sun_light_intensity[0]= 0.9f;
+			shadowmap_fbo_.sun_light_intensity[1]= 0.9f;
+			shadowmap_fbo_.sun_light_intensity[2]= 0.95f;
+			shadowmap_fbo_.ambient_sky_light_intensity[0]= 0.2f;
+			shadowmap_fbo_.ambient_sky_light_intensity[1]= 0.2f;
+			shadowmap_fbo_.ambient_sky_light_intensity[2]= 0.2f;
+			Vec3Mul( shadowmap_fbo_.ambient_sky_light_intensity, 0.5f );
+			Vec3Mul( shadowmap_fbo_.sun_light_intensity, 0.5f );
+		}
+		else
+		{
+			shadowmap_fbo_.sun_light_intensity[0]= 0.35f;
+			shadowmap_fbo_.sun_light_intensity[1]= 0.35f;
+			shadowmap_fbo_.sun_light_intensity[2]= 0.38f;
+			shadowmap_fbo_.ambient_sky_light_intensity[0]= 0.1f;
+			shadowmap_fbo_.ambient_sky_light_intensity[1]= 0.1f;
+			shadowmap_fbo_.ambient_sky_light_intensity[2]= 0.1f;
+		}
+	}
+	else
+	{
+		shadowmap_fbo_.sun_light_intensity[0]= 0.9f;
+		shadowmap_fbo_.sun_light_intensity[1]= 0.9f;
+		shadowmap_fbo_.sun_light_intensity[2]= 0.8f;
+		shadowmap_fbo_.ambient_sky_light_intensity[0]= 0.2f;
+		shadowmap_fbo_.ambient_sky_light_intensity[1]= 0.23f;
+		shadowmap_fbo_.ambient_sky_light_intensity[2]= 0.29f;
+		if( settings_.use_hdr )
+			Vec3Mul( shadowmap_fbo_.ambient_sky_light_intensity, 0.5f );
+	}
 
 	static const unsigned int shadowmap_quality_depend_size[mf_Settings::LastQuality]=
 	{
@@ -1844,47 +1881,6 @@ void mf_Renderer::DrawTerrain(bool draw_to_water_framebuffer )
 		glDisable( GL_CLIP_DISTANCE0 );
 }
 
-void mf_Renderer::DrawStars( bool draw_to_water_framebuffer )
-{
-	stars_shader_.Bind();
-
-	float mat[16];
-	float translate_mat[16];
-	float scale_mat[16];
-	Mat4Scale( scale_mat, g_stars_distance_scaler * GetSceneRadius() );
-
-	float translate_vec[3];
-	translate_vec[0]= player_->Pos()[0];
-	translate_vec[1]= player_->Pos()[1];
-	if( draw_to_water_framebuffer )
-		translate_vec[2]= ( 2.0f * level_->TerrainWaterLevel() - player_->Pos()[2] );
-	else translate_vec[2]= player_->Pos()[2];
-	Mat4Translate( translate_mat, translate_vec );
-
-	Mat4Mul( scale_mat, translate_mat, mat );
-	Mat4Mul( mat, view_matrix_ );
-
-	stars_shader_.UniformMat4( "mat", mat );
-
-	float sprite_size;
-	const float init_sprite_size= 6.0f / 1024.0f;
-	if( draw_to_water_framebuffer )
-		sprite_size= float(water_reflection_fbo_.size[1]) * init_sprite_size;
-	else
-		sprite_size= float(mf_MainLoop::Instance()->ViewportHeight()) * init_sprite_size;
-	stars_shader_.UniformFloat( "s", sprite_size );
-
-	glEnable( GL_PROGRAM_POINT_SIZE );
-	glEnable( GL_BLEND );
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
-	stars_vbo_.Bind();
-	glDrawArrays( GL_POINTS, 0, stars_vbo_.VertexCount() );
-
-	glDisable( GL_BLEND );
-	glDisable( GL_PROGRAM_POINT_SIZE );
-}
-
 void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
 {
 	{
@@ -2047,6 +2043,47 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 		GL_UNSIGNED_SHORT,
 		0 );
 
+	if( settings_.daytime == mf_Settings::DaytimeNight )
+	{
+		stars_shader_.Bind();
+
+		float mat[16];
+		float translate_mat[16];
+		float scale_mat[16];
+		Mat4Scale( scale_mat, g_stars_distance_scaler * GetSceneRadius() );
+
+		float translate_vec[3];
+		translate_vec[0]= player_->Pos()[0];
+		translate_vec[1]= player_->Pos()[1];
+		if( draw_to_water_framebuffer )
+			translate_vec[2]= ( 2.0f * level_->TerrainWaterLevel() - player_->Pos()[2] );
+		else translate_vec[2]= player_->Pos()[2];
+		Mat4Translate( translate_mat, translate_vec );
+
+		Mat4Mul( scale_mat, translate_mat, mat );
+		Mat4Mul( mat, view_matrix_ );
+
+		stars_shader_.UniformMat4( "mat", mat );
+
+		float sprite_size;
+		const float init_sprite_size= 2.5f / 1024.0f;
+		if( draw_to_water_framebuffer )
+			sprite_size= float(water_reflection_fbo_.size[1]) * init_sprite_size;
+		else
+			sprite_size= float(mf_MainLoop::Instance()->ViewportHeight()) * init_sprite_size;
+		stars_shader_.UniformFloat( "s", sprite_size );
+
+		glEnable( GL_PROGRAM_POINT_SIZE );
+		glEnable( GL_BLEND );
+		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+		stars_vbo_.Bind();
+		glDrawArrays( GL_POINTS, 0, stars_vbo_.VertexCount() );
+
+		glDisable( GL_BLEND );
+		glDisable( GL_PROGRAM_POINT_SIZE );
+	}
+
 	/*
 	SUN
 	*/
@@ -2071,7 +2108,12 @@ void mf_Renderer::DrawSky(  bool draw_to_water_framebuffer )
 	glBindTexture( GL_TEXTURE_2D, sun_texture_ );
 	sun_shader_.UniformInt( "tex", 0 );
 
-	sun_shader_.UniformFloat( "i", settings_.use_hdr ? 8.0f : 4.0f ); // sun light intencity
+	// sun light intencity
+	if( settings_.daytime == mf_Settings::DaytimeNight )
+		sun_shader_.UniformFloat( "i", settings_.use_hdr ? 2.5f : 1.0f );
+	else
+		sun_shader_.UniformFloat( "i", settings_.use_hdr ? 8.0f : 4.0f );
+	sun_shader_.UniformFloat( "a", player_->Angle()[1] + MF_PI  );
 
 	glEnable( GL_PROGRAM_POINT_SIZE );
 	glEnable( GL_BLEND );

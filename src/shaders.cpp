@@ -530,10 +530,13 @@ const char* const sun_shader_f=
 "#version 330\n"
 "uniform sampler2D tex;"
 "uniform float i;" // sun light intencity
+"uniform float a;" // angle of rotation
 "out vec4 c_;"
 "void main()"
 "{"
-	"vec4 t=texture(tex,gl_PointCoord);"
+	"vec2 tc=gl_PointCoord-vec2(0.5,0.5);"
+	"tc=vec2( tc.x*cos(a)-tc.y*sin(a),tc.x*sin(a)+tc.y*cos(a));"
+	"vec4 t=texture(tex,tc+vec2(0.5,0.5));"
 	"c_=vec4(t.xyz*i,t.a);"
 "}";
 
@@ -638,8 +641,8 @@ const char* const stars_shader_v=
 "out float fi;" // frag intensity
 "void main()"
 "{"
-	"gl_PointSize=s;"
-	"fi=i;"
+	"gl_PointSize=s*(1.0+i);"
+	"fi=i*2.0;"
 	"gl_Position=mat*vec4(p,1.0);"
 "}";
 

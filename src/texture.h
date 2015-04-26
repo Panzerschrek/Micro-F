@@ -39,6 +39,7 @@ public:
 	void FillEllipse( int center_x, int center_y, int radius, const float* color, float scale_x= 1.0f, float scale_y= 1.0f );
 	void DrawLine( unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, const float* color );
 	void Grayscale();
+	void Smooth();
 	void Abs();
 	void SinWaveDeformX( float amplitude, float freq, float phase );
 	void SinWaveDeformY( float amplitude, float freq, float phase );
@@ -82,7 +83,6 @@ public:
 	void ExpNormalization( float k );
 
 private:
-
 	unsigned short Noise2( int x, int y, unsigned int mask );
 	unsigned short InterpolatedNoise( unsigned int x, unsigned int y, unsigned int k );
 	unsigned short FinalNoise( unsigned int x, unsigned int y, unsigned int octave_count );

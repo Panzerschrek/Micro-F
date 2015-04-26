@@ -460,6 +460,34 @@ void mf_Texture::Grayscale()
 	}
 }
 
+void mf_Texture::Smooth()
+{
+	float* new_data= new float[ size_[0] * size_[1] * 4 ];
+	float* out_data= new_data;
+
+	int mask[2]= { size_[0] - 1, size_[1] - 1 };
+	for( int y= 0; y< int(size_[1]); y++ )
+		for( int x= 0; x< int(size_[0]); x++, out_data+= 4 )
+		{
+			for( int j= 0; j< 4; j++ )
+			{
+				float r;
+				r=  data_[ ( x + (y << size_log2_[0]) ) * 4 + j ] * 2.0f;
+				r+= data_[ ( ((x+1)&mask[0]) + (y << size_log2_[0]) ) * 4 + j ] * 1.5f;
+				r+= data_[ ( ((x-1)&mask[0]) + (y << size_log2_[0]) ) * 4 + j ] * 1.5f;
+				r+= data_[ ( x + (((y+1)&mask[1]) << size_log2_[0]) ) * 4 + j ] * 1.5f;
+				r+= data_[ ( x + (((y-1)&mask[1]) << size_log2_[0]) ) * 4 + j ] * 1.5f;
+				r+= data_[ ( ((x+1)&mask[0]) + (((y+1)&mask[1]) << size_log2_[0]) ) * 4 + j ];
+				r+= data_[ ( ((x-1)&mask[0]) + (((y+1)&mask[1]) << size_log2_[0]) ) * 4 + j ];
+				r+= data_[ ( ((x+1)&mask[0]) + (((y-1)&mask[1]) << size_log2_[0]) ) * 4 + j ];
+				r+= data_[ ( ((x-1)&mask[0]) + (((y-1)&mask[1]) << size_log2_[0]) ) * 4 + j ];
+				out_data[j]= r * 0.083333333333333333333333333333333f;
+			}
+		}
+	delete[] data_;
+	data_= new_data;
+}
+
 void mf_Texture::Abs()
 {
 	float* d= data_;

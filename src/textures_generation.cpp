@@ -436,41 +436,65 @@ void GenSunTexture( mf_Texture* tex )
 	tex->Pow( 0.7f );
 }
 
-void GenMoonTexture( mf_Texture* textures )
+void GenMoonTexture( mf_Texture* tex )
 {
-	static const char side_basises[6*9]=
+	static const unsigned int tex_size_log2= 6;
+	static const unsigned int tex_size= 64;
+	static const unsigned char initial_tex_data[ tex_size * tex_size / 8 ]=
+#include "../textures/moon.h"
+	;
+
+	MF_ASSERT( tex->SizeX() == tex->SizeY() && tex->SizeXLog2() >= tex_size_log2 );
+
+	unsigned char decompressed_data[ tex_size * tex_size ];
+	mfMonochromeImageTo8Bit( initial_tex_data, decompressed_data, tex_size * tex_size );
+
+
+	float* tex_data= tex->GetData();
+	unsigned int ts_shift_k= tex->SizeXLog2() - tex_size_log2;
+	unsigned int tc_cell_size= 1 << ts_shift_k;
+	unsigned int tc_mask= ( 1 << ts_shift_k ) - 1;
+	for( unsigned int y= 0; y< tex->SizeY(); y++ )
 	{
-		//TODO make correct basis for convertion uv to xyz
-		0,1,0 , 1,0,0, 0,0,0,
-		0,-1,0, 1,0,0, 0,0,0,
-		1,0,0 , 0,0,1, 0,-1,0,
-		-1,0,0, 0,0,1, 0,-1,0,
-		0,0,1 , 1,0,0, 0,-1,0,
-		0,0,-1, 1,0,0, 0,-1,0
-	};
-
-	for( unsigned int i= 0; i< 6; i++ )
-	{
-		float* tex_data= textures[i].GetData();
-
-		int size= textures[0].SizeX();
-		const char* current_basis= &side_basises[ i*9 ];
-
-		//textures[i].Noise();
-		for( int v= 0; v< size; v++ )
-			for( int u= 0; u< size; u++, tex_data+= 4 )
+		unsigned int ys= y >> ts_shift_k;
+		unsigned int y_mask= y & tc_mask;
+		for( unsigned int x= 0; x< tex->SizeX(); x++, tex_data+= 4 )
+		{
+			unsigned int xs= x >> ts_shift_k;
+			unsigned int x_mask= x & tc_mask;
+			unsigned int y_interpolated[2]=
 			{
-				int xyz[3];
-				xyz[0]= current_basis[0] * u + current_basis[1] * v + current_basis[2] * size;
-				xyz[1]= current_basis[3] * u + current_basis[4] * v + current_basis[5] * size;
-				xyz[2]= current_basis[6] * u + current_basis[7] * v + current_basis[8] * size;
-
-				unsigned short noise= Noise3Final( xyz[0], xyz[1], xyz[2], 0, 6 );
-				tex_data[0]= tex_data[1]= tex_data[2]= tex_data[3]= 
-					float(noise) / 65536.0f;
-			}
-
+				decompressed_data[ xs   + ys * tex_size ] * ( tc_cell_size - y_mask ) + decompressed_data[ xs   + (ys+1) * tex_size ] * y_mask,
+				decompressed_data[ xs+1 + ys * tex_size ] * ( tc_cell_size - y_mask ) + decompressed_data[ xs+1 + (ys+1) * tex_size ] * y_mask
+			};
+			unsigned int val= y_interpolated[1] * x_mask + ( tc_cell_size - x_mask ) * y_interpolated[0];
+			tex_data[0]= tex_data[1]= tex_data[2]= tex_data[3]= float( val >> (ts_shift_k+ts_shift_k) ) / 255.0f;
+		}
 	}
+	tex->Smooth();
+	tex->Smooth();
+	tex->Smooth();
+
+	static const float white_color[]= { 1.0f, 1.0f, 1.0f, 1.0f };
+	static const float gray_color[]= { 0.5f, 0.5f, 0.5f, 1.0f };
+	static const float sub_color[]= { 1.0f, 1.0f, 1.0f, 1.0f };
+	tex->Mix( white_color, gray_color, sub_color );
+
+	{
+		mf_Texture noise( tex->SizeXLog2(), tex->SizeXLog2() );
+		noise.Noise();
+		static const float noise_rescale[]= { 0.7f, 0.7f, 0.7f, 100.0f };
+		static const float noise_add[]= { 0.3f, 0.3f, 0.3f, 100.0f };
+		noise.Mul( noise_rescale );
+		noise.Add( noise_add );
+
+		tex->Mul( &noise );
+	}
+
+	mf_Texture circle( tex->SizeXLog2(), tex->SizeXLog2() );
+	circle.Fill( g_invisible_color );
+	circle.FillEllipse( tex->SizeX() / 2, tex->SizeX() / 2, tex->SizeX() / 2 - 12, sub_color );
+	tex->Mul( &circle );
 }
 
 void GenDirtTexture( mf_Texture* tex )
