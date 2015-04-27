@@ -69,7 +69,7 @@ public:
 
 	void Tick( float dt );
 	void PlayerShotBegin();
-	void PlayerShotContinue( const float* dir, bool first_shot= false );
+	void PlayerShotContinue( bool first_shot= false );
 	void PlayerRocketShot( const float* dir );
 
 	const mf_Level* GetLevel() const;

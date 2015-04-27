@@ -7,7 +7,7 @@
 #include "mf_model.h"
 #include "../models/models.h"
 
-#define MF_FOV_CHANGE_SPEED MF_PI6
+#define MF_FOV_CHANGE_SPEED MF_PI4
 #define MF_MIN_FOV MF_PI6
 #define MF_MAX_FOV (MF_PI2 + MF_PI6)
 #define MF_FOV_STEP (MF_PI6 * 0.25f)
@@ -139,10 +139,9 @@ void mf_Player::Tick( float dt )
 
 float mf_Player::GetMachinegunCircleRadius() const
 {
-	const float c_machinegun_angle= MF_PI6;
 	return 0.5f *
 		float(mf_MainLoop::Instance()->ViewportHeight()) *
-		mf_Math::tan( c_machinegun_angle * 0.5f ) /
+		mf_Math::tan( aircraft_.GetMachinegunConeAngle() ) /
 		mf_Math::tan( fov_ * 0.5f );
 }
 

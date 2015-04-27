@@ -84,6 +84,7 @@ private:
 	void DrawMenu( const GuiMenu* menu );
 	void DrawCursor();
 	void DrawTargetAircraftAim();
+	void DrawMachinegunCircle();
 
 	void OnPlayButton();
 	void OnSettingsButton();
@@ -112,6 +113,8 @@ private:
 
 	mf_GLSLProgram gui_shader_;
 	mf_VertexBuffer common_vbo_;
+
+	mf_GLSLProgram machinegun_circle_shader_;
 
 	GLuint textures_[LastGuiTexture];
 	GLuint cursor_texture_;

@@ -109,6 +109,25 @@ const char* const gui_shader_f=
 	"c_=texture(tex[uint(ftc.z)],ftc.xy)*vec4(c,1.0);"
 "}";
 
+const char* const machinegun_circle_shader_v=
+"#version 330\n"
+"uniform float tpidis;" // 2 * pi / segment_count
+"uniform vec3 r;" // x - x scaler, y - y scaler, z - circle width
+"void main()"
+"{"
+	"float a=tpidis*float(gl_VertexID/2);"
+	"float rs=1.0+r.z*float(gl_VertexID&1);"
+	"gl_Position=vec4(cos(a)*r.x*rs,sin(a)*r.y*rs,0.0,1.0);"
+"}";
+
+const char* const machinegun_circle_shader_f=
+"#version 330\n"
+"out vec4 c_;"
+"void main()"
+"{"
+	"c_=vec4(0.5,1.0,0.5,0.5);"
+"}";
+
 const char* const terrain_shader_v=
 "#version 330\n"
 "uniform mat4 mat;" // view matrix

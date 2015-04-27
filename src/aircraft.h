@@ -31,6 +31,8 @@ public:
 	void SetThrottle( float throttle );
 	float Throttle() const;
 
+	float GetMachinegunConeAngle() const;
+
 	int HP() const;
 	void AddHP( int hp_bonus );
 

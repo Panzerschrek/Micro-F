@@ -126,6 +126,10 @@ mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
 	gui_shader_.FindUniform( "tex" );
 	gui_shader_.FindUniform( "c" );
 
+	machinegun_circle_shader_.Create( mf_Shaders::machinegun_circle_shader_v, mf_Shaders::machinegun_circle_shader_f );
+	machinegun_circle_shader_.FindUniform( "r" );
+	machinegun_circle_shader_.FindUniform( "tpidis" );
+
 	{
 		mf_DrawingModel model;
 		GenGeosphere( &model, 24, 16 );
@@ -311,6 +315,8 @@ void mf_Gui::Draw()
 			text_->AddText( 2, bottom_row - 2, 2, c_rockets_color, rockets_str );
 		}
 
+		if( player_->GetViewMode() == mf_Player::ViewInsideCockpit )
+			DrawMachinegunCircle();
 		DrawTargetAircraftAim();
 		DrawControlPanel();
 		DrawNaviball();
@@ -1190,8 +1196,18 @@ void mf_Gui::DrawTargetAircraftAim()
 	vertices[5]= vertices[2];
 
 	gui_shader_.Bind();
+	static const float c_white_color[3]= { 1.0f, 1.0f, 1.0f };
 	static const float c_green_color[3]= { 0.5f, 1.0f, 0.5f };
-	gui_shader_.UniformVec3( "c", c_green_color );
+	const float* color;
+	{
+		float vec_to_target_aircraft[3];
+		Vec3Sub( aircraft->Pos(), player_->GetAircraft()->Pos(), vec_to_target_aircraft );
+		Vec3Normalize( vec_to_target_aircraft );
+		if( Vec3Dot( vec_to_target_aircraft, player_->GetAircraft()->AxisVec(1) ) >= mf_Math::cos(player_->GetAircraft()->GetMachinegunConeAngle()) )
+			color= c_green_color;
+		else color= c_white_color;
+	}
+	gui_shader_.UniformVec3( "c", color );
 
 	glActiveTexture( GL_TEXTURE0 + 0 );
 	glBindTexture( GL_TEXTURE_2D, textures_[TextureTargetAircraft] );
@@ -1206,6 +1222,28 @@ void mf_Gui::DrawTargetAircraftAim()
 
 	glDrawArrays( GL_TRIANGLES, 0, 6 );
 
+	glDisable( GL_BLEND );
+	glEnable( GL_DEPTH_TEST );
+}
+
+void mf_Gui::DrawMachinegunCircle()
+{
+	const static unsigned int c_segments= 64;
+
+	machinegun_circle_shader_.Bind();
+
+	float radius[3];
+	radius[0]= player_->GetMachinegunCircleRadius() / float(main_loop_->ViewportHeight());
+	radius[1]= radius[0] * float(main_loop_->ViewportWidth()) / float(main_loop_->ViewportHeight());
+	radius[2]= (0.02f / 1024.0f) * float(main_loop_->ViewportWidth());
+
+	machinegun_circle_shader_.UniformVec3( "r", radius );
+	machinegun_circle_shader_.UniformFloat( "tpidis", MF_2PI / float(c_segments) );
+
+	glDisable( GL_DEPTH_TEST );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	glDrawArrays( GL_TRIANGLE_STRIP, 0, c_segments * 2 + 2 );
 	glDisable( GL_BLEND );
 	glEnable( GL_DEPTH_TEST );
 }

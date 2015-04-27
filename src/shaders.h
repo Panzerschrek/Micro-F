@@ -11,6 +11,8 @@ extern const char* const naviball_icon_shader_f;
 
 extern const char* const gui_shader_v;
 extern const char* const gui_shader_f;
+extern const char* const machinegun_circle_shader_v;
+extern const char* const machinegun_circle_shader_f;
 
 extern const char* const terrain_shader_v;
 extern const char* const terrain_shader_f;

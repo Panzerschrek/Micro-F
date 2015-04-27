@@ -276,6 +276,11 @@ void mf_Aircraft::CalculateAngles( float* out_angles ) const
 	out_angles[1]= - atan2( x_vec[2], x_vec[0] );
 }
 
+float mf_Aircraft::GetMachinegunConeAngle() const
+{
+	return MF_PI12;
+}
+
 void mf_Aircraft::ThrottleUp( float dt )
 {
 	const float throttle_up_speed= 0.75f;

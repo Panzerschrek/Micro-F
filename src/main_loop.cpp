@@ -116,11 +116,7 @@ void mf_MainLoop::Loop()
 				game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
 
 				if( shot_button_pressed_ )
-				{
-					float dir[3];
-					player_.ScreenPointToWorldSpaceVec( cursor_xy[0], cursor_xy[1], dir );
-					game_logic_->PlayerShotContinue( dir );
-				}
+					game_logic_->PlayerShotContinue();
 				game_logic_->Tick( prev_tick_dt_ );
 			}// if normal dt
 
@@ -132,9 +128,11 @@ void mf_MainLoop::Loop()
 		} // if in game or ingame menu
 
 		{
-			char fps_str[32];
-			sprintf( fps_str, "fps: %d", fps_calc_.frame_count_to_show );
-			text_->AddText( 0, 0, 1, mf_Text::default_color, fps_str );
+			char str[32];
+			sprintf( str, "fps: %d", fps_calc_.frame_count_to_show );
+			text_->AddText( 0, 0, 1, mf_Text::default_color, str );
+			sprintf( str, "fov: %3.1f", player_.Fov() * MF_RAD2DEG );
+			text_->AddText( 0, 1, 1, mf_Text::default_color, str );
 		}
 
 		if( mouse_captured_ )
@@ -541,7 +539,7 @@ void mf_MainLoop::Shot( unsigned int x, unsigned int y, unsigned int button )
 			float dir[3];
 			player_.ScreenPointToWorldSpaceVec( x, y, dir );
 			game_logic_->PlayerShotBegin();
-			game_logic_->PlayerShotContinue( dir, true );
+			game_logic_->PlayerShotContinue( true );
 		}
 		else
 		{

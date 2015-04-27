@@ -367,7 +367,7 @@ void mf_GameLogic::PlayerShotBegin()
 	player_last_shot_time_= mf_MainLoop::Instance()->CurrentTime();
 }
 
-void mf_GameLogic::PlayerShotContinue( const float* dir, bool first_shot )
+void mf_GameLogic::PlayerShotContinue( bool first_shot )
 {
 	const float c_machinegun_freq= Tables::aircraft_primary_weapon_freq[ player_->GetAircraft()->GetType() ];
 
@@ -400,10 +400,18 @@ void mf_GameLogic::PlayerShotContinue( const float* dir, bool first_shot )
 		bullet->owner= player_->GetAircraft();
 		VEC3_CPY( bullet->pos, bullet->owner->Pos() );
 
-		Vec3Normalize( dir, bullet->dir );
+		if( player_->TargetAircraft() != NULL )
+		{
+			Vec3Sub( player_->TargetAircraft()->Pos(), bullet->owner->Pos(), bullet->dir );
+			Vec3Normalize( bullet->dir );
+			if( Vec3Dot( bullet->dir, bullet->owner->AxisVec(1) ) >= mf_Math::cos(bullet->owner->GetMachinegunConeAngle()) )
+			{}
+			else Vec3Normalize( bullet->owner->AxisVec(1), bullet->dir );
+		}
+		else Vec3Normalize( bullet->owner->AxisVec(1), bullet->dir );
 		for( unsigned int i= 0; i< 3; i++ )
 			bullet->dir[i] += randomizer_.RandF( -0.01f, 0.01f );
-		Vec3Normalize(bullet->dir );
+		Vec3Normalize( bullet->dir );
 
 		bullet->velocity= mfInf();
 
