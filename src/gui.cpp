@@ -1233,9 +1233,10 @@ void mf_Gui::DrawMachinegunCircle()
 	machinegun_circle_shader_.Bind();
 
 	float radius[3];
-	radius[0]= player_->GetMachinegunCircleRadius() / float(main_loop_->ViewportHeight());
-	radius[1]= radius[0] * float(main_loop_->ViewportWidth()) / float(main_loop_->ViewportHeight());
-	radius[2]= (0.02f / 1024.0f) * float(main_loop_->ViewportWidth());
+	radius[1]= 2.0f * player_->GetMachinegunCircleRadius() / float(main_loop_->ViewportHeight());
+	radius[0]= 2.0f * player_->GetMachinegunCircleRadius() / float(main_loop_->ViewportWidth());
+	radius[2]= (0.03f / 1024.0f) * float(main_loop_->ViewportWidth());
+
 
 	machinegun_circle_shader_.UniformVec3( "r", radius );
 	machinegun_circle_shader_.UniformFloat( "tpidis", MF_2PI / float(c_segments) );
