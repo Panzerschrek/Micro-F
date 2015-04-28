@@ -178,6 +178,35 @@ short* GenPlasmagunSound( unsigned int sample_rate, unsigned int* out_samples_co
 	return data;
 }
 
+short* GenBlastSound( unsigned int sample_rate, unsigned int* out_samples_count )
+{
+	mf_Rand rand;
+
+	unsigned int samples_count= sample_rate * 2;
+
+	short* data= new short[ samples_count ];
+	float inv_samples_per_second= 1.0f / float(sample_rate);
+	float a= 0.0f;
+	float t= 0.8f;
+	const float k= 0.99981f;
+	const float amp= 5.5f;
+	for( unsigned int i= 0; i< samples_count; i++ )
+	{
+		a= a * ( 1.0f - t ) + amp * Noise1Final( float(i) * ( inv_samples_per_second * 1500.0f ), 3 ) * t;
+		if( a > 1.0f ) a= 1.0f;
+		else if( a < -1.0f ) a= -1.0f;
+
+		float scaler= float(i) * ( 1.0f / 1024.0f );
+		if( scaler > 1.0f ) scaler= 1.0f;
+		data[i]= short( scaler * a * 32767.0f );
+		t*= k;
+	}
+
+	*out_samples_count= samples_count;
+	return data;
+}
+
+
 short* (* const sound_gen_func[LastSound])(unsigned int sample_rate, unsigned int* out_samples_count)=
 {
 	GenPulsejetSound,
@@ -185,5 +214,6 @@ short* (* const sound_gen_func[LastSound])(unsigned int sample_rate, unsigned in
 	GenPowerupPickupSound,
 	GenMachinegunShotSound,
 	GenMachinegunShotSound, // TODO: automatic cannon sound
-	GenPlasmagunSound  // TODO: plasmagun sound
+	GenPlasmagunSound,
+	GenBlastSound
 };

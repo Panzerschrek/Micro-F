@@ -161,7 +161,7 @@ void mf_SoundEngine::AddSingleSound( mf_SoundType sound_type, float volume, floa
 	static const float c_zero_vel[3]= { 0.0f, 0.0f, 0.0f };
 
 	single_sounds_[ single_sounds_count_ ].source= CreateSoundSource( sound_type );
-	single_sounds_[ single_sounds_count_ ].death_time= mf_MainLoop::Instance()->CurrentTime() + sound_buffers_[sound_type].length + 0.01f;
+	single_sounds_[ single_sounds_count_ ].death_time= mf_MainLoop::Instance()->CurrentTime() + sound_buffers_[sound_type].length / pitch + 0.01f;
 	if( opt_pos != NULL )
 		single_sounds_[ single_sounds_count_ ].source->SetOrientation( opt_pos, c_zero_vel );
 	else

@@ -12,6 +12,8 @@
 #define MF_ROCKET_LIFETIME 12.0f
 #define MF_ROCKET_HIT_DISTANCE 10.0f
 
+#define MF_BLAST_SOUND_VOLUME 1024.0f
+
 #define MF_MAX_ALIVE_ENEMIES 3
 
 namespace PowerupsTables
@@ -303,6 +305,7 @@ void mf_GameLogic::Tick( float dt )
 		if( level_.SphereIntersectTerrain( enemies_[i]->GetAircraft()->Pos(), 4.0f ) )
 		{
 			particles_manager_.AddBlast( enemies_[i]->GetAircraft()->Pos() );
+			mf_SoundEngine::Instance()->AddSingleSound( SoundBlast, MF_BLAST_SOUND_VOLUME, 1.0f, enemies_[i]->GetAircraft()->Pos() );
 			DespawnEnemy( enemies_[i] );
 			continue;
 		}
