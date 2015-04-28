@@ -2,9 +2,11 @@
 #include "particles_manager.h"
 #include "textures_generation.h"
 #include "aircraft.h"
+#include "game_logic.h"
 
 #define MF_SMOKE_MAX_LIFETIME 7.0f
-#define MF_PLASMA_ENGINE_PARTICEL_LIFETIME 0.5f
+#define MF_PLASMA_ENGINE_PARTICLE_LIFETIME 0.5f
+#define MF_PLASMABALL_TRAIL_PARTICLE_LIFETIME 0.6f
 #define MF_BLAST_FIRE_LIFETIME 1.0f
 
 static void TransformAircraftPoint( const mf_Aircraft* aircraft, const float* in_pos, float* out_pos )
@@ -150,6 +152,47 @@ void mf_ParticlesManager::AddPlasmaBall( const float* pos )
 	particle_count_++;
 }
 
+void mf_ParticlesManager::AddRocketTrail( const mf_Rocket* rocket )
+{
+	const float c_particles_per_meter= 0.3f;
+
+	float particles_per_second= c_particles_per_meter * rocket->velocity;
+
+	unsigned int particle_count= (unsigned int)
+		( mf_Math::floor(current_tick_time_ * particles_per_second) - mf_Math::ceil(prev_tick_time_ * particles_per_second) )
+		+ 1u;
+
+	Particle* particle= particles_ + particle_count_;
+	float partice_pos[3];
+	float particle_step[3];
+	float particle_dir[3];
+	VEC3_CPY( partice_pos, rocket->pos );
+	Vec3Mul( rocket->dir, -1.0f, particle_dir );
+	Vec3Mul( particle_dir, 1.0f / c_particles_per_meter, particle_step );
+	float dt= (1.0f / c_particles_per_meter) / rocket->velocity;
+	float t= current_tick_time_;
+
+	float unused;
+	float part= modf(current_tick_time_ * particles_per_second, &unused );
+	t-= dt * part;
+	float pos_add_vec[3];
+	Vec3Mul( particle_step, part, pos_add_vec );
+	Vec3Add( partice_pos, pos_add_vec );
+
+	for( unsigned int i= 0; i< particle_count; i++, Vec3Add( partice_pos, particle_step ), t-= dt, particle++ )
+	{
+		particle->type= Particle::PlasmaBallTrail;
+		VEC3_CPY( particle->pos, partice_pos );
+		VEC3_CPY( particle->direction, particle_dir );
+		particle->velocity= 0.0f;
+		particle->acceleration= 0.0f;
+		particle->spawn_time= t;
+		particle->life_time= MF_PLASMABALL_TRAIL_PARTICLE_LIFETIME;
+		spawn_counter_++;
+	}
+	particle_count_+= particle_count;
+}
+
 void mf_ParticlesManager::PrepareParticlesVertices( mf_ParticleVertex* out_vertices ) const
 {
 	const Particle* particle= particles_;
@@ -176,7 +219,7 @@ void mf_ParticlesManager::PrepareParticlesVertices( mf_ParticleVertex* out_verti
 			break;
 		case Particle::PlasmaEngineTrail:
 			{
-				float lifetime_k= ( current_tick_time_ - particle->spawn_time ) * ( 1.0f / MF_PLASMA_ENGINE_PARTICEL_LIFETIME );
+				float lifetime_k= ( current_tick_time_ - particle->spawn_time ) * ( 1.0f / MF_PLASMA_ENGINE_PARTICLE_LIFETIME );
 				vertex->pos_size[3]= 0.25f;
 
 				vertex->luminance= 1.0f - lifetime_k;
@@ -198,8 +241,18 @@ void mf_ParticlesManager::PrepareParticlesVertices( mf_ParticleVertex* out_verti
 			break;
 		case Particle::PlasmaBall:
 			{
-				vertex->pos_size[3]= 1.6f;
+				vertex->pos_size[3]= 1.8f;
 				vertex->luminance= 1.0f;
+				vertex->t_dt_lt_r[0]= 0;
+				vertex->t_dt_lt_r[1]= 0;
+				vertex->t_dt_lt_r[2]= TexturePlasmaBall;
+			}
+			break;
+		case Particle::PlasmaBallTrail:
+			{
+				float lifetime_k= ( current_tick_time_ - particle->spawn_time ) * ( 1.0f / MF_PLASMABALL_TRAIL_PARTICLE_LIFETIME );
+				vertex->pos_size[3]= 1.1f - 0.6f * lifetime_k;
+				vertex->luminance= 1.0f + lifetime_k * 1.0f;
 				vertex->t_dt_lt_r[0]= 0;
 				vertex->t_dt_lt_r[1]= 0;
 				vertex->t_dt_lt_r[2]= TexturePlasmaBall;
@@ -266,7 +319,7 @@ void mf_ParticlesManager::AddF2XXXTrail( const mf_Aircraft* aircraft, unsigned i
 		particle->velocity= 0.0f;
 		particle->acceleration= 0.0f;
 		particle->spawn_time= t;
-		particle->life_time= MF_PLASMA_ENGINE_PARTICEL_LIFETIME;
+		particle->life_time= MF_PLASMA_ENGINE_PARTICLE_LIFETIME;
 		spawn_counter_++;
 	}
 	particle_count_+= particle_count;

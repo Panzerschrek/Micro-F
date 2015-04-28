@@ -3,6 +3,7 @@
 #include "mf_math.h"
 
 class mf_Aircraft;
+struct mf_Rocket;
 
 /*
  Input - texture with premultipled alpha.
@@ -41,13 +42,14 @@ public:
 	void AddBlast( const float* pos );
 	void AddPowerupGlow( const float* pos, float glow_factor /* in range 0 - 1*/ );
 	void AddPlasmaBall( const float* pos );
+	void AddRocketTrail( const mf_Rocket* bullet );
 
 	unsigned int GetParticlesCount() const;
 	void PrepareParticlesVertices( mf_ParticleVertex* out_vertices ) const;
 private:
 
 	void AddF2XXXTrail( const mf_Aircraft* aircraft, unsigned int engine_number );
-	void AddV1Trail( const mf_Aircraft* aircraft );
+	void AddV1Trail( const mf_Aircraft* rocket );
 	struct Particle
 	{
 		enum Type
@@ -56,6 +58,7 @@ private:
 			PlasmaEngineTrail,
 			PowerupGlow,
 			PlasmaBall,
+			PlasmaBallTrail,
 			BlastFire,
 			LastType
 		};

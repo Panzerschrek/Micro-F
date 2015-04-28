@@ -336,7 +336,10 @@ void mf_GameLogic::Tick( float dt )
 		particles_manager_.AddPowerupGlow( powerups_[i].pos , glow_factor );
 	}
 	for( unsigned int i= 0; i< rocket_count_; i++ )
+	{
 		particles_manager_.AddPlasmaBall( rockets_[i].pos );
+		particles_manager_.AddRocketTrail( &rockets_[i] );
+	}
 
 	// sound
 	for( unsigned int i= 0; i< enemies_count_ + 1; i++ )
