@@ -178,21 +178,16 @@ short* GenPlasmagunSound( unsigned int sample_rate, unsigned int* out_samples_co
 	return data;
 }
 
-short* GenBlastSound( unsigned int sample_rate, unsigned int* out_samples_count )
+short* GenBlastLikeSound( unsigned int sample_rate, unsigned int samples_count, float t, float k, float amp, float freq )
 {
 	mf_Rand rand;
-
-	unsigned int samples_count= sample_rate * 2;
 
 	short* data= new short[ samples_count ];
 	float inv_samples_per_second= 1.0f / float(sample_rate);
 	float a= 0.0f;
-	float t= 0.8f;
-	const float k= 0.99981f;
-	const float amp= 5.5f;
 	for( unsigned int i= 0; i< samples_count; i++ )
 	{
-		a= a * ( 1.0f - t ) + amp * Noise1Final( float(i) * ( inv_samples_per_second * 1500.0f ), 3 ) * t;
+		a= a * ( 1.0f - t ) + amp * Noise1Final( float(i) * ( inv_samples_per_second * freq ), 3 ) * t;
 		if( a > 1.0f ) a= 1.0f;
 		else if( a < -1.0f ) a= -1.0f;
 
@@ -201,6 +196,21 @@ short* GenBlastSound( unsigned int sample_rate, unsigned int* out_samples_count 
 		data[i]= short( scaler * a * 32767.0f );
 		t*= k;
 	}
+	return data;
+}
+
+short* GenBlastSound( unsigned int sample_rate, unsigned int* out_samples_count )
+{
+	*out_samples_count= sample_rate * 2;
+	return GenBlastLikeSound( sample_rate, *out_samples_count, 0.8f, 0.99981f, 5.5f, 1500.0f );
+}
+
+short* GenAutomaticCannonShotSound( unsigned int sample_rate, unsigned int* out_samples_count )
+{
+	unsigned int samples_count= (unsigned int) mf_Math::floor( float(sample_rate) * 0.15f );
+	short* data= GenBlastLikeSound( sample_rate, samples_count, 1.0f, 0.9991f, 1.0f, 5000.0f );
+	for( unsigned int i= samples_count - 512; i< samples_count; i++ )
+		data[i]= (short)( (data[i] * ( samples_count - i )) >> 9 );
 
 	*out_samples_count= samples_count;
 	return data;
@@ -213,7 +223,7 @@ short* (* const sound_gen_func[LastSound])(unsigned int sample_rate, unsigned in
 	GenPlasmajetSound,
 	GenPowerupPickupSound,
 	GenMachinegunShotSound,
-	GenMachinegunShotSound, // TODO: automatic cannon sound
+	GenAutomaticCannonShotSound, // TODO: automatic cannon sound
 	GenPlasmagunSound,
 	GenBlastSound
 };

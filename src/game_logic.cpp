@@ -44,6 +44,11 @@ static const int bullets_damage_table[ mf_Bullet::LastType ]=
 	10, 20, 15
 };
 
+static const int rockets_damage_table[ mf_Rocket::LastType ]=
+{
+	50
+};
+
 static const float aircraft_primary_weapon_freq[ mf_Aircraft::LastType ]=
 {
 	8.0f, 7.0f, 10.0f
@@ -199,15 +204,11 @@ void mf_GameLogic::Tick( float dt )
 		{
 			if( hited_target != NULL )
 			{
-				hited_target->AddHP( - Tables::bullets_damage_table[ bullet->type ] );
-				if( hited_target->HP() <= 0 ) hited_target->SetThrottle( 0.0f );
-
+				OnAircraftHit( hited_target, - Tables::bullets_damage_table[ bullet->type ] );
 				particles_manager_.AddBulletTerrainHit( intersection_pos );
 			}
 			else
-			{
 				particles_manager_.AddBulletTerrainHit( intersection_pos );
-			}
 		}
 
 		if( is_intersection || bullet->velocity == mfInf() || IsBulletOutsideWorld(bullet->pos) )
@@ -256,7 +257,7 @@ void mf_GameLogic::Tick( float dt )
 		bool is_rocket_dead= false;
 		if( Distance( rocket->pos, rocket->target->Pos() ) < MF_ROCKET_HIT_DISTANCE )
 		{
-			//TODO: add damage to target, score to owner
+			OnAircraftHit( rocket->target, -Tables::rockets_damage_table[ rocket->type ] );
 			particles_manager_.AddBulletTerrainHit( rocket->pos );
 			is_rocket_dead= true;
 		}
@@ -388,7 +389,7 @@ void mf_GameLogic::PlayerShotContinue( bool first_shot )
 		switch( player_->GetAircraft()->GetType() )
 		{
 			case mf_Aircraft::F1949:
-				bullet_type= mf_Bullet::AutomaticCannonShell; sound_type= SoundMachinegunShot;
+				bullet_type= mf_Bullet::AutomaticCannonShell; sound_type= SoundAutomaticCannonShot;
 			break;
 			case mf_Aircraft::F2XXX:
 				bullet_type= mf_Bullet::PlasmaShell; sound_type= SoundPlasmagunShot;
@@ -436,6 +437,7 @@ void mf_GameLogic::PlayerRocketShot( const float* dir )
 		VEC3_CPY( rocket->dir, dir );
 		VEC3_CPY( rocket->pos, player_->GetAircraft()->Pos() );
 		rocket->velocity= 100.0f;
+		rocket->type= mf_Rocket::PlasmaBall;
 		rocket->owner= player_->GetAircraft();
 		rocket->target= player_->TargetAircraft();
 		rocket->spawn_time= mf_MainLoop::Instance()->CurrentTime();
@@ -511,4 +513,10 @@ void mf_GameLogic::DespawnEnemy( mf_Enemy* enemy )
 		enemies_[ind]= enemies_[ enemies_count_ - 1 ];
 	}
 	enemies_count_--;
+}
+
+void mf_GameLogic::OnAircraftHit( mf_Aircraft* aircraft, int damage )
+{
+	aircraft->AddHP( -damage );
+	if( aircraft->HP() <= 0 ) aircraft->SetThrottle(0);
 }

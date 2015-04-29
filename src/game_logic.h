@@ -83,6 +83,7 @@ private:
 	void PlacePowerups();
 	void SpawnEnemy();
 	void DespawnEnemy( mf_Enemy* enemy );
+	void OnAircraftHit( mf_Aircraft* aircraft, int damage );
 
 private:
 	mf_Level level_;
