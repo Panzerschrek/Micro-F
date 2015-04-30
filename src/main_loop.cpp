@@ -116,7 +116,11 @@ void mf_MainLoop::Loop()
 				game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
 
 				if( shot_button_pressed_ )
-					game_logic_->PlayerShotContinue();
+				{
+					float dir[3];
+					player_.ScreenPointToWorldSpaceVec( cursor_xy[0], cursor_xy[1], dir );
+					game_logic_->ShotContinue( player_.GetAircraft(), dir );
+				}
 				game_logic_->Tick( prev_tick_dt_ );
 			}// if normal dt
 
@@ -538,8 +542,8 @@ void mf_MainLoop::Shot( unsigned int x, unsigned int y, unsigned int button )
 		{
 			float dir[3];
 			player_.ScreenPointToWorldSpaceVec( x, y, dir );
-			game_logic_->PlayerShotBegin();
-			game_logic_->PlayerShotContinue( true );
+			game_logic_->ShotBegin( player_.GetAircraft() );
+			game_logic_->ShotContinue( player_.GetAircraft(), dir, true );
 		}
 		else
 		{

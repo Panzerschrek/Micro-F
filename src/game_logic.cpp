@@ -369,24 +369,26 @@ void mf_GameLogic::Tick( float dt )
 	}
 }
 
-void mf_GameLogic::PlayerShotBegin()
+void mf_GameLogic::ShotBegin( mf_Aircraft* aircraft )
 {
-	player_last_shot_time_= mf_MainLoop::Instance()->CurrentTime();
+	//player_last_shot_time_= mf_MainLoop::Instance()->CurrentTime();
+	aircraft->MachinegunShot( mf_MainLoop::Instance()->CurrentTime() );
 }
 
-void mf_GameLogic::PlayerShotContinue( bool first_shot )
+void mf_GameLogic::ShotContinue( mf_Aircraft* aircraft, float* dir, bool first_shot )
 {
-	const float c_machinegun_freq= Tables::aircraft_primary_weapon_freq[ player_->GetAircraft()->GetType() ];
+	const float c_machinegun_freq= Tables::aircraft_primary_weapon_freq[ aircraft->GetType() ];
 
-	float dt= mf_MainLoop::Instance()->CurrentTime() - player_last_shot_time_;
+	float dt= mf_MainLoop::Instance()->CurrentTime() - aircraft->LastMachinegunShotTime();
 	if( dt * c_machinegun_freq >= 1.0f || first_shot )
 	{
 		float unused;
-		player_last_shot_time_= mf_MainLoop::Instance()->CurrentTime() - modf( dt * c_machinegun_freq, &unused ) / c_machinegun_freq;
+		//player_last_shot_time_= mf_MainLoop::Instance()->CurrentTime() - modf( dt * c_machinegun_freq, &unused ) / c_machinegun_freq;
+		aircraft->MachinegunShot( mf_MainLoop::Instance()->CurrentTime() - modf( dt * c_machinegun_freq, &unused ) / c_machinegun_freq );
 
 		mf_Bullet::Type bullet_type;
 		mf_SoundType sound_type;
-		switch( player_->GetAircraft()->GetType() )
+		switch( aircraft->GetType() )
 		{
 			case mf_Aircraft::F1949:
 				bullet_type= mf_Bullet::AutomaticCannonShell; sound_type= SoundAutomaticCannonShot;
@@ -404,18 +406,22 @@ void mf_GameLogic::PlayerShotContinue( bool first_shot )
 
 		mf_Bullet* bullet= &bullets_[ bullets_count_ ];
 		bullet->type= bullet_type;
-		bullet->owner= player_->GetAircraft();
+		bullet->owner= aircraft;
 		VEC3_CPY( bullet->pos, bullet->owner->Pos() );
 
-		if( player_->TargetAircraft() != NULL )
+		if( aircraft == player_->GetAircraft() )
 		{
-			Vec3Sub( player_->TargetAircraft()->Pos(), bullet->owner->Pos(), bullet->dir );
-			Vec3Normalize( bullet->dir );
-			if( Vec3Dot( bullet->dir, bullet->owner->AxisVec(1) ) >= mf_Math::cos(bullet->owner->GetMachinegunConeAngle()) )
-			{}
+			if( player_->TargetAircraft() != NULL )
+			{
+				Vec3Sub( player_->TargetAircraft()->Pos(), bullet->owner->Pos(), bullet->dir );
+				Vec3Normalize( bullet->dir );
+				if( Vec3Dot( bullet->dir, bullet->owner->AxisVec(1) ) >= mf_Math::cos(bullet->owner->GetMachinegunConeAngle()) )
+				{}
+				else Vec3Normalize( bullet->owner->AxisVec(1), bullet->dir );
+			}
 			else Vec3Normalize( bullet->owner->AxisVec(1), bullet->dir );
 		}
-		else Vec3Normalize( bullet->owner->AxisVec(1), bullet->dir );
+		else Vec3Normalize( dir, bullet->dir );
 		for( unsigned int i= 0; i< 3; i++ )
 			bullet->dir[i] += randomizer_.RandF( -0.01f, 0.01f );
 		Vec3Normalize( bullet->dir );
@@ -423,7 +429,7 @@ void mf_GameLogic::PlayerShotContinue( bool first_shot )
 		bullet->velocity= mfInf();
 
 		bullets_count_++;
-		mf_SoundEngine::Instance()->AddSingleSound( sound_type, 1.0f, 1.0f, NULL );
+		mf_SoundEngine::Instance()->AddSingleSound( sound_type, 1.0f, 1.0f, aircraft == player_->GetAircraft() ? NULL : aircraft->Pos() );
 	}
 }
 

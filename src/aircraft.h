@@ -51,6 +51,9 @@ public:
 	void SetYawFactor( float yaw );
 	void SetRollFactor( float roll );
 
+	void MachinegunShot( float time );
+	float LastMachinegunShotTime() const;
+
 private:
 	Type type_;
 	float pos_[3];
@@ -71,6 +74,8 @@ private:
 
 	int hp_;
 	int rockets_count_;
+
+	float last_machinegun_shot_time_;
 
 	float max_engines_trust_; // N
 	float wings_area_; // m^2
@@ -192,4 +197,14 @@ inline void mf_Aircraft::SetYawFactor( float yaw )
 inline void mf_Aircraft::SetRollFactor( float roll )
 {
 	roll_factor_= roll;
+}
+
+inline void mf_Aircraft::MachinegunShot( float time )
+{
+	last_machinegun_shot_time_= time;
+}
+
+inline float mf_Aircraft::LastMachinegunShotTime() const
+{
+	return last_machinegun_shot_time_;
 }

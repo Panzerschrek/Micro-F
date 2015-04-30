@@ -68,8 +68,8 @@ public:
 	~mf_GameLogic();
 
 	void Tick( float dt );
-	void PlayerShotBegin();
-	void PlayerShotContinue( bool first_shot= false );
+	void ShotBegin( mf_Aircraft* aircraft );
+	void ShotContinue( mf_Aircraft* aircraft, float* dir, bool first_shot= false );
 	void PlayerRocketShot( const float* dir );
 
 	const mf_Level* GetLevel() const;
