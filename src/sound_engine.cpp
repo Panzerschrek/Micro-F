@@ -156,20 +156,21 @@ void mf_SoundEngine::DestroySoundSource( mf_SoundSource* source )
 	sound_source_count_--;
 }
 
-void mf_SoundEngine::AddSingleSound( mf_SoundType sound_type, float volume, float pitch, const float* opt_pos )
+void mf_SoundEngine::AddSingleSound( mf_SoundType sound_type, float volume, float pitch, const float* opt_pos, const float* opt_speed )
 {
 	static const float c_zero_vel[3]= { 0.0f, 0.0f, 0.0f };
 
-	single_sounds_[ single_sounds_count_ ].source= CreateSoundSource( sound_type );
-	single_sounds_[ single_sounds_count_ ].death_time= mf_MainLoop::Instance()->CurrentTime() + sound_buffers_[sound_type].length / pitch + 0.01f;
+	mf_SoundSource* sound= CreateSoundSource( sound_type );
 	if( opt_pos != NULL )
-		single_sounds_[ single_sounds_count_ ].source->SetOrientation( opt_pos, c_zero_vel );
+		sound->SetOrientation( opt_pos, opt_speed ? opt_speed : c_zero_vel );
 	else
-		single_sounds_[ single_sounds_count_ ].source->source_buffer_3d_->SetMode( DS3DMODE_HEADRELATIVE, DS3D_IMMEDIATE );
-	single_sounds_[ single_sounds_count_ ].source->SetVolume( volume );
-	single_sounds_[ single_sounds_count_ ].source->SetPitch( pitch );
-	single_sounds_[ single_sounds_count_ ].source->source_buffer_->Play( 0, MF_SND_PRIORITY, 0 );
+		sound->source_buffer_3d_->SetMode( DS3DMODE_HEADRELATIVE, DS3D_IMMEDIATE );
+	sound->SetVolume( volume );
+	sound->SetPitch( pitch );
+	sound->source_buffer_->Play( 0, MF_SND_PRIORITY, 0 );
 
+	single_sounds_[ single_sounds_count_ ].source= sound;
+	single_sounds_[ single_sounds_count_ ].death_time= mf_MainLoop::Instance()->CurrentTime() + sound_buffers_[sound_type].length / pitch + 0.01f;
 	single_sounds_count_++;
 }
 

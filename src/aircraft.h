@@ -12,7 +12,7 @@ public:
 		LastType
 	};
 
-	mf_Aircraft( Type type = F1949, int hp= 1000 );
+	mf_Aircraft( Type type = F1949, int hp= 1000, const float* pos= NULL, float course= 0.0f );
 	~mf_Aircraft();
 
 	void Tick( float dt );

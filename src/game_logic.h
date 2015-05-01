@@ -79,6 +79,8 @@ public:
 	const mf_Enemy* const* GetEnemies() const;
 	unsigned int GetEnemiesCount() const;
 
+	mf_Rand* GetRandomizer();
+
 private:
 	void PlacePowerups();
 	void SpawnEnemy();
@@ -140,4 +142,9 @@ inline const mf_Enemy* const* mf_GameLogic::GetEnemies() const
 inline unsigned int mf_GameLogic::GetEnemiesCount() const
 {
 	return enemies_count_;
+}
+
+inline mf_Rand* mf_GameLogic::GetRandomizer()
+{
+	return &randomizer_;
 }

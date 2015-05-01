@@ -13,8 +13,9 @@
 #define MF_ROCKET_HIT_DISTANCE 10.0f
 
 #define MF_BLAST_SOUND_VOLUME 1024.0f
+#define MF_MACHINEGUN_SHOT_VOLUME 512.0f
 
-#define MF_MAX_ALIVE_ENEMIES 3
+#define MF_MAX_ALIVE_ENEMIES 2
 
 namespace PowerupsTables
 {
@@ -119,13 +120,14 @@ mf_GameLogic::~mf_GameLogic()
 void mf_GameLogic::Tick( float dt )
 {
 	{ // try spawn new enemies
-		unsigned int alive_enemies_count= 0;
+		/*unsigned int alive_enemies_count= 0;
 		for( unsigned int i= 0; i< enemies_count_; i++ )
 			if( enemies_[i]->GetAircraft()->HP() > 0 )
-				alive_enemies_count++;
+				alive_enemies_count++;*/
+		unsigned int alive_enemies_count= enemies_count_;
 		if( alive_enemies_count < MF_MAX_ALIVE_ENEMIES )
 		{
-			if( ( randomizer_.Rand() & 63 ) == 0 )
+			if( ( randomizer_.Rand() & 127 ) == 0 )
 				SpawnEnemy();
 		}
 	}
@@ -170,12 +172,12 @@ void mf_GameLogic::Tick( float dt )
 		mf_Aircraft* hited_target= NULL;
 
 		// search intersection with enemies
-		for( unsigned int e= 0; e< enemies_count_; e++ )
+		for( unsigned int e= 0; e< enemies_count_ + 1; e++ )
 		{
 			float aircraft_space_dir[3];
 			float aircraft_space_pos[3];
 			float aircraft_space_hit_pos[3];
-			mf_Aircraft* enemy_aircraft= enemies_[e]->GetAircraft();
+			mf_Aircraft* enemy_aircraft= e == enemies_count_ ? player_->GetAircraft() : enemies_[e]->GetAircraft();
 
 			float pos_relative_aircraft[3];
 			Vec3Sub( bullet->pos, enemy_aircraft->Pos(), pos_relative_aircraft );
@@ -186,25 +188,28 @@ void mf_GameLogic::Tick( float dt )
 				aircraft_space_dir[j]= Vec3Dot( bullet->dir, enemy_aircraft->AxisVec(j) );
 			}
 
-			if( aircrafts_models_[enemy_aircraft->GetType()].BeamIntersectModel( aircraft_space_pos, aircraft_space_dir, bullet_travle_distance, aircraft_space_hit_pos ) )
+			if( enemy_aircraft != bullet->owner )
 			{
-				//TODO: add damage to targe, score to owner
-				for( unsigned int j= 0; j< 3; j++ )
-					intersection_pos[j]=
-						enemy_aircraft->AxisVec(0)[j] * aircraft_space_hit_pos[0] +
-						enemy_aircraft->AxisVec(1)[j] * aircraft_space_hit_pos[1] +
-						enemy_aircraft->AxisVec(2)[j] * aircraft_space_hit_pos[2] +
-						enemy_aircraft->Pos()[j];
-				is_intersection= true;
-				hited_target= enemy_aircraft;
+				if( aircrafts_models_[enemy_aircraft->GetType()].BeamIntersectModel( aircraft_space_pos, aircraft_space_dir, bullet_travle_distance, aircraft_space_hit_pos ) )
+				{
+					//TODO: add damage to targe, score to owner
+					for( unsigned int j= 0; j< 3; j++ )
+						intersection_pos[j]=
+							enemy_aircraft->AxisVec(0)[j] * aircraft_space_hit_pos[0] +
+							enemy_aircraft->AxisVec(1)[j] * aircraft_space_hit_pos[1] +
+							enemy_aircraft->AxisVec(2)[j] * aircraft_space_hit_pos[2] +
+							enemy_aircraft->Pos()[j];
+					is_intersection= true;
+					hited_target= enemy_aircraft;
+				}
 			}
-		}
+		} // for enemies
 
 		if( is_intersection )
 		{
 			if( hited_target != NULL )
 			{
-				OnAircraftHit( hited_target, - Tables::bullets_damage_table[ bullet->type ] );
+				OnAircraftHit( hited_target, Tables::bullets_damage_table[ bullet->type ] );
 				particles_manager_.AddBulletTerrainHit( intersection_pos );
 			}
 			else
@@ -255,9 +260,9 @@ void mf_GameLogic::Tick( float dt )
 		Vec3Add( rocket->pos, pos_add );
 
 		bool is_rocket_dead= false;
-		if( Distance( rocket->pos, rocket->target->Pos() ) < MF_ROCKET_HIT_DISTANCE )
+		if( rocket->target != NULL && Distance( rocket->pos, rocket->target->Pos() ) < MF_ROCKET_HIT_DISTANCE )
 		{
-			OnAircraftHit( rocket->target, -Tables::rockets_damage_table[ rocket->type ] );
+			OnAircraftHit( rocket->target, Tables::rockets_damage_table[ rocket->type ] );
 			particles_manager_.AddBulletTerrainHit( rocket->pos );
 			is_rocket_dead= true;
 		}
@@ -407,7 +412,7 @@ void mf_GameLogic::ShotContinue( mf_Aircraft* aircraft, float* dir, bool first_s
 		mf_Bullet* bullet= &bullets_[ bullets_count_ ];
 		bullet->type= bullet_type;
 		bullet->owner= aircraft;
-		VEC3_CPY( bullet->pos, bullet->owner->Pos() );
+		VEC3_CPY( bullet->pos, aircraft->Pos() );
 
 		if( aircraft == player_->GetAircraft() )
 		{
@@ -429,7 +434,7 @@ void mf_GameLogic::ShotContinue( mf_Aircraft* aircraft, float* dir, bool first_s
 		bullet->velocity= mfInf();
 
 		bullets_count_++;
-		mf_SoundEngine::Instance()->AddSingleSound( sound_type, 1.0f, 1.0f, aircraft == player_->GetAircraft() ? NULL : aircraft->Pos() );
+		mf_SoundEngine::Instance()->AddSingleSound( sound_type, MF_MACHINEGUN_SHOT_VOLUME, 1.0f, aircraft->Pos(), aircraft->Velocity() );
 	}
 }
 
@@ -481,9 +486,8 @@ void mf_GameLogic::SpawnEnemy()
 	mf_Enemy* enemy= new mf_Enemy(
 		mf_Aircraft::Type( randomizer_.Rand() % mf_Aircraft::LastType ),
 		100,
+		this,
 		player_->GetAircraft() );
-	float spawn_pos[]= { float(level_.TerrainSizeX()/2) * level_.TerrainCellSize(), 0.0f, level_.TerrainAmplitude() };
-	enemy->GetAircraft()->SetPos( spawn_pos );
 	enemies_[ enemies_count_ ]= enemy;
 	enemies_sounds_[ enemies_count_ ]= mf_SoundEngine::Instance()->CreateSoundSource( AircraftTypeToEngineSoundType( enemy->GetAircraft()->GetType() ) );
 	enemies_sounds_[ enemies_count_ ]->Play();

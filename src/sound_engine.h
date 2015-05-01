@@ -53,7 +53,7 @@ public:
 	void DestroySoundSource( mf_SoundSource* source );
 
 	// if position is NULL - sound is player relative
-	void AddSingleSound( mf_SoundType sound_type, float volume, float pitch, const float* opt_pos );
+	void AddSingleSound( mf_SoundType sound_type, float volume, float pitch, const float* opt_pos= NULL, const float* opt_speed= NULL );
 
 private:
 	void GenSounds();

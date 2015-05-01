@@ -30,7 +30,7 @@ static float AngleToAngularAcceleration( float angle )
 	return -angle * mf_Math::fabs(angle) * 1.9f;
 }
 
-mf_Aircraft::mf_Aircraft( Type type, int hp )
+mf_Aircraft::mf_Aircraft( Type type, int hp, const float* pos, float course )
 	: type_(type)
 	, pitch_factor_(0.0f)
 	, yaw_factor_  (0.0f)
@@ -38,17 +38,17 @@ mf_Aircraft::mf_Aircraft( Type type, int hp )
 	, throttle_(1.0f)
 	, hp_(hp), rockets_count_(3)
 {
-	axis_[0][0]= 1.0f;
-	axis_[0][1]= 0.0f;
-	axis_[0][2]= 0.0f;
-
-	axis_[1][0]= 0.0f;
-	axis_[1][1]= 1.0f;
-	axis_[1][2]= 0.0f;
+	SphericalCoordinatesToVec( course - MF_PI2, 0.0f, axis_[0] );
+	SphericalCoordinatesToVec( course, 0.0f, axis_[1] );
 
 	axis_[2][0]= 0.0f;
 	axis_[2][1]= 0.0f;
 	axis_[2][2]= 1.0f;
+
+	if( pos != NULL )
+	{
+		VEC3_CPY( pos_, pos );
+	}
 
 	// mass/wings_area/velocity/trust/ - parameters of I-5 aircraft (Soviet Union, 1930)
 	max_engines_trust_= 5000.0f;
@@ -64,9 +64,9 @@ mf_Aircraft::mf_Aircraft( Type type, int hp )
 	inertia_moment_[1]= 0.5f * ( fuselage_diameter_ * fuselage_diameter_ * 0.25f );
 	inertia_moment_[2]= inertia_moment_[0];
 
-	velocity_[0]= 0.0f;
-	velocity_[1]= 70.0f;
-	velocity_[2]= 0.0f;
+	SphericalCoordinatesToVec( course, 0.0f, velocity_ );
+	Vec3Mul( velocity_, 70.0f );
+	
 	acceleration_[0]= 0.0f;
 	acceleration_[1]= 0.0f;
 	acceleration_[2]= 0.0f;
