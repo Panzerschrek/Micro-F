@@ -130,6 +130,11 @@ void mf_MainLoop::Loop()
 
 			renderer_->DrawFrame();
 		} // if in game or ingame menu
+		else if( mode_ == ModeChooseAircraft )
+		{
+			player_.Tick( 0.0f );
+			renderer_->DrawFrame();
+		}
 
 		{
 			char str[32];
@@ -176,17 +181,22 @@ void mf_MainLoop::Play( const mf_Settings* settings )
 {
 	game_logic_= new mf_GameLogic( &player_ );
 
-	mode_= ModeGame;
+	mode_= ModeChooseAircraft;
 	renderer_= new mf_Renderer( &player_, game_logic_, text_, settings );
-	test_sound_= sound_engine_->CreateSoundSource( SoundPlasmajetEngine );
-	test_sound_->Play();
 
 	mf_Aircraft* aircraft= player_.GetAircraft();
 	float pos[3];
 	pos[0]= game_logic_->GetLevel()->TerrainSizeX() * game_logic_->GetLevel()->TerrainCellSize() * 0.5f;
-	pos[1]= 64.0f;
+	pos[1]= 128.0f;
 	pos[2]= game_logic_->GetLevel()->TerrainAmplitude();
 	aircraft->SetPos( pos );
+}
+
+void mf_MainLoop::StartGame()
+{
+	player_.ChoseAircraft();
+	game_logic_->StartGame();
+	mode_= ModeGame;
 }
 
 mf_MainLoop::mf_MainLoop(
@@ -536,7 +546,7 @@ void mf_MainLoop::CaptureMouse()
 
 void mf_MainLoop::Shot( unsigned int x, unsigned int y, unsigned int button )
 {
-	if( game_logic_ != NULL )
+	if( game_logic_ != NULL && game_logic_->GameStarted() )
 	{
 		if( button == 0 )
 		{

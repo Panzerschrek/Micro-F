@@ -16,7 +16,7 @@ class mf_MainLoop;
 class mf_Gui
 {
 public:
-	mf_Gui( mf_Text* text, const mf_Player* player );
+	mf_Gui( mf_Text* text, mf_Player* player );
 	~mf_Gui();
 
 	void SetCursor( unsigned int x, unsigned int y );
@@ -29,7 +29,7 @@ public:
 	{
 		MainMenu,
 		SettingsMenu,
-		LoadingMenu,
+		ChooseAircraftMenu,
 		InGame,
 		InGameMenu,
 		CreditsMenu,
@@ -97,10 +97,14 @@ private:
 	void OnShadowsQualityButton();
 	void OnSettingsBackButton();
 
+	void OnPreviousAircraft();
+	void OnNextAircraft();
+	void OnSelectAircraft();
+
 private:
 	mf_MainLoop* main_loop_;
 	mf_Text* text_;
-	const mf_Player* player_;
+	mf_Player* player_;
 
 	unsigned int cursor_pos_[2];
 

@@ -67,6 +67,9 @@ public:
 	mf_GameLogic( mf_Player* player );
 	~mf_GameLogic();
 
+	void StartGame();
+	bool GameStarted() const;
+
 	void Tick( float dt );
 	void ShotBegin( mf_Aircraft* aircraft );
 	void ShotContinue( mf_Aircraft* aircraft, float* dir, bool first_shot= false );
@@ -92,6 +95,8 @@ private:
 	mf_ParticlesManager particles_manager_;
 	mf_Player* player_;
 
+	bool game_started_;
+
 	mf_Rand randomizer_;
 
 	mf_Powerup powerups_[ MF_MAX_POWERUPS ];
@@ -113,6 +118,11 @@ private:
 
 	float player_last_shot_time_;
 };
+
+inline bool mf_GameLogic::GameStarted() const
+{
+	return game_started_;
+}
 
 inline const mf_Level* mf_GameLogic::GetLevel() const
 {

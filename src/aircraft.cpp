@@ -294,3 +294,13 @@ void mf_Aircraft::ThrottleDown( float dt )
 	throttle_-= dt * throttle_down_speed;
 	if( throttle_ < 0.0f ) throttle_= 0.0f;
 }
+
+void mf_Aircraft::SetAxis( const float* x_axis, const float* y_axis, const float* z_axis )
+{
+	for( unsigned int i= 0; i< 3; i++ )
+	{
+		axis_[0][i]= x_axis[i];
+		axis_[1][i]= y_axis[i];
+		axis_[2][i]= z_axis[i];
+	}
+}

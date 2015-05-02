@@ -102,7 +102,7 @@ void IntToStr( int i, char* str, int digits )
 	}
 }
 
-mf_Gui::mf_Gui( mf_Text* text, const mf_Player* player )
+mf_Gui::mf_Gui( mf_Text* text, mf_Player* player )
 	: main_loop_(mf_MainLoop::Instance())
 	, text_(text)
 	, player_(player)
@@ -345,6 +345,10 @@ void mf_Gui::PrepareMenus()
 	const char* const c_clouds_text= "clouds: ";
 	const char* const c_sky_quality_text= "sky quality: ";
 	const char* const c_shadows_quality_text= "shadows quality: ";
+
+	const char* const c_button_previous= "  <  ";
+	const char* const c_button_next= "  >  ";
+	const char* const c_button_select_text= " select ";
 
 	const unsigned int cell_size[2]= { MF_LETTER_WIDTH, MF_LETTER_HEIGHT };
 	const unsigned int border_size= 1;
@@ -590,6 +594,65 @@ void mf_Gui::PrepareMenus()
 	button->width=  text->size * cell_size[0] * strlen(c_button_back) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnSettingsBackButton;
+	button->user_data= 0;
+	menu->button_count++;
+
+	/*
+	AIRCRAFT CHOOSE MENU
+	*/
+	menu= &menus_[ ChooseAircraftMenu ];
+	menu->has_backgound= false;
+	menu->button_count= 0;
+	menu->text_count= 0;
+
+	// previous button text
+	text= &menu->buttons[0].text;
+	strcpy( text->text, c_button_previous );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_button_previous) - 4;
+	text->row= screen_size_cl[1] - 3;
+	COLOR_CPY( text->color, text_color );
+	// previous button
+	button= &menu->buttons[0];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * strlen(c_button_previous) - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnPreviousAircraft;
+	button->user_data= 0;
+	menu->button_count++;
+
+	// next button text
+	text= &menu->buttons[1].text;
+	strcpy( text->text, c_button_next );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 + 4;
+	text->row= screen_size_cl[1] - 3;
+	COLOR_CPY( text->color, text_color );
+	// next button
+	button= &menu->buttons[1];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * strlen(c_button_next) - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnNextAircraft;
+	button->user_data= 0;
+	menu->button_count++;
+
+	// select button text
+	text= &menu->buttons[2].text;
+	strcpy( text->text, c_button_select_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_button_select_text) / 2;
+	text->row= screen_size_cl[1] - 6;
+	COLOR_CPY( text->color, text_color );
+	// select button
+	button= &menu->buttons[2];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * strlen(c_button_select_text) - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnSelectAircraft;
 	button->user_data= 0;
 	menu->button_count++;
 
@@ -1262,7 +1325,7 @@ void mf_Gui::OnPlayButton()
 	settings.daytime= mf_Settings::Daytime( menus_[ SettingsMenu ].buttons[0].user_data );
 
 	main_loop_->Play( &settings );
-	current_menu_= &menus_[ InGame ];
+	current_menu_= &menus_[ ChooseAircraftMenu ];
 }
 
 void mf_Gui::OnSettingsButton()
@@ -1322,3 +1385,20 @@ void mf_Gui::OnSettingsBackButton()
 {
 	current_menu_= &menus_[ MainMenu ];
 }
+
+void mf_Gui::OnPreviousAircraft()
+{
+	player_->ChoosePreviousAircraft();
+}
+
+void mf_Gui::OnNextAircraft()
+{
+	player_->ChooseNextAircraft();
+}
+
+void mf_Gui::OnSelectAircraft()
+{
+	main_loop_->StartGame();
+	current_menu_= &menus_[ InGame ];
+}
+

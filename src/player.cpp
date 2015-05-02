@@ -14,8 +14,9 @@
 #define MF_INITIAL_FOV (MF_PI2 - MF_FOV_STEP)
 
 mf_Player::mf_Player()
-	: control_mode_(ModeAircraftControl), view_mode_(ViewThirdperson)
+	: control_mode_(ModeChooseAircraftType), view_mode_(ViewThirdperson)
 	, aircraft_(mf_Aircraft::F2XXX)
+	, aircraft_to_choose_(mf_Aircraft::F1949)
 	, autopilot_(&aircraft_)
 	, cam_radius_(10.0f)
 	, aspect_(1.0f), fov_(MF_INITIAL_FOV), target_fov_(MF_INITIAL_FOV)
@@ -32,8 +33,6 @@ mf_Player::mf_Player()
 
 	aircraft_.SetPos( pos_ );
 
-	CalculateCamRadius();
-
 	autopilot_.SetMode( mf_Autopilot::ModeKillRotation );
 	//autopilot_.SetMode( mf_Autopilot::ModeTurnToAzimuth );
 	//autopilot_.SetTargetAzimuth( -MF_PI2 );
@@ -46,32 +45,59 @@ mf_Player::~mf_Player()
 
 void mf_Player::Tick( float dt )
 {
-	float d_fov= target_fov_ - fov_;
-	if( mf_Math::fabs(d_fov) > dt * MF_FOV_CHANGE_SPEED )
-		fov_+= dt * MF_FOV_CHANGE_SPEED * mf_Math::sign(d_fov);
+	if( control_mode_ != ModeChooseAircraftType )
+	{
+		float d_fov= target_fov_ - fov_;
+		if( mf_Math::fabs(d_fov) > dt * MF_FOV_CHANGE_SPEED )
+			fov_+= dt * MF_FOV_CHANGE_SPEED * mf_Math::sign(d_fov);
+		else
+			fov_= target_fov_;
+
+		float rotate_vec[]= { 0.0f, 0.0f, 0.0f };
+		if(rotate_up_pressed_   ) rotate_vec[0]+=  1.0f;
+		if(rotate_down_pressed_ ) rotate_vec[0]+= -1.0f;
+		if(rotate_left_pressed_ ) rotate_vec[2]+=  1.0f;
+		if(rotate_right_pressed_) rotate_vec[2]+= -1.0f;
+		if(rotate_clockwise_pressed_) rotate_vec[1]+= -1.0f;
+		if(rotate_anticlockwise_pressed_) rotate_vec[1]+= 1.0f;
+
+		const float rot_speed= 1.75f;
+		angle_[0]+= dt * rot_speed * rotate_vec[0];
+		//angle_[1]+= dt * rot_speed * rotate_vec[1];
+		angle_[2]+= dt * rot_speed * rotate_vec[2];
+		
+		if( angle_[2] > MF_2PI ) angle_[2]-= MF_2PI;
+		else if( angle_[2] < 0.0f ) angle_[2]+= MF_2PI;
+		if( angle_[0] > MF_PI2 ) angle_[0]= MF_PI2;
+		else if( angle_[0] < -MF_PI2) angle_[0]= -MF_PI2;
+		if( angle_[1] > MF_PI ) angle_[1]-= MF_2PI;
+		else if( angle_[1] < -MF_PI) angle_[1]+= MF_2PI;
+	}
 	else
-		fov_= target_fov_;
+	{
+		angle_[0]= -MF_PI6;
+		angle_[1]= 0.0f;
+		angle_[2]= -MF_PI4;
+		aircraft_to_choose_.SetPos( aircraft_.Pos() );
 
-	float rotate_vec[]= { 0.0f, 0.0f, 0.0f };
-	if(rotate_up_pressed_   ) rotate_vec[0]+=  1.0f;
-	if(rotate_down_pressed_ ) rotate_vec[0]+= -1.0f;
-	if(rotate_left_pressed_ ) rotate_vec[2]+=  1.0f;
-	if(rotate_right_pressed_) rotate_vec[2]+= -1.0f;
-	if(rotate_clockwise_pressed_) rotate_vec[1]+= -1.0f;
-	if(rotate_anticlockwise_pressed_) rotate_vec[1]+= 1.0f;
+		static const float x_axis[3]= { 1.0f, 0.0f, 0.0f };
+		static const float y_axis[3]= { 0.0f, 1.0f, 0.0f };
+		static const float z_axis[3]= { 0.0f, 0.0f, 1.0f };
 
-	const float rot_speed= 1.75f;
-	angle_[0]+= dt * rot_speed * rotate_vec[0];
-	//angle_[1]+= dt * rot_speed * rotate_vec[1];
-	angle_[2]+= dt * rot_speed * rotate_vec[2];
-	
-	if( angle_[2] > MF_2PI ) angle_[2]-= MF_2PI;
-	else if( angle_[2] < 0.0f ) angle_[2]+= MF_2PI;
-	if( angle_[0] > MF_PI2 ) angle_[0]= MF_PI2;
-	else if( angle_[0] < -MF_PI2) angle_[0]= -MF_PI2;
-	if( angle_[1] > MF_PI ) angle_[1]-= MF_2PI;
-	else if( angle_[1] < -MF_PI) angle_[1]+= MF_2PI;
+		float axis_transform_mat[16];
+		float transformed_axis[2][3];
+		Mat4RotateZ( axis_transform_mat, float(clock()) / float(CLOCKS_PER_SEC) * MF_PI2 );
+		Vec3Mat4Mul( x_axis, axis_transform_mat, transformed_axis[0] );
+		Vec3Mat4Mul( y_axis, axis_transform_mat, transformed_axis[1] );
+		aircraft_to_choose_.SetAxis( transformed_axis[0], transformed_axis[1], z_axis );
 
+		float cam_vec[3];
+		SphericalCoordinatesToVec( angle_[2], angle_[0], cam_vec );
+		cam_vec[2]= 1.0f - 1.25f * ( 1.0f - cam_vec[2] );
+		Vec3Mul( cam_vec, -cam_radius_ );
+		Vec3Add( aircraft_to_choose_.Pos(), cam_vec, pos_ );
+		angle_[1]= 0.0f;
+	}
 
 	if ( control_mode_ == ModeDebugFreeFlight )
 	{
@@ -123,7 +149,6 @@ void mf_Player::Tick( float dt )
 		{
 			float cam_vec[3];
 			SphericalCoordinatesToVec( angle_[2], angle_[0], cam_vec );
-			Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
 			cam_vec[2]= 1.0f - 1.25f * ( 1.0f - cam_vec[2] );
 			Vec3Mul( cam_vec, -cam_radius_ );
 			Vec3Add( aircraft_.Pos(), cam_vec, pos_ );
@@ -182,6 +207,31 @@ void mf_Player::ScreenPointToWorldSpaceVec( unsigned int x, unsigned int y,  flo
 	Vec3Mat4Mul( vec, mat, out_vec );
 }
 
+void mf_Player::ChooseNextAircraft()
+{
+	unsigned int type= aircraft_to_choose_.GetType();
+	type++;
+	type%= mf_Aircraft::LastType;
+	aircraft_to_choose_.SetType( mf_Aircraft::Type(type) );
+	CalculateCamRadius( aircraft_to_choose_.GetType() );
+}
+
+void mf_Player::ChoosePreviousAircraft()
+{
+	unsigned int type= aircraft_to_choose_.GetType();
+	type+= mf_Aircraft::LastType - 1;
+	type%= mf_Aircraft::LastType;
+	aircraft_to_choose_.SetType( mf_Aircraft::Type(type) );
+	CalculateCamRadius( aircraft_to_choose_.GetType() );
+}
+
+void mf_Player::ChoseAircraft()
+{
+	aircraft_.SetType( aircraft_to_choose_.GetType() );
+	CalculateCamRadius( aircraft_.GetType() );
+	control_mode_= ModeAircraftControl;
+}
+
 void mf_Player::AddEnemyAircraft( mf_Aircraft* aircraft )
 {
 	enemies_aircrafts_[ enemies_count_++ ]= aircraft;
@@ -208,9 +258,9 @@ void mf_Player::ZoomOut()
 	if( target_fov_ > MF_MAX_FOV ) target_fov_= MF_MAX_FOV;
 }
 
-void mf_Player::CalculateCamRadius()
+void mf_Player::CalculateCamRadius( mf_Aircraft::Type type )
 {
-	const mf_ModelHeader* header= (const mf_ModelHeader*) mf_Models::aircraft_models[ aircraft_.GetType() ];
+	const mf_ModelHeader* header= (const mf_ModelHeader*) mf_Models::aircraft_models[ type ];
 
 	float radius_vecor[3];
 	for( unsigned int i= 0; i< 3; i++ )

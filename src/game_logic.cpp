@@ -101,6 +101,7 @@ mf_GameLogic::mf_GameLogic(mf_Player* player)
 	: level_()
 	, particles_manager_()
 	, player_(player)
+	, game_started_(false)
 	, powerup_count_(0), bullets_count_(0), rocket_count_(0), enemies_count_(0)
 	, player_sound_(NULL)
 {
@@ -108,13 +109,18 @@ mf_GameLogic::mf_GameLogic(mf_Player* player)
 		aircrafts_models_[i].LoadFromMFMD( mf_Models::aircraft_models[i] );
 
 	PlacePowerups();
-
-	player_sound_= mf_SoundEngine::Instance()->CreateSoundSource( AircraftTypeToEngineSoundType( player_->GetAircraft()->GetType() ) );
-	player_sound_->Play();
 }
 
 mf_GameLogic::~mf_GameLogic()
 {
+}
+
+void mf_GameLogic::StartGame()
+{
+	game_started_= true;
+
+	player_sound_= mf_SoundEngine::Instance()->CreateSoundSource( AircraftTypeToEngineSoundType( player_->GetAircraft()->GetType() ) );
+	player_sound_->Play();
 }
 
 void mf_GameLogic::Tick( float dt )

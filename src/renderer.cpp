@@ -2165,7 +2165,10 @@ void mf_Renderer::DrawAircrafts()
 		aircrafts[i]= game_logic_->GetEnemies()[i]->GetAircraft();
 	if( player_->GetViewMode() == mf_Player::ViewThirdperson )
 	{
-		aircrafts[ aircrafts_count ]= player_->GetAircraft();
+		aircrafts[ aircrafts_count ]=
+			player_->GetControlMode() == mf_Player::ModeChooseAircraftType ?
+			player_->GetAircraftToChoose() :
+			player_->GetAircraft();
 		aircrafts_count++;
 	}
 
@@ -2645,7 +2648,10 @@ void mf_Renderer::DrawShadows()
 		unsigned int aircraft_count= game_logic_->GetEnemiesCount();
 		for( unsigned int i= 0; i< aircraft_count; i++ )
 			aircrafts[i]= game_logic_->GetEnemies()[i]->GetAircraft();
-		aircrafts[ aircraft_count ]= player_->GetAircraft();
+		aircrafts[ aircraft_count ]=
+		player_->GetControlMode() == mf_Player::ModeChooseAircraftType ?
+			player_->GetAircraftToChoose() :
+			player_->GetAircraft();
 		aircraft_count++;
 
 		for( unsigned int i= 0; i< aircraft_count; i++ )

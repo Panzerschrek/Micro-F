@@ -44,6 +44,8 @@ public:
 	void SetPos( const float* pos );
 	void SetVelocity( const float* vel );
 
+	void SetAxis( const float* x_axis, const float* y_axis, const float* z_axis );
+
 	void ThrottleUp( float dt );
 	void ThrottleDown( float dt );
 

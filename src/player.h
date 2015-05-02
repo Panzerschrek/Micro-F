@@ -11,7 +11,8 @@ public:
 	enum ControlMode
 	{
 		ModeDebugFreeFlight,
-		ModeAircraftControl
+		ModeAircraftControl,
+		ModeChooseAircraftType
 	};
 
 	enum ViewMode
@@ -45,6 +46,11 @@ public:
 
 	const mf_Aircraft* GetAircraft() const;
 	mf_Aircraft* GetAircraft();
+
+	const mf_Aircraft* GetAircraftToChoose() const;
+	void ChooseNextAircraft();
+	void ChoosePreviousAircraft();
+	void ChoseAircraft();
 
 	unsigned int Score() const;
 	void AddScorePoints( unsigned int points );
@@ -91,12 +97,13 @@ public:
 	void ZoomOut();
 
 private:
-	void CalculateCamRadius();
+	void CalculateCamRadius( mf_Aircraft::Type type );
 
 private:
 	ControlMode control_mode_;
 	ViewMode view_mode_;
 	mf_Aircraft aircraft_;
+	mf_Aircraft aircraft_to_choose_;
 	mf_Autopilot autopilot_;
 
 	float pos_[3];
@@ -132,6 +139,11 @@ inline const float* mf_Player::Pos() const
 inline const mf_Aircraft* mf_Player::GetAircraft() const
 {
 	return &aircraft_;
+}
+
+inline const mf_Aircraft* mf_Player::GetAircraftToChoose() const
+{
+	return &aircraft_to_choose_;
 }
 
 inline mf_Aircraft* mf_Player::GetAircraft()

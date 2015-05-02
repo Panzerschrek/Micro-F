@@ -33,6 +33,7 @@ public:
 	void DrawLoadingFrame( const char* text );
 
 	void Play( const mf_Settings* settings );
+	void StartGame();
 	void Quit();
 
 private:
@@ -90,12 +91,11 @@ private:
 		unsigned int current_calc_frame_count;
 	}fps_calc_;
 
-	mf_SoundSource* test_sound_;
-
 	enum
 	{
 		ModeMainMenu,
 		ModeSettingsMenu,
+		ModeChooseAircraft,
 		ModeGame,
 		ModeIngameMenu,
 		ModeGameOver,
