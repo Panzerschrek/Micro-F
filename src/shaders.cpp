@@ -698,7 +698,6 @@ const char* const particles_shader_v=
 	"gl_Position=p4;"
 	"vec3 sp=(smat*vec4(p.xyz,1.0)).xyz;"
 	"sp.xy=sp.xy*" MF_MACRO_VALUE_TO_STR(MF_GPSM_MUL_K) "/(abs(sp.xy)+" MF_MACRO_VALUE_TO_STR(MF_GPSM_ADD_K) ");"
-	//"vec3 sp=(smat*vec4(p.xyz,1.0)).xyz;"
 	"fsl=textureLod(stex,sp*0.5+vec3(0.5,0.5,0.5),0.0);"
 	"gl_PointSize=p.w*s/p4.w;"
 "}";
