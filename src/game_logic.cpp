@@ -97,10 +97,11 @@ static bool IsBulletOutsideWorld( const float* pos )
 		pos[2] < 0.0f || pos[2] > 1024.0f;
 }
 
-mf_GameLogic::mf_GameLogic(mf_Player* player)
-	: level_()
+mf_GameLogic::mf_GameLogic( mf_Player* player, unsigned int seed )
+	: level_(seed)
 	, particles_manager_()
 	, player_(player)
+	, randomizer_(seed)
 	, game_started_(false)
 	, powerup_count_(0), bullets_count_(0), rocket_count_(0), enemies_count_(0)
 	, player_sound_(NULL)

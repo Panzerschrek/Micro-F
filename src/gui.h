@@ -13,6 +13,8 @@ class mf_MainLoop;
 #define MF_GUI_MENU_MAX_BUTTONS 16
 #define MF_GUI_MAX_TEXTS 16
 
+#define MF_SEED_DIGITS 10
+
 class mf_Gui
 {
 public:
@@ -101,10 +103,24 @@ private:
 	void OnNextAircraft();
 	void OnSelectAircraft();
 
+	void OnSeedDigit( unsigned int digit );
+	void OnSeedDigit0();
+	void OnSeedDigit1();
+	void OnSeedDigit2();
+	void OnSeedDigit3();
+	void OnSeedDigit4();
+	void OnSeedDigit5();
+	void OnSeedDigit6();
+	void OnSeedDigit7();
+	void OnSeedDigit8();
+	void OnSeedDigit9();
+
 private:
 	mf_MainLoop* main_loop_;
 	mf_Text* text_;
 	mf_Player* player_;
+
+	unsigned int seed_digits_[ MF_SEED_DIGITS ];
 
 	unsigned int cursor_pos_[2];
 

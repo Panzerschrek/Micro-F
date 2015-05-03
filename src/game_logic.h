@@ -64,7 +64,7 @@ struct mf_Rocket
 class mf_GameLogic
 {
 public:
-	mf_GameLogic( mf_Player* player );
+	mf_GameLogic( mf_Player* player, unsigned int seed );
 	~mf_GameLogic();
 
 	void StartGame();

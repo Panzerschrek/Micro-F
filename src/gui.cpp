@@ -108,6 +108,9 @@ mf_Gui::mf_Gui( mf_Text* text, mf_Player* player )
 	, player_(player)
 	, current_menu_(NULL)
 {
+	for( unsigned int i= 0; i< MF_SEED_DIGITS; i++ )
+		seed_digits_[i]= 0;
+
 	cursor_pos_[0]= cursor_pos_[1]= 0;
 
 	naviball_shader_.SetAttribLocation( "p", 0 );
@@ -349,6 +352,8 @@ void mf_Gui::PrepareMenus()
 	const char* const c_button_previous= "  <  ";
 	const char* const c_button_next= "  >  ";
 	const char* const c_button_select_text= " select ";
+
+	const char* const c_seed_text= " seed ";
 
 	const unsigned int cell_size[2]= { MF_LETTER_WIDTH, MF_LETTER_HEIGHT };
 	const unsigned int border_size= 1;
@@ -596,6 +601,39 @@ void mf_Gui::PrepareMenus()
 	button->callback= &mf_Gui::OnSettingsBackButton;
 	button->user_data= 0;
 	menu->button_count++;
+
+	// seed text
+	text= &menu->texts[5];
+	strcpy( text->text, c_seed_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_seed_text) / 2;
+	text->row= 20;
+	COLOR_CPY( text->color, text_color );
+	menu->text_count++;
+
+	// seed digits
+	for( unsigned int i= 0; i< MF_SEED_DIGITS; i++ )
+	{
+		static const GuiButtonCallback callbacks[MF_SEED_DIGITS]=
+		{
+			&mf_Gui::OnSeedDigit0, &mf_Gui::OnSeedDigit1, &mf_Gui::OnSeedDigit2, &mf_Gui::OnSeedDigit3, &mf_Gui::OnSeedDigit4,
+			&mf_Gui::OnSeedDigit5, &mf_Gui::OnSeedDigit6, &mf_Gui::OnSeedDigit7, &mf_Gui::OnSeedDigit8, &mf_Gui::OnSeedDigit9,
+		};
+		text= &menu->buttons[6 + i].text;
+		text->size= 2;
+		text->colomn= screen_size_cl[0] / 2 - text->size * MF_SEED_DIGITS / 2 + i * text->size;
+		text->row= 22;
+		COLOR_CPY( text->color, text_color );
+		text->text[0]= (char)(seed_digits_[i] + '0'); text->text[1]= 0;
+
+		button= &menu->buttons[6 + i];
+		button->x= text->colomn * cell_size[0] + border_size;
+		button->y= text->row * cell_size[1] + border_size;
+		button->width= cell_size[0] * 2 - border_size;
+		button->height= cell_size[1] * 2 - border_size;
+		button->callback= callbacks[i];
+		menu->button_count++;
+	}
 
 	/*
 	AIRCRAFT CHOOSE MENU
@@ -1317,6 +1355,11 @@ void mf_Gui::OnPlayButton()
 	current_menu_= NULL;
 
 	mf_Settings settings;
+	
+	settings.seed= 0;
+	for( unsigned int i= 0, j= 1; i< MF_SEED_DIGITS; i++, j*= 10 )
+		settings.seed+= seed_digits_[ MF_SEED_DIGITS - 1 - i ] * j;
+
 	settings.use_hdr= menus_[ SettingsMenu ].buttons[1].user_data == 1;
 	settings.shadows_quality= mf_Settings::Quality( menus_[ SettingsMenu ].buttons[4].user_data );
 	settings.terrain_quality= mf_Settings::QualityMedium;
@@ -1401,4 +1444,22 @@ void mf_Gui::OnSelectAircraft()
 	main_loop_->StartGame();
 	current_menu_= &menus_[ InGame ];
 }
+
+void mf_Gui::OnSeedDigit( unsigned int digit )
+{
+	seed_digits_[digit]++;
+	if( seed_digits_[digit] >= 10 ) seed_digits_[digit]= 0;
+	menus_[ SettingsMenu ].buttons[ 6 + digit ].text.text[0]= (char)( '0' + seed_digits_[digit] );
+}
+
+void mf_Gui::OnSeedDigit0(){ OnSeedDigit(0); }
+void mf_Gui::OnSeedDigit1(){ OnSeedDigit(1); }
+void mf_Gui::OnSeedDigit2(){ OnSeedDigit(2); }
+void mf_Gui::OnSeedDigit3(){ OnSeedDigit(3); }
+void mf_Gui::OnSeedDigit4(){ OnSeedDigit(4); }
+void mf_Gui::OnSeedDigit5(){ OnSeedDigit(5); }
+void mf_Gui::OnSeedDigit6(){ OnSeedDigit(6); }
+void mf_Gui::OnSeedDigit7(){ OnSeedDigit(7); }
+void mf_Gui::OnSeedDigit8(){ OnSeedDigit(8); }
+void mf_Gui::OnSeedDigit9(){ OnSeedDigit(9); }
 

@@ -31,6 +31,8 @@ struct mf_Settings
 		LastDaytime
 	};
 
+	unsigned int seed;
+
 	Quality shadows_quality;
 	Quality terrain_quality;
 	Quality sky_quality;

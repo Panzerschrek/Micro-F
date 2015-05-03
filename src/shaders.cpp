@@ -939,7 +939,7 @@ const char* const clouds_gen_shader_f=
 "in vec3 fp;" // frag position
 "out vec4 c_;"
 
-"const int seed=0;"
+"const int seed=%d;"
 // Noise3D
 "int N3(int x,int y,int z)" // returns value in range [0;65536)
 "{"

@@ -7,16 +7,28 @@
 
 #define MF_MAX_VALLEY_WAY_POINTS 1024
 
-static unsigned short Noise2( int x,  int y )
+static unsigned short Noise2( int x,  int y, int seed )
 {
-	int n= x + y * 57;
+	/*int n= x + y * 57;
 	n= (n << 13) ^ n;
 	return (unsigned short)(
 		((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) /0x7fff
-		);
+		);*/
+	const int X_NOISE_GEN = 1;
+	const int Y_NOISE_GEN = 31337;
+	const int Z_NOISE_GEN = 263;
+	const int SEED_NOISE_GEN = 1013;
+	int n= (
+		X_NOISE_GEN      * x
+		+ Y_NOISE_GEN    * y
+		+ Z_NOISE_GEN    * 0
+		+ SEED_NOISE_GEN * seed)
+		& 0x7fffffff;
+		n = (n >> 13) ^ n;
+	return (unsigned short)( (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff );
 }
 
-static unsigned short InterpolatedNoise( unsigned int x, unsigned int y, unsigned int k )
+static unsigned short InterpolatedNoise( unsigned int x, unsigned int y, unsigned int k, int seed )
 {
 	unsigned int step= 1<<k;
 	unsigned int X= x >> k;
@@ -24,10 +36,10 @@ static unsigned short InterpolatedNoise( unsigned int x, unsigned int y, unsigne
 
 	unsigned int noise[4]=
 	{
-		Noise2(X, Y ),
-		Noise2(X + 1, Y ),
-		Noise2(X + 1, Y + 1 ),
-		Noise2(X, Y + 1 )
+		Noise2(X, Y, seed ),
+		Noise2(X + 1, Y, seed ),
+		Noise2(X + 1, Y + 1, seed ),
+		Noise2(X, Y + 1, seed )
 	};
 
 	unsigned int dx=  x - (X <<k );
@@ -42,15 +54,16 @@ static unsigned short InterpolatedNoise( unsigned int x, unsigned int y, unsigne
 		);
 }
 
-static unsigned short FinalNoise(unsigned int x, unsigned int y)
+static unsigned short FinalNoise( unsigned int x, unsigned int y, int seed )
 {
 	unsigned short r= 0;
 	for( int i= 0; i<= 6; i++ )
-		r+= InterpolatedNoise( x, y, 7 - i )>>(1+i);
+		r+= InterpolatedNoise( x, y, 7 - i, seed )>>(1+i);
 	return r;
 }
 
-mf_Level::mf_Level()
+mf_Level::mf_Level( unsigned int seed )
+	: seed_(seed)
 {
 	terrain_size_[0]= 768 * 3/2; // 1536
 	terrain_size_[1]= 2048; // 8192
@@ -211,7 +224,7 @@ void mf_Level::GenTarrain()
 	for( unsigned int y= 0; y< terrain_size_[1]; y++ )
 		for( unsigned int x= 0; x< terrain_size_[0]; x++ )
 		{
-			unsigned int noise= FinalNoise(x,y);
+			unsigned int noise= FinalNoise( x,y, seed_ );
 			noise= ( noise * noise ) >> 16;
 			primary_terrain_data[ x + y * terrain_size_[0] ]= (unsigned short)noise;
 		}
@@ -328,7 +341,7 @@ void mf_Level::GenTarrain()
 void mf_Level::GenValleyWayPoints()
 {
 	mf_MainLoop::Instance()->DrawLoadingFrame( "generating river" );
-	mf_Rand randomizer;
+	mf_Rand randomizer( seed_ );
 
 	const float y_range[]= {96.0f * 2.0f, 128.0f * 2.5f };
 	const float x_amplitude= 144.0f;
@@ -481,7 +494,7 @@ struct mf_GridCell
 void mf_Level::PlaceStaticObjects()
 {
 	mf_MainLoop::Instance()->DrawLoadingFrame( "planting forest" );
-	mf_Rand randomizer;
+	mf_Rand randomizer( seed_ );
 
 	const unsigned int grid_cell_size= 3;
 	const float grid_cell_size_f= float(grid_cell_size);

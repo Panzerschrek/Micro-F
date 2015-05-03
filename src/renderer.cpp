@@ -277,7 +277,7 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		// setup constant in shader, becouse it is faster, then uniform
 		char f_shader[4096];
 		static const float c_cloud_destiny_border[mf_Settings::LastCloudsQuality]= { 0.0f, 0.6f, 0.54f, 0.45f };
-		sprintf( f_shader, mf_Shaders::clouds_gen_shader_f, c_cloud_destiny_border[ settings_.clouds_intensity ] );
+		sprintf( f_shader, mf_Shaders::clouds_gen_shader_f, settings_.seed, c_cloud_destiny_border[ settings_.clouds_intensity ] );
 		sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "p", 0 );
 		sky_clouds_data_.clouds_gen_shader.SetAttribLocation( "tc", 1 );
 		sky_clouds_data_.clouds_gen_shader.Create( mf_Shaders::clouds_gen_shader_v, f_shader );

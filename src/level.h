@@ -30,7 +30,7 @@ struct mf_StaticLevelObjectsRow
 class mf_Level
 {
 public:
-	mf_Level();
+	mf_Level( unsigned int seed );
 	~mf_Level();
 
 	const unsigned short* GetTerrianHeightmapData() const;
@@ -79,6 +79,8 @@ private:
 	float terrain_amplitude_; // in meters
 	float terrain_cell_size_; // in meters
 	float terrain_water_level_;
+
+	unsigned int seed_;
 
 	unsigned int terrain_size_[2];
 

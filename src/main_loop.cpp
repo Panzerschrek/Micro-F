@@ -179,7 +179,7 @@ void mf_MainLoop::DrawLoadingFrame( const char* text )
 
 void mf_MainLoop::Play( const mf_Settings* settings )
 {
-	game_logic_= new mf_GameLogic( &player_ );
+	game_logic_= new mf_GameLogic( &player_, settings->seed );
 
 	mode_= ModeChooseAircraft;
 	renderer_= new mf_Renderer( &player_, game_logic_, text_, settings );
