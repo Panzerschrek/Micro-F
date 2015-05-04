@@ -148,7 +148,7 @@ private:
 		GLuint depth_tex_id;
 	} shadowmap_fbo_;
 	mf_GLSLProgram terrain_shadowmap_shader_;
-	mf_GLSLProgram water_shadowmap_shader_;
+	//mf_GLSLProgram water_shadowmap_shader_;
 
 	struct QuadRow
 	{

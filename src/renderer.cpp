@@ -173,11 +173,11 @@ mf_Renderer::mf_Renderer( const mf_Player* player, const mf_GameLogic* game_logi
 		sizeof(water_shader_uniforms) / sizeof(char*) );
 
 	// water shadowmap shader
-	water_shadowmap_shader_.SetAttribLocation( "p", 0 );
+	/*water_shadowmap_shader_.SetAttribLocation( "p", 0 );
 	water_shadowmap_shader_.Create( mf_Shaders::water_shadowmap_shader_v, NULL );
 	static const char* const water_shadowmap_shader_uniforms[]= { "mat", "wl", "tcs", "ph" };
 	water_shadowmap_shader_.FindUniforms( water_shadowmap_shader_uniforms,
-		sizeof(water_shadowmap_shader_uniforms) / sizeof(char*) );
+		sizeof(water_shadowmap_shader_uniforms) / sizeof(char*) );*/
 
 	// aircraf shader
 	aircraft_shader_.SetAttribLocation( "p", 0 );

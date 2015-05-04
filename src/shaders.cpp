@@ -30,8 +30,6 @@ common input/output names
 "c_" - output color of fragment shader
 */
 
-#define MULTILINE_STING(__VA_ARGS__) #__VA_ARGS__
-
 namespace mf_Shaders
 {
 
@@ -252,7 +250,7 @@ const char* const water_shader_f=
 "}"
 ;
 
-const char* const water_shadowmap_shader_v=
+/*const char* const water_shadowmap_shader_v=
 "#version 330\n"
 "uniform mat4 mat;" // view matrix
 "uniform float wl;" // water level
@@ -266,7 +264,7 @@ const char* const water_shadowmap_shader_v=
 	"p3.z+=(sin(p.x*om+ph)+sin(p.y*om+ph)-2.08)*0.2;" // sub values for prevent reflection artefacts (like sky pixels near coast )
 	"gl_Position=mat*vec4(p3,1.0);"
 "}"
-;
+;*/
 
 const char* const aircrafts_shader_v=
 "#version 330\n"
