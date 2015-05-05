@@ -16,13 +16,15 @@
 #define MF_MACHINEGUN_SHOT_VOLUME 512.0f
 
 #define MF_MAX_ALIVE_ENEMIES 2
+#define MF_SCORE_PER_ENEMY 10
+#define MF_SCORE_PER_STAR 13
 
 namespace PowerupsTables
 {
 
 static const int stars_bonus_table[mf_Powerup::LastType]=
 {
-	1, 0, 0
+	MF_SCORE_PER_STAR, 0, 0
 };
 
 static const int health_bonus_table[mf_Powerup::LastType]=
@@ -199,7 +201,6 @@ void mf_GameLogic::Tick( float dt )
 			{
 				if( aircrafts_models_[enemy_aircraft->GetType()].BeamIntersectModel( aircraft_space_pos, aircraft_space_dir, bullet_travle_distance, aircraft_space_hit_pos ) )
 				{
-					//TODO: add damage to targe, score to owner
 					for( unsigned int j= 0; j< 3; j++ )
 						intersection_pos[j]=
 							enemy_aircraft->AxisVec(0)[j] * aircraft_space_hit_pos[0] +
@@ -534,6 +535,12 @@ void mf_GameLogic::DespawnEnemy( mf_Enemy* enemy )
 
 void mf_GameLogic::OnAircraftHit( mf_Aircraft* aircraft, int damage )
 {
+	int old_hp= aircraft->HP();
 	aircraft->AddHP( -damage );
 	if( aircraft->HP() <= 0 ) aircraft->SetThrottle(0);
+
+	if( old_hp > 0 && aircraft->HP() <= 0 )
+	{
+		player_->AddScorePoints( MF_SCORE_PER_ENEMY );
+	}
 }

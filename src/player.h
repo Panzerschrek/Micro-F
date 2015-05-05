@@ -56,6 +56,9 @@ public:
 	void AddScorePoints( unsigned int points );
 	void ResetScore();
 
+	void AddLives( int count );
+	int Lives() const;
+
 	void AddEnemyAircraft( mf_Aircraft* aircraft );
 	void RemoveEnemyAircraft( mf_Aircraft* aircraft );
 	const mf_Aircraft* const* GetEnemiesAircrafts() const;
@@ -105,6 +108,8 @@ private:
 	mf_Aircraft aircraft_;
 	mf_Aircraft aircraft_to_choose_;
 	mf_Autopilot autopilot_;
+
+	int lives_;
 
 	float pos_[3];
 
@@ -159,6 +164,16 @@ inline unsigned int mf_Player::Score() const
 inline void mf_Player::AddScorePoints( unsigned int points )
 {
 	score_+= points;
+}
+
+inline void mf_Player::AddLives( int count )
+{
+	lives_+= count;
+}
+
+inline int mf_Player::Lives() const
+{
+	return lives_;
 }
 
 inline void mf_Player::ResetScore()
