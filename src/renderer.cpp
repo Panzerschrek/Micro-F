@@ -2307,7 +2307,7 @@ void mf_Renderer::DrawPowerups()
 		float rotate_mat[16];
 		float cam_mat[16];
 		float vec_to_cam[3];
-		Mat4RotateZ( rotate_mat, float(clock()) / float(CLOCKS_PER_SEC) * 0.5f );
+		Mat4RotateZ( rotate_mat, float(clock()) / float(CLOCKS_PER_SEC) * 0.5f + 0.0625f * powerups[i].pos[1] );
 		Mat4Translate( translate_mat, powerups[i].pos );
 		Mat4Mul( rotate_mat, translate_mat, mat );
 		Mat4Mul( mat, view_matrix_ );
@@ -2426,7 +2426,7 @@ void mf_Renderer::DrawLevelStaticObjects( bool draw_to_water_framebuffer )
 
 		float mat[ MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL ][2][16];
 		unsigned int objects_count_to_draw= 0;
-		mf_StaticLevelObject::Type current_object_type= mf_StaticLevelObject::Palm;
+		mf_StaticLevelObject::Type current_object_type= mf_StaticLevelObject::SmallOak;
 		if( objects_count !=0 ) current_object_type= objects[0].type;
 
 		for( unsigned int i= 0; i<= objects_count; i++ )
@@ -2726,7 +2726,7 @@ void mf_Renderer::DrawShadows()
 
 			float mat[ MF_MAX_STATIC_LEVEL_OBJECTS_PER_DRAW_CALL ][16];
 			unsigned int objects_count_to_draw= 0;
-			mf_StaticLevelObject::Type current_object_type= mf_StaticLevelObject::Palm;
+			mf_StaticLevelObject::Type current_object_type= mf_StaticLevelObject::SmallOak;
 			if( objects_count !=0 ) current_object_type= objects[0].type;
 
 			for( unsigned int i= 0; i<= objects_count; i++ )

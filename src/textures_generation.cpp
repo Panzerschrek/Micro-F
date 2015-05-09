@@ -636,12 +636,6 @@ void (* const aircraft_texture_gen_func[mf_Aircraft::LastType])(mf_Texture* t)=
 	GenV1Texture
 };
 
-void GenPalmTexture( mf_Texture* tex )
-{
-	static const float palm_color[4]= { 0.1f, 0.6f, 0.2f, 1.0f };
-	tex->Fill( palm_color );
-}
-
 void GenOakTexture( mf_Texture* tex )
 {
 	mf_Texture extended_texture( tex->SizeXLog2() + 2, tex->SizeYLog2() );
@@ -945,7 +939,6 @@ void (* const gui_texture_gen_func[LastGuiTexture])(mf_Texture* t)=
 
 void (* const static_level_object_texture_gen_func[LastStaticLevelObjectTexture])(mf_Texture* t)=
 {
-	GenPalmTexture,
 	GenOakTexture,
 	GenOakLeafsTexture,
 	GenSpruceTexture,

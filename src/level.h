@@ -7,7 +7,7 @@ struct mf_StaticLevelObject
 {
 	enum Type
 	{
-		Palm= 0,
+		SmallOak= 0,
 		Oak,
 		Spruce,
 		Birch,

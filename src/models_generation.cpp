@@ -294,46 +294,38 @@ void GenSkySphere( mf_DrawingModel* model, unsigned int partitiion )
 	model->SetIndexData( indeces, 3 * triangle_count * icosahderon_triangle_count );
 }
 
-/*void GenPalmLeaf( mf_DrawingModel* model, const mf_BezierCurve* curve, unsigned int segments )
-{
-	unsigned int vertex_count= ( segments + 1 ) * 2;
-	unsigned int index_count= segments * 6;
-
-	mf_DrawingModelVertex* v= new mf_DrawingModelVertex[ vertex_count ];
-	unsigned short* ind= new unsigned short[ index_count ];
-
-	for( unsigned int i= 0; i< segments + 1; i++ )
-	{
-	}
-}*/
-
 void GenLeafs( mf_DrawingModel* model)
 {
 	model->LoadFromMFMD( mf_Models::leafs );
 	ApplyTexture( model, TextureOakLeafs );
 }
 
-void GenPalm( mf_DrawingModel* model )
+void GenSmallOak( mf_DrawingModel* model )
 {
-	const float c_palm_height= 10.0f;
-	static const float palm_size[]= { 0.5f, 0.5f, c_palm_height * 0.5f };
-	static const float palm_shift[]= { 0.0f, 0.0f, c_palm_height * 0.5f };
-	GenCylinder( model, 12, 12, false );
+	const float c_small_oak_height= 8.0f;
+	static const float c_trunk_rotate_angle= MF_PI12;
+	static const float palm_size[]= { 0.4f, 0.4f, c_small_oak_height * 0.5f };
+	static const float palm_shift[]= { 0.0f, 0.0f, c_small_oak_height * 0.5f };
+	GenCylinder( model, 9, 1, false );
 	model->Scale( palm_size );
 	model->Shift( palm_shift );
 
-	mf_DrawingModelVertex* v= (mf_DrawingModelVertex*) model->GetVertexData();
-	for( unsigned int i= 0; i< model->VertexCount(); i++ )
-	{
-		float mult= (3.0f - v[i].pos[2] / c_palm_height ) * 0.333333f;
-		v[i].pos[0]*= mult;
-		v[i].pos[1]*= mult;
+	float mat[16];
+	Mat4RotateX( mat, c_trunk_rotate_angle );
+	Mat4ToMat3( mat );
+	model->Rotate( mat );
 
-		float x_delta= v[i].pos[2] / c_palm_height;
-		v[i].pos[0]+= x_delta * x_delta * ( c_palm_height * 0.25f );
-		//TODO: deform normal
-	}
-	ApplyTexture( model, TexturePalmBark );
+	ApplyTexture( model, TextureOakBark );
+
+	mf_DrawingModel leafs;
+	GenLeafs( &leafs );
+	leafs.Rotate( mat );
+	static const float leafs_scale[3]= { 3.0f, 3.0f, 4.5f };
+	static const float leafs_shift[3]= { 0.0f,  - mf_Math::sin(c_trunk_rotate_angle) * c_small_oak_height, c_small_oak_height };
+	leafs.Scale( leafs_scale );
+	leafs.Shift( leafs_shift );
+
+	model->Add( &leafs );
 }
 
 void GenOak( mf_DrawingModel* model )
@@ -556,7 +548,7 @@ void GenBirch( mf_DrawingModel* model )
 
 void (* const level_static_models_gen_func[mf_StaticLevelObject::LastType])(mf_DrawingModel* model)=
 {
-	GenPalm,
+	GenSmallOak,
 	GenOak,
 	GenSpruce,
 	GenBirch

@@ -479,7 +479,7 @@ void mf_GameLogic::PlayerRocketShot( const float* dir )
 
 void mf_GameLogic::PlacePowerups()
 {
-	static const float c_stars_step_range[2]= { 64.0f, 128.0f };
+	static const float c_stars_step_range[2]= { 128.0f, 256.0f };
 
 	powerup_count_= 0;
 
@@ -494,7 +494,7 @@ void mf_GameLogic::PlacePowerups()
 		powerups_[powerup_count_].lifes_bonus= PowerupsTables::lifes_bonus_table[type];
 		powerups_[powerup_count_].pos[0]= level_.GetValleyCenterX( y );
 		powerups_[powerup_count_].pos[1]= y;
-		powerups_[powerup_count_].pos[2]= level_.TerrainWaterLevel() + 0.25f * randomizer_.RandF( 5.0f, level_.TerrainAmplitude() );
+		powerups_[powerup_count_].pos[2]= level_.TerrainWaterLevel() + 0.25f * randomizer_.RandF( 30.0f, level_.TerrainAmplitude() );
 		powerup_count_++;
 
 		y+= randomizer_.RandF( c_stars_step_range[0], c_stars_step_range[1] );

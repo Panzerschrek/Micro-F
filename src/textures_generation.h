@@ -30,7 +30,6 @@ enum mf_GuiTexture
 
 enum mf_StaticLevelObjectTexture
 {
-	TexturePalmBark,
 	TextureOakBark,
 	TextureOakLeafs,
 	TextureSpruceBark,
