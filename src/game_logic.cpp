@@ -8,7 +8,7 @@
 #include "mf_math.h"
 #include "enemy.h"
 
-#define MF_FORCEFIELD_DAMAGE_RADIUS 8.0f
+#define MF_FORCEFIELD_DAMAGE_RADIUS 16.0f
 #define MF_ROCKET_LIFETIME 12.0f
 #define MF_ROCKET_HIT_DISTANCE 10.0f
 
@@ -19,22 +19,29 @@
 #define MF_SCORE_PER_ENEMY 10
 #define MF_SCORE_PER_STAR 13
 
+#define MF_PLAYER_DEATH_HP_BORDER (-250)
+
 namespace PowerupsTables
 {
 
 static const int stars_bonus_table[mf_Powerup::LastType]=
 {
-	MF_SCORE_PER_STAR, 0, 0
+	MF_SCORE_PER_STAR, 0, 0, 0
 };
 
 static const int health_bonus_table[mf_Powerup::LastType]=
 {
-	0, 200, 0
+	0, 200, 0, 0
 };
 
 static const int rockets_bonus_table[mf_Powerup::LastType]=
 {
-	0, 0, 3
+	0, 0, 3, 0
+};
+
+static const int lifes_bonus_table[mf_Powerup::LastType]=
+{
+	0, 0, 0, 1
 };
 
 } // namespace PowerupsTables
@@ -121,9 +128,6 @@ mf_GameLogic::~mf_GameLogic()
 void mf_GameLogic::StartGame()
 {
 	game_started_= true;
-
-	player_sound_= mf_SoundEngine::Instance()->CreateSoundSource( AircraftTypeToEngineSoundType( player_->GetAircraft()->GetType() ) );
-	player_sound_->Play();
 }
 
 void mf_GameLogic::Tick( float dt )
@@ -296,6 +300,7 @@ void mf_GameLogic::Tick( float dt )
 			player_aircraft->AddHP( powerups_[i].health_bonus );
 			player_aircraft->AddRockets( powerups_[i].rockets_bonus );
 			player_->AddScorePoints( powerups_[i].stars_bonus );
+			player_->AddLifes( powerups_[i].lifes_bonus );
 			mf_SoundEngine::Instance()->AddSingleSound( SoundPowerupPickup, 1.0f, 1.0f, NULL );
 
 			if( i < powerup_count_ - 1 )
@@ -308,10 +313,7 @@ void mf_GameLogic::Tick( float dt )
 	// check collision of player with terrain
 	if( level_.SphereIntersectTerrain( player_aircraft->Pos(), 4.0f ) )
 	{
-		float pos[3];
-		VEC3_CPY( pos, player_aircraft->Pos() );
-		pos[2]+= 4.0f;
-		player_aircraft->AddHP( - ( player_aircraft->HP() + 100 ) );
+		RespawnPlayer();
 	}
 	// check collision of enemies with terrain
 	for( unsigned int i= 0; i< enemies_count_; )
@@ -332,18 +334,22 @@ void mf_GameLogic::Tick( float dt )
 		vec_to_forcefield[1]= 0;
 		vec_to_forcefield[2]= player_aircraft->Pos()[2] - level_.ForcefieldZPos();
 		float dist_to_forcefield= Vec3Len( vec_to_forcefield );
-		if( dist_to_forcefield > level_.ForcefieldRadius() )
-			player_aircraft->AddHP( - ( player_aircraft->HP() + 100 ) );
-		else if( level_.ForcefieldRadius() - dist_to_forcefield < MF_FORCEFIELD_DAMAGE_RADIUS )
-			player_aircraft->AddHP( -50 );
+		if( level_.ForcefieldRadius() - MF_FORCEFIELD_DAMAGE_RADIUS < dist_to_forcefield )
+			player_aircraft->AddHP( -int( mf_Math::round( 800.0f * dt ) ) );
 	}
 
 	for( unsigned int i= 0; i< enemies_count_; i++ )
 		enemies_[i]->Tick(dt);
 
+	{ // check player after enemies tick
+		if( player_aircraft->HP() <= MF_PLAYER_DEATH_HP_BORDER )
+			RespawnPlayer();
+	}
+
 	// particels
 	particles_manager_.Tick( dt );
-	particles_manager_.AddEnginesTrail( player_->GetAircraft() );
+	if( !player_->IsInRespawn() )
+		particles_manager_.AddEnginesTrail( player_->GetAircraft() );
 	for( unsigned int i= 0; i< enemies_count_; i++ )
 		particles_manager_.AddEnginesTrail( enemies_[i]->GetAircraft() );
 	for( unsigned int i= 0; i< powerup_count_; i++ )
@@ -358,6 +364,11 @@ void mf_GameLogic::Tick( float dt )
 		particles_manager_.AddRocketTrail( &rockets_[i] );
 	}
 
+	if( player_sound_ == NULL )
+	{
+		player_sound_= mf_SoundEngine::Instance()->CreateSoundSource( AircraftTypeToEngineSoundType( player_->GetAircraft()->GetType() ) );
+		player_sound_->Play();
+	}
 	// sound
 	for( unsigned int i= 0; i< enemies_count_ + 1; i++ )
 	{
@@ -479,7 +490,8 @@ void mf_GameLogic::PlacePowerups()
 		powerups_[powerup_count_].type= type;
 		powerups_[powerup_count_].stars_bonus= PowerupsTables::stars_bonus_table[type];
 		powerups_[powerup_count_].health_bonus= PowerupsTables::health_bonus_table[type];
-		powerups_[powerup_count_].rockets_bonus = PowerupsTables::rockets_bonus_table[type];
+		powerups_[powerup_count_].rockets_bonus= PowerupsTables::rockets_bonus_table[type];
+		powerups_[powerup_count_].lifes_bonus= PowerupsTables::lifes_bonus_table[type];
 		powerups_[powerup_count_].pos[0]= level_.GetValleyCenterX( y );
 		powerups_[powerup_count_].pos[1]= y;
 		powerups_[powerup_count_].pos[2]= level_.TerrainWaterLevel() + 0.25f * randomizer_.RandF( 5.0f, level_.TerrainAmplitude() );
@@ -537,10 +549,26 @@ void mf_GameLogic::OnAircraftHit( mf_Aircraft* aircraft, int damage )
 {
 	int old_hp= aircraft->HP();
 	aircraft->AddHP( -damage );
-	if( aircraft->HP() <= 0 ) aircraft->SetThrottle(0);
+	if( aircraft != player_->GetAircraft() && aircraft->HP() <= 0 ) aircraft->SetThrottle(0);
 
 	if( old_hp > 0 && aircraft->HP() <= 0 )
 	{
 		player_->AddScorePoints( MF_SCORE_PER_ENEMY );
 	}
+}
+
+void mf_GameLogic::RespawnPlayer()
+{
+	particles_manager_.AddBlast( player_->GetAircraft()->Pos() );
+	mf_SoundEngine::Instance()->AddSingleSound( SoundBlast, MF_BLAST_SOUND_VOLUME, 1.0f, player_->GetAircraft()->Pos() );
+
+	mf_SoundEngine::Instance()->DestroySoundSource( player_sound_ );
+	player_sound_= NULL;
+
+	float pos[3];
+	pos[1]= player_->GetAircraft()->Pos()[1] - 64.0f;
+	pos[2]= 1.25f * level_.TerrainAmplitude();
+	pos[0]= level_.GetValleyCenterX( pos[1] );
+
+	player_->TryRespawn( pos );
 }

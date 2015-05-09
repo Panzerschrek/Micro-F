@@ -37,13 +37,13 @@ void mf_Enemy::Tick( float dt )
 	Vec3Normalize( vec_to_player );
 	VecToSphericalCoordinates( vec_to_player, &angle[2], &angle[0] );
 
-	if( Distance( player_aircraft_->Pos(), aircraft_.Pos() ) > 200.0f && mf_Math::fabs(angle[0]) < MF_PI4 )
+	if( Distance( player_aircraft_->Pos(), aircraft_.Pos() ) > 175.0f && mf_Math::fabs(angle[0]) < MF_PI4 )
 	{
 		autopilot_.SetMode( mf_Autopilot::ModeTurnToAzimuth );
 		autopilot_.SetTargetAzimuth( angle[2] );
 	}
 
-	if( Vec3Dot( vec_to_player, aircraft_.AxisVec(1) ) >= mf_Math::cos(aircraft_.GetMachinegunConeAngle() * 0.5f) )
+	if( Vec3Dot( vec_to_player, aircraft_.AxisVec(1) ) >= mf_Math::cos(aircraft_.GetMachinegunConeAngle() * 0.75f) )
 	{
 		if (shot_pressed_)
 		{

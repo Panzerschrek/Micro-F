@@ -26,6 +26,9 @@ public:
 
 	void Tick( float dt );
 
+	// return false, if cannot respawn
+	bool TryRespawn( const float* pos );
+
 	const float* Pos() const;
 	const float* Angle() const;
 	const float Fov() const;
@@ -56,8 +59,9 @@ public:
 	void AddScorePoints( unsigned int points );
 	void ResetScore();
 
-	void AddLives( int count );
-	int Lives() const;
+	void AddLifes( int count );
+	int Lifes() const;
+	bool IsInRespawn() const;
 
 	void AddEnemyAircraft( mf_Aircraft* aircraft );
 	void RemoveEnemyAircraft( mf_Aircraft* aircraft );
@@ -109,7 +113,9 @@ private:
 	mf_Aircraft aircraft_to_choose_;
 	mf_Autopilot autopilot_;
 
-	int lives_;
+	int lifes_;
+	bool is_in_respawn_;
+	float respawn_start_time_;
 
 	float pos_[3];
 
@@ -166,14 +172,19 @@ inline void mf_Player::AddScorePoints( unsigned int points )
 	score_+= points;
 }
 
-inline void mf_Player::AddLives( int count )
+inline void mf_Player::AddLifes( int count )
 {
-	lives_+= count;
+	lifes_+= count;
 }
 
-inline int mf_Player::Lives() const
+inline int mf_Player::Lifes() const
 {
-	return lives_;
+	return lifes_;
+}
+
+inline bool mf_Player::IsInRespawn() const
+{
+	return is_in_respawn_;
 }
 
 inline void mf_Player::ResetScore()

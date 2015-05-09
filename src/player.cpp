@@ -13,12 +13,15 @@
 #define MF_FOV_STEP (MF_PI6 * 0.25f)
 #define MF_INITIAL_FOV (MF_PI2 - MF_FOV_STEP)
 
+#define MF_START_HP 1000
+#define MF_START_ROCKET_COUNT 3
+
 mf_Player::mf_Player()
 	: control_mode_(ModeChooseAircraftType), view_mode_(ViewThirdperson)
-	, aircraft_(mf_Aircraft::F2XXX)
+	, aircraft_( mf_Aircraft::F2XXX, MF_START_HP )
 	, aircraft_to_choose_(mf_Aircraft::F1949)
 	, autopilot_(&aircraft_)
-	, lives_(3)
+	, lifes_(3), is_in_respawn_(false)
 	, cam_radius_(10.0f)
 	, aspect_(1.0f), fov_(MF_INITIAL_FOV), target_fov_(MF_INITIAL_FOV)
 	, forward_pressed_(false), backward_pressed_(false), left_pressed_(false), right_pressed_(false)
@@ -46,6 +49,12 @@ mf_Player::~mf_Player()
 
 void mf_Player::Tick( float dt )
 {
+	if( is_in_respawn_)
+	{
+		if( mf_MainLoop::Instance()->CurrentTime() >= respawn_start_time_ + 4.0f ) is_in_respawn_= false;
+		return;
+	}
+
 	if( control_mode_ != ModeChooseAircraftType )
 	{
 		float d_fov= target_fov_ - fov_;
@@ -161,6 +170,26 @@ void mf_Player::Tick( float dt )
 			aircraft_.CalculateAngles( angle_ );
 		}
 	}
+}
+
+bool mf_Player::TryRespawn( const float* pos )
+{
+	lifes_--;
+	if( lifes_ < 0 ) return false;
+
+	aircraft_.SetPos( pos );
+	aircraft_.AddRockets( MF_START_ROCKET_COUNT - aircraft_.RocketsCount() );
+	aircraft_.AddHP( MF_START_HP - aircraft_.HP() );
+
+	static const float start_axis[]= { 1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 1.0f };
+	static const float start_vel[]= { 0.0f, 65.0f, 0.0f };
+	aircraft_.SetAxis( start_axis, start_axis + 3, start_axis + 6 );
+	aircraft_.SetVelocity( start_vel );
+
+	is_in_respawn_= true;
+	respawn_start_time_= mf_MainLoop::Instance()->CurrentTime();
+
+	return true;
 }
 
 float mf_Player::GetMachinegunCircleRadius() const

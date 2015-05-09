@@ -299,6 +299,7 @@ void mf_Gui::Draw()
 			};
 			static const unsigned char c_score_color[4]= { 240, 230, 220, 0 };
 			static const unsigned char c_rockets_color[4]= { 160, 160, 255, 0 };
+			static const unsigned char c_lifes_color[4]= { 128, 128, 128, 0 };
 
 			unsigned int color_index;
 			if( aircraft->HP() >= 600 ) color_index= 0;
@@ -316,6 +317,10 @@ void mf_Gui::Draw()
 			char rockets_str[32];
 			sprintf( rockets_str, "Rockets: %d", aircraft->RocketsCount() );
 			text_->AddText( 2, bottom_row - 2, 2, c_rockets_color, rockets_str );
+
+			char lifes_str[16];
+			sprintf( lifes_str, "Lifes: %d", player_->Lifes() );
+			text_->AddText( 2, bottom_row - 4, 2, c_lifes_color, lifes_str );
 		}
 
 		if( player_->GetViewMode() == mf_Player::ViewInsideCockpit )

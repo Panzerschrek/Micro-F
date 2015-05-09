@@ -2163,7 +2163,7 @@ void mf_Renderer::DrawAircrafts()
 	unsigned int aircrafts_count= game_logic_->GetEnemiesCount();
 	for( unsigned int i= 0; i< aircrafts_count; i++ )
 		aircrafts[i]= game_logic_->GetEnemies()[i]->GetAircraft();
-	if( player_->GetViewMode() == mf_Player::ViewThirdperson )
+	if( player_->GetViewMode() == mf_Player::ViewThirdperson && !player_->IsInRespawn() )
 	{
 		aircrafts[ aircrafts_count ]=
 			player_->GetControlMode() == mf_Player::ModeChooseAircraftType ?
@@ -2648,11 +2648,14 @@ void mf_Renderer::DrawShadows()
 		unsigned int aircraft_count= game_logic_->GetEnemiesCount();
 		for( unsigned int i= 0; i< aircraft_count; i++ )
 			aircrafts[i]= game_logic_->GetEnemies()[i]->GetAircraft();
-		aircrafts[ aircraft_count ]=
-		player_->GetControlMode() == mf_Player::ModeChooseAircraftType ?
-			player_->GetAircraftToChoose() :
-			player_->GetAircraft();
-		aircraft_count++;
+		if( !player_->IsInRespawn() )
+		{
+			aircrafts[ aircraft_count ]=
+			player_->GetControlMode() == mf_Player::ModeChooseAircraftType ?
+				player_->GetAircraftToChoose() :
+				player_->GetAircraft();
+			aircraft_count++;
+		}
 
 		for( unsigned int i= 0; i< aircraft_count; i++ )
 		{

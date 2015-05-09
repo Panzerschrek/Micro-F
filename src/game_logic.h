@@ -20,12 +20,14 @@ struct mf_Powerup
 		Star,
 		MiddleHealth,
 		Rockets,
+		Life,
 		LastType
 	};
 	Type type;
 	float pos[3];
 	int stars_bonus;
 	int health_bonus;
+	int lifes_bonus;
 	int rockets_bonus;
 };
 
@@ -89,6 +91,7 @@ private:
 	void SpawnEnemy();
 	void DespawnEnemy( mf_Enemy* enemy );
 	void OnAircraftHit( mf_Aircraft* aircraft, int damage );
+	void RespawnPlayer();
 
 private:
 	mf_Level level_;

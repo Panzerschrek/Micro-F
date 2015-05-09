@@ -48,7 +48,8 @@ const unsigned char* powerups_models[ mf_Powerup::LastType ]=
 {
 	star,
 	wrench_hammer,
-	rockets
+	rockets,
+	f1949
 };
 
 } // namespace mf_Models
