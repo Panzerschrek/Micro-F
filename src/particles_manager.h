@@ -49,7 +49,7 @@ public:
 private:
 
 	void AddF2XXXTrail( const mf_Aircraft* aircraft, unsigned int engine_number );
-	void AddV1Trail( const mf_Aircraft* rocket );
+	void AddV1Trail( const mf_Aircraft* rocket, const float* pos );
 	struct Particle
 	{
 		enum Type

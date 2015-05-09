@@ -80,8 +80,18 @@ void mf_ParticlesManager::AddEnginesTrail( const mf_Aircraft* aircraft )
 		AddF2XXXTrail( aircraft, 0 );
 		AddF2XXXTrail( aircraft, 1 );
 	}
+	else if( aircraft->GetType() == mf_Aircraft::V1)
+	{
+		static const float c_v1_engine_pos[3]= { 0.0f, -4.7f, 0.9f };
+		AddV1Trail( aircraft, c_v1_engine_pos );
+	}
 	else
-		AddV1Trail( aircraft );
+	{
+		static const float c_f1949_engines_pos[]=
+			{ 3.01f, -2.8f, -0.56f,  -3.01f, -2.8f, -0.56f };
+		AddV1Trail( aircraft, c_f1949_engines_pos );
+		AddV1Trail( aircraft, c_f1949_engines_pos + 3 );
+	}
 }
 
 void mf_ParticlesManager::AddBulletTerrainHit( const float* pos )
@@ -325,9 +335,9 @@ void mf_ParticlesManager::AddF2XXXTrail( const mf_Aircraft* aircraft, unsigned i
 	particle_count_+= particle_count;
 }
 
-void mf_ParticlesManager::AddV1Trail( const mf_Aircraft* aircraft )
+void mf_ParticlesManager::AddV1Trail( const mf_Aircraft* aircraft, const float* pos )
 {
-	static const float c_v1_engine_pos[3]= { 0.0f, -4.7f, 0.9f };
+	//static const float c_v1_engine_pos[3]= { 0.0f, -4.7f, 0.9f };
 
 	const float c_smoke_particles_per_second= 60.0f;
 	float particles_per_second= ( aircraft->Throttle() + 1.0f ) * 0.5f * c_smoke_particles_per_second;
@@ -349,7 +359,7 @@ void mf_ParticlesManager::AddV1Trail( const mf_Aircraft* aircraft )
 	float particle_dir[3];
 	float particle_velocity;
 	float particle_acceleration;
-	TransformAircraftPoint( aircraft, c_v1_engine_pos, particle_pos );
+	TransformAircraftPoint( aircraft, pos, particle_pos );
 	Vec3Mul( aircraft->Velocity(), -dt_ , particle_step );
 	Vec3Mul( aircraft->Velocity(), - 1.0f / aircraft_velocity, particle_dir );
 	particle_velocity= aircraft_velocity * 0.25f;
