@@ -51,7 +51,19 @@ void mf_Player::Tick( float dt )
 {
 	if( is_in_respawn_)
 	{
-		if( mf_MainLoop::Instance()->CurrentTime() >= respawn_start_time_ + 4.0f ) is_in_respawn_= false;
+		if( mf_MainLoop::Instance()->CurrentTime() >= respawn_start_time_ + 4.0f )
+		{
+			lifes_--;
+			aircraft_.AddHP( MF_START_HP - aircraft_.HP() );
+			aircraft_.AddRockets( MF_START_ROCKET_COUNT - aircraft_.RocketsCount() );
+
+			static const float start_axis[]= { 1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 1.0f };
+			static const float start_vel[]= { 0.0f, 65.0f, 0.0f };
+			aircraft_.SetAxis( start_axis, start_axis + 3, start_axis + 6 );
+			aircraft_.SetVelocity( start_vel );
+
+			is_in_respawn_= false;
+		}
 		return;
 	}
 
@@ -174,17 +186,9 @@ void mf_Player::Tick( float dt )
 
 bool mf_Player::TryRespawn( const float* pos )
 {
-	lifes_--;
-	if( lifes_ < 0 ) return false;
+	if( lifes_ == 0 ) return false;
 
 	aircraft_.SetPos( pos );
-	aircraft_.AddRockets( MF_START_ROCKET_COUNT - aircraft_.RocketsCount() );
-	aircraft_.AddHP( MF_START_HP - aircraft_.HP() );
-
-	static const float start_axis[]= { 1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 1.0f };
-	static const float start_vel[]= { 0.0f, 65.0f, 0.0f };
-	aircraft_.SetAxis( start_axis, start_axis + 3, start_axis + 6 );
-	aircraft_.SetVelocity( start_vel );
 
 	is_in_respawn_= true;
 	respawn_start_time_= mf_MainLoop::Instance()->CurrentTime();

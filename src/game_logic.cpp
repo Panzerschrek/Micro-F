@@ -341,6 +341,7 @@ void mf_GameLogic::Tick( float dt )
 	for( unsigned int i= 0; i< enemies_count_; i++ )
 		enemies_[i]->Tick(dt);
 
+	if( !player_->IsInRespawn() )
 	{ // check player after enemies tick
 		if( player_aircraft->HP() <= MF_PLAYER_DEATH_HP_BORDER )
 			RespawnPlayer();
@@ -559,6 +560,8 @@ void mf_GameLogic::OnAircraftHit( mf_Aircraft* aircraft, int damage )
 
 void mf_GameLogic::RespawnPlayer()
 {
+	if( player_->IsInRespawn() ) return;
+
 	particles_manager_.AddBlast( player_->GetAircraft()->Pos() );
 	mf_SoundEngine::Instance()->AddSingleSound( SoundBlast, MF_BLAST_SOUND_VOLUME, 1.0f, player_->GetAircraft()->Pos() );
 
