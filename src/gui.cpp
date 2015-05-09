@@ -436,7 +436,7 @@ void mf_Gui::PrepareMenus()
 	button->y= text->row * cell_size[1] + border_size;
 	button->width=  text->size * cell_size[0] * main_menu_button_width - border_size;
 	button->height= text->size * cell_size[1] - border_size;
-	button->callback= &mf_Gui::OnSettingsButton;
+	button->callback= NULL;
 	menu->button_count++;
 
 	button_altitude+= text->size + 1;
@@ -454,7 +454,7 @@ void mf_Gui::PrepareMenus()
 	button->y= text->row * cell_size[1] + border_size;
 	button->width=  text->size * cell_size[0] * main_menu_button_width - border_size;
 	button->height= text->size * cell_size[1] - border_size;
-	button->callback= &mf_Gui::OnCreditsButton;
+	button->callback= NULL;
 	menu->button_count++;
 
 	button_altitude+= text->size + 1;
@@ -1459,7 +1459,8 @@ void mf_Gui::OnPlayButton()
 	settings.daytime= mf_Settings::Daytime( menus_[ SettingsMenu ].buttons[0].user_data );
 
 	main_loop_->Play( &settings );
-	current_menu_= &menus_[ ChooseAircraftMenu ];
+	current_menu_= &menus_[ InGame ];
+	main_loop_->StartGame();
 }
 
 void mf_Gui::OnSettingsButton()

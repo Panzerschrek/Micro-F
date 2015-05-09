@@ -298,7 +298,7 @@ mf_MainLoop::mf_MainLoop(
 
 	sound_engine_= new mf_SoundEngine(hwnd_);
 	music_engine_= new mf_MusicEngine();
-	music_engine_->Play( mf_MusicEngine::MelodyAviatorsMarch );
+	//music_engine_->Play( mf_MusicEngine::MelodyAviatorsMarch );
 
 	text_= new mf_Text();
 	gui_ = new mf_Gui( text_, &player_ );
