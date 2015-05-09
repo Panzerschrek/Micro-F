@@ -11,7 +11,7 @@ class mf_MainLoop;
 
 #define MF_GUI_TEXT_MAX_LENTH 32
 #define MF_GUI_MENU_MAX_BUTTONS 16
-#define MF_GUI_MAX_TEXTS 16
+#define MF_GUI_MAX_TEXTS 24
 
 #define MF_SEED_DIGITS 10
 
@@ -90,6 +90,7 @@ private:
 
 	void OnPlayButton();
 	void OnSettingsButton();
+	void OnCreditsButton();
 	void OnQuitButton();
 
 	void OnChangeDayTimeButton();

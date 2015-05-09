@@ -345,6 +345,7 @@ void mf_Gui::PrepareMenus()
 	const char* const c_subtitle_text= "96k game";
 	const char* const c_play_button_text= " play ";
 	const char* const c_settings_button_text= " settings ";
+	const char* const c_credits_button_text= " credits ";
 	const char* const c_quit_button_text= " quit ";
 
 	const char* const c_button_back= "back";
@@ -401,6 +402,8 @@ void mf_Gui::PrepareMenus()
 	menu->text_count++;
 
 	unsigned int button_altitude= screen_size_cl[1]/2 - 4;
+	unsigned int main_menu_button_width= 12;
+	unsigned int main_menu_button_colomn= screen_size_cl[0]/2 - 2 * main_menu_button_width / 2;
 
 	// Play button
 	text= &menu->buttons[0].text;
@@ -411,9 +414,9 @@ void mf_Gui::PrepareMenus()
 	COLOR_CPY( text->color, text_color );
 
 	button= &menu->buttons[0];
-	button->x= text->colomn * cell_size[0] + border_size;
+	button->x= main_menu_button_colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_play_button_text) - border_size;
+	button->width=  text->size * cell_size[0] * main_menu_button_width - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnPlayButton;
 	menu->button_count++;
@@ -429,27 +432,45 @@ void mf_Gui::PrepareMenus()
 	COLOR_CPY( text->color, text_color );
 
 	button= &menu->buttons[1];
-	button->x= text->colomn * cell_size[0] + border_size;
+	button->x= main_menu_button_colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_settings_button_text) - border_size;
+	button->width=  text->size * cell_size[0] * main_menu_button_width - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnSettingsButton;
 	menu->button_count++;
 
 	button_altitude+= text->size + 1;
 
-	// Quit button
+	// Credits button
 	text= &menu->buttons[2].text;
+	strcpy( text->text, c_credits_button_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_credits_button_text) / 2;
+	text->row= button_altitude;
+	COLOR_CPY( text->color, text_color );
+
+	button= &menu->buttons[2];
+	button->x= main_menu_button_colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * main_menu_button_width - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnCreditsButton;
+	menu->button_count++;
+
+	button_altitude+= text->size + 1;
+
+	// Quit button
+	text= &menu->buttons[3].text;
 	strcpy( text->text, c_quit_button_text );
 	text->size= 2;
 	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_quit_button_text) / 2;
 	text->row= button_altitude;
 	COLOR_CPY( text->color, text_color );
 
-	button= &menu->buttons[2];
-	button->x= text->colomn * cell_size[0] + border_size;
+	button= &menu->buttons[3];
+	button->x= main_menu_button_colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_quit_button_text) - border_size;
+	button->width=  text->size * cell_size[0] * main_menu_button_width - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnQuitButton;
 	menu->button_count++;
@@ -696,6 +717,71 @@ void mf_Gui::PrepareMenus()
 	button->width=  text->size * cell_size[0] * strlen(c_button_select_text) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnSelectAircraft;
+	button->user_data= 0;
+	menu->button_count++;
+
+	/*
+	CREDITS MENU
+	*/
+	menu= &menus_[ CreditsMenu ];
+	menu->button_count= 0;
+	menu->text_count= 0;
+
+	const char* const c_author_name= "Art\x7Fm \"Panzerschrek\" Kunz";
+	const char* const c_credits_title= " CREDITS ";
+	static const char* const c_credits_strings[]=
+	{
+		"idea:",
+		"game design:",
+		"common programming:",
+		"game logic programming:",
+		"graphics programming:",
+		"sound programming:",
+		"gui programming:",
+		"modelling:",
+		"texture artist:"
+	};
+	unsigned int credits_begin_row= screen_size_cl[1]/2 - sizeof(c_credits_strings) / sizeof(char*) * 2 / 2;
+	for( unsigned int i= 0, row= credits_begin_row; i< sizeof(c_credits_strings) / sizeof(char*); i++, row+= 2 )
+	{
+		text= &menu->texts[i*2];
+		strcpy( text->text, c_credits_strings[i] );
+		text->size= 2;
+		text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_credits_strings[i]) - 3;
+		text->row= row;
+		COLOR_CPY( text->color, text_color );
+
+		text= &menu->texts[i*2+1];
+		strcpy( text->text, c_author_name );
+		text->size= 2;
+		text->colomn= screen_size_cl[0]/2 - 1;
+		text->row= row;
+		COLOR_CPY( text->color, text_color );
+
+		menu->text_count+=2;
+	}
+	text= &menu->texts[menu->text_count];
+	strcpy( text->text, c_credits_title );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_credits_title) / 2;
+	text->row= credits_begin_row - 3;
+	COLOR_CPY( text->color, text_color );
+	menu->text_count++;
+
+	// back button text
+	text= &menu->buttons[0].text;
+	strcpy( text->text, c_button_back );
+	text->size= 2;
+	text->colomn= 2;
+	text->row= screen_size_cl[1] - 3;
+	COLOR_CPY( text->color, text_color );
+	// back button
+	button= &menu->buttons[0];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * strlen(c_button_back) - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnSettingsBackButton;
 	button->user_data= 0;
 	menu->button_count++;
 
@@ -1379,6 +1465,11 @@ void mf_Gui::OnPlayButton()
 void mf_Gui::OnSettingsButton()
 {
 	current_menu_= &menus_[ SettingsMenu ];
+}
+
+void mf_Gui::OnCreditsButton()
+{
+	current_menu_= &menus_[ CreditsMenu ];
 }
 
 void mf_Gui::OnHdrButton()
