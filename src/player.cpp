@@ -13,12 +13,11 @@
 #define MF_FOV_STEP (MF_PI6 * 0.25f)
 #define MF_INITIAL_FOV (MF_PI2 - MF_FOV_STEP)
 
-#define MF_START_HP 1000
 #define MF_START_ROCKET_COUNT 3
 
 mf_Player::mf_Player()
 	: control_mode_(ModeChooseAircraftType), view_mode_(ViewThirdperson)
-	, aircraft_( mf_Aircraft::F2XXX, MF_START_HP )
+	, aircraft_( mf_Aircraft::F2XXX, MF_PLAYER_START_HP )
 	, aircraft_to_choose_(mf_Aircraft::F1949)
 	, autopilot_(&aircraft_)
 	, lifes_(3), is_in_respawn_(false)
@@ -54,7 +53,7 @@ void mf_Player::Tick( float dt )
 		if( mf_MainLoop::Instance()->CurrentTime() >= respawn_start_time_ + 4.0f )
 		{
 			lifes_--;
-			aircraft_.AddHP( MF_START_HP - aircraft_.HP() );
+			aircraft_.AddHP( MF_PLAYER_START_HP - aircraft_.HP() );
 			aircraft_.AddRockets( MF_START_ROCKET_COUNT - aircraft_.RocketsCount() );
 
 			static const float start_axis[]= { 1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 1.0f };

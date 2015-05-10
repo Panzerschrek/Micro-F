@@ -27,6 +27,9 @@ public:
 	void Draw();
 	void Resize();
 
+	void Win( int score, float time );
+	void Loose();
+
 	enum MenuMode
 	{
 		MainMenu,
@@ -120,6 +123,9 @@ private:
 	mf_MainLoop* main_loop_;
 	mf_Text* text_;
 	mf_Player* player_;
+
+	int score_;
+	float game_time_;
 
 	unsigned int seed_digits_[ MF_SEED_DIGITS ];
 

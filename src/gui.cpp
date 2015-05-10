@@ -102,10 +102,17 @@ void IntToStr( int i, char* str, int digits )
 	}
 }
 
+void TimeToStr( float time, char* str )
+{
+	int time_sec= int( mf_Math::round(time) );
+	sprintf( str, "%d:%d", time_sec/60, time_sec % 60 );
+}
+
 mf_Gui::mf_Gui( mf_Text* text, mf_Player* player )
 	: main_loop_(mf_MainLoop::Instance())
 	, text_(text)
 	, player_(player)
+	, score_(0), game_time_(0.0f)
 	, current_menu_(NULL)
 {
 	for( unsigned int i= 0; i< MF_SEED_DIGITS; i++ )
@@ -224,9 +231,7 @@ mf_Gui::mf_Gui( mf_Text* text, mf_Player* player )
 	}
 
 	PrepareMenus();
-
 	current_menu_= &menus_[ MainMenu ];
-	//OnPlayButton(); // hack for fast development
 }
 
 mf_Gui::~mf_Gui()
@@ -339,6 +344,14 @@ void mf_Gui::Resize()
 	PrepareMenus();
 }
 
+void mf_Gui::Win( int score, float time )
+{
+	score_= score;
+	game_time_= time;
+
+	current_menu_= &menus_[ WinMenu ];
+}
+
 void mf_Gui::PrepareMenus()
 {
 	const char* const c_title_text= "Micro-F";
@@ -360,6 +373,11 @@ void mf_Gui::PrepareMenus()
 	const char* const c_button_select_text= " select ";
 
 	const char* const c_seed_text= " seed ";
+
+	const char* const c_win_text= "YOU WIN!";
+	const char* const c_score_text= "score:";
+	const char* const c_time_text= "time:";
+	const char* const c_replay_button_text= " replay ";
 
 	const unsigned int cell_size[2]= { MF_LETTER_WIDTH, MF_LETTER_HEIGHT };
 	const unsigned int border_size= 1;
@@ -726,6 +744,7 @@ void mf_Gui::PrepareMenus()
 	menu= &menus_[ CreditsMenu ];
 	menu->button_count= 0;
 	menu->text_count= 0;
+	menu->has_backgound= true;
 
 	const char* const c_author_name= "Art\x7Fm \"Panzerschrek\" Kunz";
 	const char* const c_credits_title= " CREDITS ";
@@ -784,6 +803,88 @@ void mf_Gui::PrepareMenus()
 	button->callback= &mf_Gui::OnSettingsBackButton;
 	button->user_data= 0;
 	menu->button_count++;
+
+	/*
+	WIN MENU
+	*/
+	menu= &menus_[ WinMenu ];
+	menu->button_count= 0;
+	menu->text_count= 0;
+	menu->has_backgound= true;
+
+	unsigned int win_menu_begin_row= screen_size_cl[1]/2 - sizeof(c_credits_strings) / sizeof(char*) * 2 / 2;
+	
+	text= &menu->texts[0];
+	strcpy( text->text, c_win_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_win_text) / 2;
+	text->row= win_menu_begin_row;
+	COLOR_CPY( text->color, text_color );
+
+	// Score text
+	text= &menu->texts[1];
+	strcpy( text->text, c_score_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_score_text);
+	text->row= win_menu_begin_row + 3;
+	COLOR_CPY( text->color, text_color );
+	// Score value text
+	text= &menu->texts[2];
+	sprintf( text->text, "%d", score_ );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 + 2;
+	text->row= win_menu_begin_row + 3;
+	COLOR_CPY( text->color, text_color );
+
+	// Time text
+	text= &menu->texts[3];
+	strcpy( text->text, c_time_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_time_text);
+	text->row= win_menu_begin_row + 6;
+	COLOR_CPY( text->color, text_color );
+	// Time value text
+	text= &menu->texts[4];
+	TimeToStr( game_time_, text->text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 + 2;
+	text->row= win_menu_begin_row + 6;
+	COLOR_CPY( text->color, text_color );
+
+	menu->text_count+= 5;
+
+	// Replay button text
+	text= &menu->buttons[0].text;
+	strcpy( text->text, c_replay_button_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_replay_button_text) / 2;
+	text->row= win_menu_begin_row + 9;
+	COLOR_CPY( text->color, text_color );
+	// Replay button
+	button= &menu->buttons[0];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * strlen(c_replay_button_text) - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnPlayButton;
+	menu->button_count++;
+
+	// Quin button text
+	text= &menu->buttons[1].text;
+	strcpy( text->text, c_quit_button_text );
+	text->size= 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_quit_button_text) / 2;
+	text->row= win_menu_begin_row + 12;
+	COLOR_CPY( text->color, text_color );
+	// Quit button
+	button= &menu->buttons[1];
+	button->x= text->colomn * cell_size[0] + border_size;
+	button->y= text->row * cell_size[1] + border_size;
+	button->width=  text->size * cell_size[0] * strlen(c_quit_button_text) - border_size;
+	button->height= text->size * cell_size[1] - border_size;
+	button->callback= &mf_Gui::OnQuitButton;
+	menu->button_count++;
+
 
 	/*
 	INGAME MENU

@@ -34,6 +34,7 @@ public:
 
 	void Play( const mf_Settings* settings );
 	void StartGame();
+	void Win( float game_time );
 	void Quit();
 
 private:
@@ -103,7 +104,6 @@ private:
 		ModeCredits
 
 	} mode_;
-
 };
 
 inline float mf_MainLoop::CurrentTime() const

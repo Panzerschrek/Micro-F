@@ -179,17 +179,21 @@ void mf_MainLoop::DrawLoadingFrame( const char* text )
 
 void mf_MainLoop::Play( const mf_Settings* settings )
 {
-	game_logic_= new mf_GameLogic( &player_, settings->seed );
-
+	if( game_logic_ == NULL )
+	{
+		game_logic_= new mf_GameLogic( &player_, settings->seed );
+		renderer_= new mf_Renderer( &player_, game_logic_, text_, settings );
+	}
 	mode_= ModeChooseAircraft;
-	renderer_= new mf_Renderer( &player_, game_logic_, text_, settings );
-
 	mf_Aircraft* aircraft= player_.GetAircraft();
 	float pos[3];
 	pos[0]= game_logic_->GetLevel()->TerrainSizeX() * game_logic_->GetLevel()->TerrainCellSize() * 0.5f;
 	pos[1]= 128.0f;
 	pos[2]= game_logic_->GetLevel()->TerrainAmplitude();
 	aircraft->SetPos( pos );
+	player_.SetViewMode( mf_Player::ViewThirdperson );
+
+	prev_game_tick_= 0;
 }
 
 void mf_MainLoop::StartGame()
@@ -198,6 +202,18 @@ void mf_MainLoop::StartGame()
 	game_logic_->StartGame();
 	music_engine_->Stop();
 	mode_= ModeGame;
+}
+
+void mf_MainLoop::Win( float game_time )
+{
+	gui_->Win( player_.Score(), game_time );
+	mode_= ModeGameEnd;
+	game_logic_->StopGame();
+	player_.AddScorePoints( - player_.Score() );
+	player_.AddLifes( 3 - player_.Lifes() );
+	player_.GetAircraft()->AddRockets( 3 - player_.GetAircraft()->RocketsCount() );
+	player_.GetAircraft()->AddHP( MF_PLAYER_START_HP - player_.GetAircraft()->HP() );
+	player_.SetControlMode( mf_Player::ModeChooseAircraftType );
 }
 
 mf_MainLoop::mf_MainLoop(
@@ -427,7 +443,9 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 		case KEY('E'):
 			instance->player_.RotateAnticlockwiseReleased(); break;
 		case VK_F1:
-			instance->player_.ToggleViewMode(); break;
+			if( !instance->player_.IsInRespawn() && instance->game_logic_ != NULL && instance->game_logic_->GameStarted() )
+				instance->player_.ToggleViewMode();
+			break;
 		default:
 			break;
 		}

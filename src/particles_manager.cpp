@@ -287,6 +287,11 @@ void mf_ParticlesManager::PrepareParticlesVertices( mf_ParticleVertex* out_verti
 	}
 }
 
+void mf_ParticlesManager::KillAllParticles()
+{
+	particle_count_= 0;
+}
+
 void mf_ParticlesManager::AddF2XXXTrail( const mf_Aircraft* aircraft, unsigned int engine_number )
 {
 	static const float c_engines_pos[2*3]=

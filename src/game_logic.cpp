@@ -128,6 +128,27 @@ mf_GameLogic::~mf_GameLogic()
 void mf_GameLogic::StartGame()
 {
 	game_started_= true;
+	game_start_time_= mf_MainLoop::Instance()->CurrentTime();
+}
+
+void mf_GameLogic::StopGame()
+{
+	game_started_= false;
+	PlacePowerups();
+
+	mf_SoundEngine::Instance()->DestroySoundSource( player_sound_ );
+	player_sound_= NULL;
+
+	for( unsigned int i= 0; i< enemies_count_; i++ )
+	{
+		mf_SoundEngine::Instance()->DestroySoundSource( enemies_sounds_[i] );
+		delete enemies_[i];
+	}
+	enemies_count_= 0;
+	bullets_count_= 0;
+	rocket_count_= 0;
+
+	particles_manager_.KillAllParticles();
 }
 
 void mf_GameLogic::Tick( float dt )
@@ -365,12 +386,12 @@ void mf_GameLogic::Tick( float dt )
 		particles_manager_.AddRocketTrail( &rockets_[i] );
 	}
 
+	// sound
 	if( player_sound_ == NULL )
 	{
 		player_sound_= mf_SoundEngine::Instance()->CreateSoundSource( AircraftTypeToEngineSoundType( player_->GetAircraft()->GetType() ) );
 		player_sound_->Play();
 	}
-	// sound
 	for( unsigned int i= 0; i< enemies_count_ + 1; i++ )
 	{
 		mf_Aircraft* aircraft;
@@ -392,6 +413,10 @@ void mf_GameLogic::Tick( float dt )
 		source->SetPitch( ThrottleToEngineSoundPitch( aircraft->Throttle() ) );
 		source->SetVolume( volume_scaler * ThrottleToEngineSoundVolumeScaler( aircraft->Throttle() ) );
 	}
+	
+	// check win/loose
+	if( player_->Score() > 0 )
+		mf_MainLoop::Instance()->Win( mf_MainLoop::Instance()->CurrentTime() - game_start_time_ );
 }
 
 void mf_GameLogic::ShotBegin( mf_Aircraft* aircraft )

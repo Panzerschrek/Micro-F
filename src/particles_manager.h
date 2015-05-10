@@ -46,6 +46,8 @@ public:
 
 	unsigned int GetParticlesCount() const;
 	void PrepareParticlesVertices( mf_ParticleVertex* out_vertices ) const;
+	void KillAllParticles();
+
 private:
 
 	void AddF2XXXTrail( const mf_Aircraft* aircraft, unsigned int engine_number );

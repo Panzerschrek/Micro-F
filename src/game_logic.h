@@ -70,6 +70,7 @@ public:
 	~mf_GameLogic();
 
 	void StartGame();
+	void StopGame();
 	bool GameStarted() const;
 
 	void Tick( float dt );
@@ -99,6 +100,7 @@ private:
 	mf_Player* player_;
 
 	bool game_started_;
+	float game_start_time_;
 
 	mf_Rand randomizer_;
 

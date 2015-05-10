@@ -4,6 +4,8 @@
 #include "autopilot.h"
 #include "game_logic.h"
 
+#define MF_PLAYER_START_HP 1000
+
 class mf_Player
 {
 public:
@@ -55,8 +57,8 @@ public:
 	void ChoosePreviousAircraft();
 	void ChoseAircraft();
 
-	unsigned int Score() const;
-	void AddScorePoints( unsigned int points );
+	int Score() const;
+	void AddScorePoints( int points );
 	void ResetScore();
 
 	void AddLifes( int count );
@@ -134,7 +136,7 @@ private:
 	bool rotate_up_pressed_, rotate_down_pressed_, rotate_left_pressed_, rotate_right_pressed_;
 	bool rotate_clockwise_pressed_, rotate_anticlockwise_pressed_;
 
-	unsigned int score_;
+	int score_;
 
 	mf_Aircraft* enemies_aircrafts_[ MF_MAX_ENEMIES ];
 	unsigned int enemies_count_;
@@ -162,12 +164,12 @@ inline mf_Aircraft* mf_Player::GetAircraft()
 	return &aircraft_;
 }
 
-inline unsigned int mf_Player::Score() const
+inline int mf_Player::Score() const
 {
 	return score_;
 }
 
-inline void mf_Player::AddScorePoints( unsigned int points )
+inline void mf_Player::AddScorePoints( int points )
 {
 	score_+= points;
 }
