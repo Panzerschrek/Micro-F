@@ -135,6 +135,10 @@ void mf_MainLoop::Loop()
 			player_.Tick( 0.0f );
 			renderer_->DrawFrame();
 		}
+		else if( mode_ == ModeGameEnd )
+		{
+			renderer_->DrawFrame();
+		}
 
 		{
 			char str[32];

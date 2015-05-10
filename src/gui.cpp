@@ -820,7 +820,7 @@ void mf_Gui::PrepareMenus()
 	menu= &menus_[ WinMenu ];
 	menu->button_count= 0;
 	menu->text_count= 0;
-	menu->has_backgound= true;
+	menu->has_backgound= false;
 
 	unsigned int win_menu_begin_row= screen_size_cl[1]/2 - sizeof(c_credits_strings) / sizeof(char*) * 2 / 2;
 	
@@ -901,7 +901,7 @@ void mf_Gui::PrepareMenus()
 	menu= &menus_[ GameOverMenu ];
 	menu->button_count= 0;
 	menu->text_count= 0;
-	menu->has_backgound= true;
+	menu->has_backgound= false;
 
 	text= &menu->texts[0];
 	strcpy( text->text, c_game_over_text );
