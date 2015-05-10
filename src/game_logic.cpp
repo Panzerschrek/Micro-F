@@ -111,7 +111,7 @@ mf_GameLogic::mf_GameLogic( mf_Player* player, unsigned int seed )
 	, particles_manager_()
 	, player_(player)
 	, randomizer_(seed)
-	, game_started_(false)
+	, game_started_(false), game_over_(false)
 	, powerup_count_(0), bullets_count_(0), rocket_count_(0), enemies_count_(0)
 	, player_sound_(NULL)
 {
@@ -362,7 +362,7 @@ void mf_GameLogic::Tick( float dt )
 	for( unsigned int i= 0; i< enemies_count_; i++ )
 		enemies_[i]->Tick(dt);
 
-	if( !player_->IsInRespawn() )
+	if( !player_->IsInRespawn() && !game_over_ )
 	{ // check player after enemies tick
 		if( player_aircraft->HP() <= MF_PLAYER_DEATH_HP_BORDER )
 			RespawnPlayer();
@@ -370,7 +370,7 @@ void mf_GameLogic::Tick( float dt )
 
 	// particels
 	particles_manager_.Tick( dt );
-	if( !player_->IsInRespawn() )
+	if( !player_->IsInRespawn() && !game_over_ )
 		particles_manager_.AddEnginesTrail( player_->GetAircraft() );
 	for( unsigned int i= 0; i< enemies_count_; i++ )
 		particles_manager_.AddEnginesTrail( enemies_[i]->GetAircraft() );
@@ -415,7 +415,12 @@ void mf_GameLogic::Tick( float dt )
 	}
 	
 	// check win/loose
-	if( player_->Score() > 0 )
+	if( game_over_ )
+	{
+		mf_MainLoop::Instance()->Loose();
+		game_over_= false;
+	}
+	else if( player_aircraft->Pos()[1] >= float(level_.TerrainSizeY()) * level_.TerrainCellSize() )
 		mf_MainLoop::Instance()->Win( mf_MainLoop::Instance()->CurrentTime() - game_start_time_ );
 }
 
@@ -585,7 +590,8 @@ void mf_GameLogic::OnAircraftHit( mf_Aircraft* aircraft, int damage )
 
 void mf_GameLogic::RespawnPlayer()
 {
-	if( player_->IsInRespawn() ) return;
+	if( player_->IsInRespawn() )
+		return;
 
 	particles_manager_.AddBlast( player_->GetAircraft()->Pos() );
 	mf_SoundEngine::Instance()->AddSingleSound( SoundBlast, MF_BLAST_SOUND_VOLUME, 1.0f, player_->GetAircraft()->Pos() );
@@ -598,5 +604,8 @@ void mf_GameLogic::RespawnPlayer()
 	pos[2]= 1.25f * level_.TerrainAmplitude();
 	pos[0]= level_.GetValleyCenterX( pos[1] );
 
-	player_->TryRespawn( pos );
+	if( player_->TryRespawn( pos ) )
+	{
+	}
+	else game_over_= true;
 }

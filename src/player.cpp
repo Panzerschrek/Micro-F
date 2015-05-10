@@ -53,14 +53,7 @@ void mf_Player::Tick( float dt )
 		if( mf_MainLoop::Instance()->CurrentTime() >= respawn_start_time_ + 4.0f )
 		{
 			lifes_--;
-			aircraft_.AddHP( MF_PLAYER_START_HP - aircraft_.HP() );
-			aircraft_.AddRockets( MF_START_ROCKET_COUNT - aircraft_.RocketsCount() );
-
-			static const float start_axis[]= { 1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 1.0f };
-			static const float start_vel[]= { 0.0f, 65.0f, 0.0f };
-			aircraft_.SetAxis( start_axis, start_axis + 3, start_axis + 6 );
-			aircraft_.SetVelocity( start_vel );
-
+			SetupInitialAircraftParams();
 			is_in_respawn_= false;
 		}
 		return;
@@ -193,6 +186,19 @@ bool mf_Player::TryRespawn( const float* pos )
 	respawn_start_time_= mf_MainLoop::Instance()->CurrentTime();
 
 	return true;
+}
+
+void mf_Player::SetupInitialAircraftParams()
+{
+	aircraft_.AddHP( MF_PLAYER_START_HP - aircraft_.HP() );
+	aircraft_.AddRockets( MF_START_ROCKET_COUNT - aircraft_.RocketsCount() );
+	aircraft_.SetThrottle( 1.0f );
+	fov_= target_fov_= MF_INITIAL_FOV;
+
+	static const float start_axis[]= { 1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f, 1.0f };
+	static const float start_vel[]= { 0.0f, 68.0f, 0.0f };
+	aircraft_.SetAxis( start_axis, start_axis + 3, start_axis + 6 );
+	aircraft_.SetVelocity( start_vel );
 }
 
 float mf_Player::GetMachinegunCircleRadius() const

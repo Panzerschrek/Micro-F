@@ -207,13 +207,13 @@ void mf_MainLoop::StartGame()
 void mf_MainLoop::Win( float game_time )
 {
 	gui_->Win( player_.Score(), game_time );
-	mode_= ModeGameEnd;
-	game_logic_->StopGame();
-	player_.AddScorePoints( - player_.Score() );
-	player_.AddLifes( 3 - player_.Lifes() );
-	player_.GetAircraft()->AddRockets( 3 - player_.GetAircraft()->RocketsCount() );
-	player_.GetAircraft()->AddHP( MF_PLAYER_START_HP - player_.GetAircraft()->HP() );
-	player_.SetControlMode( mf_Player::ModeChooseAircraftType );
+	RestartGame();
+}
+
+void mf_MainLoop::Loose()
+{
+	gui_->Loose();
+	RestartGame();
 }
 
 mf_MainLoop::mf_MainLoop(
@@ -581,6 +581,16 @@ void mf_MainLoop::Shot( unsigned int x, unsigned int y, unsigned int button )
 			game_logic_->PlayerRocketShot( dir );
 		}
 	}
+}
+
+void mf_MainLoop::RestartGame()
+{
+	mode_= ModeGameEnd;
+	game_logic_->StopGame();
+	player_.AddScorePoints( - player_.Score() );
+	player_.AddLifes( 3 - player_.Lifes() );
+	player_.SetupInitialAircraftParams();
+	player_.SetControlMode( mf_Player::ModeChooseAircraftType );
 }
 
 void mf_MainLoop::CalculateFPS()

@@ -35,6 +35,7 @@ public:
 	void Play( const mf_Settings* settings );
 	void StartGame();
 	void Win( float game_time );
+	void Loose();
 	void Quit();
 
 private:
@@ -51,6 +52,7 @@ private:
 	void FocusChange( bool focus_in );
 	void CaptureMouse();
 	void Shot( unsigned int x, unsigned int y, unsigned int button );
+	void RestartGame();
 
 	void CalculateFPS();
 

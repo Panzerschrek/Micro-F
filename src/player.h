@@ -30,6 +30,7 @@ public:
 
 	// return false, if cannot respawn
 	bool TryRespawn( const float* pos );
+	void SetupInitialAircraftParams();
 
 	const float* Pos() const;
 	const float* Angle() const;

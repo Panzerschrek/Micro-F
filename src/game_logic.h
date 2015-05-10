@@ -101,6 +101,7 @@ private:
 
 	bool game_started_;
 	float game_start_time_;
+	bool game_over_;
 
 	mf_Rand randomizer_;
 
