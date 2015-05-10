@@ -355,7 +355,8 @@ void mf_GameLogic::Tick( float dt )
 		vec_to_forcefield[1]= 0;
 		vec_to_forcefield[2]= player_aircraft->Pos()[2] - level_.ForcefieldZPos();
 		float dist_to_forcefield= Vec3Len( vec_to_forcefield );
-		if( level_.ForcefieldRadius() - MF_FORCEFIELD_DAMAGE_RADIUS < dist_to_forcefield )
+		if( level_.ForcefieldRadius() - MF_FORCEFIELD_DAMAGE_RADIUS < dist_to_forcefield
+			|| player_aircraft->Pos()[1] < MF_Y_LEVEL_BORDER )
 			player_aircraft->AddHP( -int( mf_Math::round( 800.0f * dt ) ) );
 	}
 
@@ -384,6 +385,26 @@ void mf_GameLogic::Tick( float dt )
 	{
 		particles_manager_.AddPlasmaBall( rockets_[i].pos );
 		particles_manager_.AddRocketTrail( &rockets_[i] );
+	}
+	// show finish  and start text
+	{
+		static const char* const c_finish_text= "FINISH";
+		static const char* const c_back_border_text= "DEATH";
+		static const float c_letter_pixel_size= 8.0f;
+		float pos[3];
+		pos[0]= float( level_.TerrainSizeX() / 2 ) * level_.TerrainCellSize() - float(strlen(c_finish_text) * MF_LETTER_WIDTH) * 0.5f * c_letter_pixel_size;
+		pos[1]= float(level_.TerrainSizeY()) * level_.TerrainCellSize() - MF_Y_LEVEL_BORDER;
+		pos[2]= level_.TerrainAmplitude() * 0.75f;
+
+		static const float c_x_axis[3]= { c_letter_pixel_size, 0.0f, 0.0f };
+		static const float c_x_axis_invert[3]= { -c_letter_pixel_size, 0.0f, 0.0f };
+		static const float c_y_axis[3]= { 0.0f, 0.0f, c_letter_pixel_size };
+
+		particles_manager_.AddFlashingText( pos, c_x_axis, c_y_axis, c_finish_text );
+
+		pos[0]= float( level_.TerrainSizeX() / 2 ) * level_.TerrainCellSize() + float(strlen(c_back_border_text) * MF_LETTER_WIDTH) * 0.5f * c_letter_pixel_size;
+		pos[1]= MF_Y_LEVEL_BORDER;
+		particles_manager_.AddFlashingText( pos, c_x_axis_invert, c_y_axis, c_back_border_text );
 	}
 
 	// sound
@@ -420,13 +441,12 @@ void mf_GameLogic::Tick( float dt )
 		mf_MainLoop::Instance()->Loose();
 		game_over_= false;
 	}
-	else if( player_aircraft->Pos()[1] >= float(level_.TerrainSizeY()) * level_.TerrainCellSize() )
+	else if( player_aircraft->Pos()[1] >= float(level_.TerrainSizeY()) * level_.TerrainCellSize() - MF_Y_LEVEL_BORDER )
 		mf_MainLoop::Instance()->Win( mf_MainLoop::Instance()->CurrentTime() - game_start_time_ );
 }
 
 void mf_GameLogic::ShotBegin( mf_Aircraft* aircraft )
 {
-	//player_last_shot_time_= mf_MainLoop::Instance()->CurrentTime();
 	aircraft->MachinegunShot( mf_MainLoop::Instance()->CurrentTime() );
 }
 
@@ -438,7 +458,6 @@ void mf_GameLogic::ShotContinue( mf_Aircraft* aircraft, float* dir, bool first_s
 	if( dt * c_machinegun_freq >= 1.0f || first_shot )
 	{
 		float unused;
-		//player_last_shot_time_= mf_MainLoop::Instance()->CurrentTime() - modf( dt * c_machinegun_freq, &unused ) / c_machinegun_freq;
 		aircraft->MachinegunShot( mf_MainLoop::Instance()->CurrentTime() - modf( dt * c_machinegun_freq, &unused ) / c_machinegun_freq );
 
 		mf_Bullet::Type bullet_type;
@@ -601,6 +620,7 @@ void mf_GameLogic::RespawnPlayer()
 
 	float pos[3];
 	pos[1]= player_->GetAircraft()->Pos()[1] - 64.0f;
+	if( pos[1] < MF_Y_LEVEL_BORDER ) pos[1]= MF_Y_LEVEL_BORDER;
 	pos[2]= 1.25f * level_.TerrainAmplitude();
 	pos[0]= level_.GetValleyCenterX( pos[1] );
 

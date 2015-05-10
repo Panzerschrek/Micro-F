@@ -43,6 +43,7 @@ public:
 	void AddPowerupGlow( const float* pos, float glow_factor /* in range 0 - 1*/ );
 	void AddPlasmaBall( const float* pos );
 	void AddRocketTrail( const mf_Rocket* bullet );
+	void AddFlashingText( const float* pos, const float* x_dir, const float* y_dir, const char* text );
 
 	unsigned int GetParticlesCount() const;
 	void PrepareParticlesVertices( mf_ParticleVertex* out_vertices ) const;
@@ -62,6 +63,7 @@ private:
 			PlasmaBall,
 			PlasmaBallTrail,
 			BlastFire,
+			TextPixel,
 			LastType
 		};
 		Type type;

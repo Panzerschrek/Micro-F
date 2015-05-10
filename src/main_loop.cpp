@@ -188,7 +188,7 @@ void mf_MainLoop::Play( const mf_Settings* settings )
 	mf_Aircraft* aircraft= player_.GetAircraft();
 	float pos[3];
 	pos[0]= game_logic_->GetLevel()->TerrainSizeX() * game_logic_->GetLevel()->TerrainCellSize() * 0.5f;
-	pos[1]= 128.0f;
+	pos[1]= MF_Y_LEVEL_BORDER;
 	pos[2]= game_logic_->GetLevel()->TerrainAmplitude();
 	aircraft->SetPos( pos );
 	player_.SetViewMode( mf_Player::ViewThirdperson );
@@ -314,7 +314,7 @@ mf_MainLoop::mf_MainLoop(
 
 	sound_engine_= new mf_SoundEngine(hwnd_);
 	music_engine_= new mf_MusicEngine();
-	music_engine_->Play( mf_MusicEngine::MelodyAviatorsMarch );
+	//music_engine_->Play( mf_MusicEngine::MelodyAviatorsMarch );
 
 	text_= new mf_Text();
 	gui_ = new mf_Gui( text_, &player_ );

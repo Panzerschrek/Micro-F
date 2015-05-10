@@ -13,6 +13,8 @@ class mf_SoundSource;
 #define MF_MAX_ROCKETS 128
 #define MF_MAX_ENEMIES 32
 
+#define MF_Y_LEVEL_BORDER 512.0f
+
 struct mf_Powerup
 {
 	enum Type

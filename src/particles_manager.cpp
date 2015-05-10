@@ -3,6 +3,7 @@
 #include "textures_generation.h"
 #include "aircraft.h"
 #include "game_logic.h"
+#include "text.h"
 
 #define MF_SMOKE_MAX_LIFETIME 7.0f
 #define MF_PLASMA_ENGINE_PARTICLE_LIFETIME 0.5f
@@ -203,6 +204,40 @@ void mf_ParticlesManager::AddRocketTrail( const mf_Rocket* rocket )
 	particle_count_+= particle_count;
 }
 
+void mf_ParticlesManager::AddFlashingText( const float* pos, const float* x_dir, const float* y_dir, const char* text )
+{
+	unsigned int text_length= strlen(text);
+	const unsigned char* font_data= mf_Text::font_data_;
+
+	Particle* particle= particles_ + particle_count_;
+	for( unsigned int c= 0; c< text_length; c++ )
+	{
+		for( unsigned int y= 0; y< MF_LETTER_HEIGHT; y++ )
+			for( unsigned int x= 0; x< MF_LETTER_WIDTH; x++ )
+			{
+				if( font_data[ x + MF_LETTER_WIDTH * (text[c]-32) + y * MF_FONT_BITMAP_WIDTH ] != 0 )
+				{
+					float x_component[3];
+					float y_component[3];
+					Vec3Mul( x_dir, float(x + c * MF_LETTER_WIDTH), x_component );
+					Vec3Mul( y_dir, float(y), y_component );
+					Vec3Add( x_component, y_component, particle->pos );
+					Vec3Add( particle->pos, pos );
+					
+					particle->type= Particle::TextPixel;
+					particle->direction[0]= particle->direction[1]= particle->direction[2]= 0.0f;
+					particle->velocity= 0.0f; particle->acceleration= 0.0f;
+					particle->life_time= 0.0f;
+					particle->spawn_time= current_tick_time_;
+
+					particle++;
+					particle_count_++;
+				}
+			}
+	} // for chars
+}
+
+
 void mf_ParticlesManager::PrepareParticlesVertices( mf_ParticleVertex* out_vertices ) const
 {
 	const Particle* particle= particles_;
@@ -282,7 +317,17 @@ void mf_ParticlesManager::PrepareParticlesVertices( mf_ParticleVertex* out_verti
 				vertex->t_dt_lt_r[2]= TextureFire;
 			}
 			break;
-		default: break;
+		case Particle::TextPixel:
+			{
+				vertex->pos_size[3]= 4.0f;
+				vertex->luminance= 0.5f;
+
+				vertex->t_dt_lt_r[0]= 0;
+				vertex->t_dt_lt_r[1]= TextureEngineFire;
+				vertex->t_dt_lt_r[2]= TextureEngineFire;
+			}
+			break;
+		default: MF_ASSERT(false); break;
 		} // switch type
 	}
 }
