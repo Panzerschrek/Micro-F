@@ -115,8 +115,9 @@ mf_Gui::mf_Gui( mf_Text* text, mf_Player* player )
 	, score_(0), game_time_(0.0f)
 	, current_menu_(NULL)
 {
-	for( unsigned int i= 0; i< MF_SEED_DIGITS; i++ )
-		seed_digits_[i]= 0;
+	time_t current_time_since_01_jenuary_1970= time( NULL );
+	for( unsigned int i= 0; i< MF_SEED_DIGITS; i++, current_time_since_01_jenuary_1970/=10 )
+		seed_digits_[i]= current_time_since_01_jenuary_1970 %10;
 
 	cursor_pos_[0]= cursor_pos_[1]= 0;
 
