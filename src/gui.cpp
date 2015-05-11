@@ -576,7 +576,7 @@ void mf_Gui::PrepareMenus()
 	menu->text_count++;
 	// clouds button text
 	text= &menu->buttons[2].text;
-	strcpy( text->text, clouds_intensity[0] );
+	strcpy( text->text, clouds_intensity[1] );
 	text->size= 2;
 	text->colomn= screen_size_cl[0]/2;
 	text->row= 10;
@@ -588,7 +588,7 @@ void mf_Gui::PrepareMenus()
 	button->width=  text->size * cell_size[0] * c_settings_button_width - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnCloudsButton;
-	button->user_data= 0;
+	button->user_data= 1;
 	menu->button_count++;
 
 	// sky quality
