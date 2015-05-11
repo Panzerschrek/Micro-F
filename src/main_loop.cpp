@@ -78,7 +78,6 @@ void mf_MainLoop::Loop()
 			{
 				prev_game_tick_= tick;
 
-				unsigned int cursor_xy[2]= { viewport_width_ / 2, viewport_height_ / 2 };
 				if( mouse_captured_ )
 				{
 					POINT new_cursor_pos;
@@ -87,38 +86,13 @@ void mf_MainLoop::Loop()
 					player_.RotateX( float( prev_cursor_pos_.y - new_cursor_pos.y ) * mouse_speed_y_ );
 					SetCursorPos( prev_cursor_pos_.x, prev_cursor_pos_.y );
 				}
-				else if( player_.GetViewMode() == mf_Player::ViewInsideCockpit )
-				{
-					POINT new_cursor_pos;
-					GetCursorPos( &new_cursor_pos );
-					MapWindowPoints( 0, hwnd_, &new_cursor_pos, 1 );
-
-					int dx= new_cursor_pos.x - viewport_width_  / 2;
-					int dy= new_cursor_pos.y - viewport_height_ / 2;
-					float r2= float( dx * dx + dy * dy );
-					float max_r= player_.GetMachinegunCircleRadius();
-					if( r2 > max_r * max_r )
-					{
-						float k= max_r / mf_Math::sqrt(r2);
-						new_cursor_pos.x= int( float(dx) * k ) + viewport_width_  / 2;
-						new_cursor_pos.y= int( float(dy) * k ) + viewport_height_ / 2;
-
-						POINT global_point= new_cursor_pos;
-						MapWindowPoints( hwnd_, 0, &global_point, 1 );
-						SetCursorPos( global_point.x, global_point.y );
-					}
-					cursor_xy[0]= new_cursor_pos.x;
-					cursor_xy[1]= new_cursor_pos.y;
-					gui_->SetCursor( new_cursor_pos.x, new_cursor_pos.y );
-				}
-
 				player_.Tick(prev_tick_dt_);
 				game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
 
 				if( shot_button_pressed_ )
 				{
 					float dir[3];
-					player_.ScreenPointToWorldSpaceVec( cursor_xy[0], cursor_xy[1], dir );
+					player_.ScreenPointToWorldSpaceVec( viewport_width_ / 2, viewport_height_ / 2, dir );
 					game_logic_->ShotContinue( player_.GetAircraft(), dir );
 				}
 				game_logic_->Tick( prev_tick_dt_ );
@@ -206,6 +180,8 @@ void mf_MainLoop::StartGame()
 	game_logic_->StartGame();
 	music_engine_->Stop();
 	mode_= ModeGame;
+
+	CaptureMouse( true );
 }
 
 void mf_MainLoop::Win( float game_time )
@@ -383,6 +359,9 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 	case WM_SIZE:
 		instance->Resize();
 		break;
+	case WM_SETFOCUS:
+		instance->FocusChange( HWND(wParam) != instance->hwnd_ );
+		break;
 	case WM_KILLFOCUS:
 		instance->FocusChange( HWND(wParam) == instance->hwnd_ );
 		break;
@@ -419,9 +398,6 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 	case WM_KEYUP:
 		switch(wParam)
 		{
-		case KEY('M'):
-			instance->CaptureMouse();
-			break;
 		case KEY('W'):
 			instance->player_.ForwardReleased(); break;
 		case KEY('S'):
@@ -449,6 +425,9 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 		case VK_F1:
 			if( !instance->player_.IsInRespawn() && instance->game_logic_ != NULL && instance->game_logic_->GameStarted() )
 				instance->player_.ToggleViewMode();
+			break;
+		case VK_ESCAPE:
+			instance->quit_= true;
 			break;
 		default:
 			break;
@@ -546,23 +525,24 @@ void mf_MainLoop::Resize()
 void mf_MainLoop::FocusChange( bool focus_in )
 {
 	if( !focus_in )
-	{
-		if( mouse_captured_ )
-			CaptureMouse();
-	}
+		CaptureMouse( false );
+	else
+		CaptureMouse( mode_ == ModeGame );
 }
 
-void mf_MainLoop::CaptureMouse()
+void mf_MainLoop::CaptureMouse( bool need_capture )
 {
+	if( need_capture == mouse_captured_) return;
+
 	if(mouse_captured_)
 	{
-		ShowCursor(true);
 		mouse_captured_= false;
+		ShowCursor( true );
 	}
 	else
 	{
-		ShowCursor(false);
 		mouse_captured_= true;
+		ShowCursor( false );
 		GetCursorPos( &prev_cursor_pos_ );
 	}
 }
@@ -595,6 +575,8 @@ void mf_MainLoop::RestartGame()
 	player_.AddLifes( 3 - player_.Lifes() );
 	player_.SetupInitialAircraftParams();
 	player_.SetControlMode( mf_Player::ModeChooseAircraftType );
+
+	CaptureMouse( false );
 }
 
 void mf_MainLoop::CalculateFPS()

@@ -50,7 +50,7 @@ private:
 
 	void Resize();
 	void FocusChange( bool focus_in );
-	void CaptureMouse();
+	void CaptureMouse( bool need_capture );
 	void Shot( unsigned int x, unsigned int y, unsigned int button );
 	void RestartGame();
 

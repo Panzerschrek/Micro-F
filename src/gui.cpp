@@ -336,7 +336,8 @@ void mf_Gui::Draw()
 		DrawNaviballGlass();
 	}
 	DrawMenu( current_menu_ );
-	DrawCursor();
+	if( player_->GetViewMode() == mf_Player::ViewInsideCockpit )
+		DrawCursor();
 }
 
 void mf_Gui::Resize()
