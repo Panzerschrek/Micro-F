@@ -38,8 +38,9 @@ public:
 
 	void Tick( float dt );
 	void AddEnginesTrail( const mf_Aircraft* aircraft );
-	void AddBulletTerrainHit( const float* pos );
-	void AddBlast( const float* pos );
+	void AddBulletHit( const float* pos, const float* target_velocity  );
+	void AddBlast( const float* pos);
+	void AddRocketBlast( const float* pos );
 	void AddPowerupGlow( const float* pos, float glow_factor /* in range 0 - 1*/ );
 	void AddPlasmaBall( const float* pos );
 	void AddRocketTrail( const mf_Rocket* bullet );
@@ -64,6 +65,7 @@ private:
 			PlasmaBallTrail,
 			BlastFire,
 			TextPixel,
+			BulletHit,
 			LastType
 		};
 		Type type;

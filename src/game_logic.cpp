@@ -13,6 +13,7 @@
 #define MF_ROCKET_HIT_DISTANCE 10.0f
 
 #define MF_BLAST_SOUND_VOLUME 1024.0f
+#define MF_ROCKET_BLAST_SOUND_VOLUME 384.0f
 #define MF_MACHINEGUN_SHOT_VOLUME 512.0f
 
 #define MF_MAX_ALIVE_ENEMIES 2
@@ -243,10 +244,13 @@ void mf_GameLogic::Tick( float dt )
 			if( hited_target != NULL )
 			{
 				OnAircraftHit( hited_target, Tables::bullets_damage_table[ bullet->type ] );
-				particles_manager_.AddBulletTerrainHit( intersection_pos );
+				particles_manager_.AddBulletHit( intersection_pos, hited_target->Velocity() );
 			}
 			else
-				particles_manager_.AddBulletTerrainHit( intersection_pos );
+			{
+				static const float vel[3]= { 0.0001f, 0.0001f, 0.0001f };
+				particles_manager_.AddBulletHit( intersection_pos, vel );
+			}
 		}
 
 		if( is_intersection || bullet->velocity == mfInf() || IsBulletOutsideWorld(bullet->pos) )
@@ -288,16 +292,28 @@ void mf_GameLogic::Tick( float dt )
 			}
 		}
 
-		float pos_add[3];
-		Vec3Mul( rocket->dir, dt * rocket->velocity, pos_add );
-		Vec3Add( rocket->pos, pos_add );
-
 		bool is_rocket_dead= false;
+		float terrain_hit_pos[3];
+
+		if( level_.BeamIntersectTerrain( rocket->pos, rocket->dir, dt * rocket->velocity, false, terrain_hit_pos ) )
+		{
+			is_rocket_dead= true;
+			particles_manager_.AddRocketBlast( terrain_hit_pos );
+			mf_SoundEngine::Instance()->AddSingleSound( SoundBlast, MF_ROCKET_BLAST_SOUND_VOLUME, 1.0f, terrain_hit_pos );
+		}
+		else
+		{
+			float pos_add[3];
+			Vec3Mul( rocket->dir, dt * rocket->velocity, pos_add );
+			Vec3Add( rocket->pos, pos_add );
+		}
+
 		if( rocket->target != NULL && Distance( rocket->pos, rocket->target->Pos() ) < MF_ROCKET_HIT_DISTANCE )
 		{
 			OnAircraftHit( rocket->target, Tables::rockets_damage_table[ rocket->type ] );
-			particles_manager_.AddBulletTerrainHit( rocket->pos );
 			is_rocket_dead= true;
+			particles_manager_.AddRocketBlast( rocket->pos );
+			mf_SoundEngine::Instance()->AddSingleSound( SoundBlast, MF_ROCKET_BLAST_SOUND_VOLUME, 1.0f, rocket->pos );
 		}
 
 		if( is_rocket_dead || current_time > rocket->spawn_time + MF_ROCKET_LIFETIME )
