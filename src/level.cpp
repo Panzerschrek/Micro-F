@@ -65,8 +65,8 @@ static unsigned short FinalNoise( unsigned int x, unsigned int y, int seed )
 mf_Level::mf_Level( unsigned int seed )
 	: seed_(seed)
 {
-	terrain_size_[0]= 768 * 3/2; // 1536
-	terrain_size_[1]= 2048; // 8192
+	terrain_size_[0]= 1280;
+	terrain_size_[1]= 8192;
 	terrain_amplitude_= 144.0f * 1.3f;
 	terrain_cell_size_= 2.0f;
 	terrain_water_level_= terrain_amplitude_ / 9.0f;

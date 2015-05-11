@@ -547,14 +547,33 @@ void mf_GameLogic::PlayerRocketShot( const float* dir )
 
 void mf_GameLogic::PlacePowerups()
 {
-	static const float c_stars_step_range[2]= { 128.0f, 256.0f };
-
 	powerup_count_= 0;
+
+	static const float c_stars_step_range[2]= { 128.0f, 256.0f };
+	static const unsigned int c_powerup_place_chance[ mf_Powerup::LastType ]=
+		{ 10, 15, 7, 3 };
+	unsigned int c_chance_sum= 0;
+	for( unsigned int i= 0 ; i< mf_Powerup::LastType; i++ )
+		c_chance_sum+= c_powerup_place_chance[i];
 
 	float y= 32.0f;
 	while( y < level_.TerrainSizeY() * level_.TerrainCellSize() )
 	{
-		mf_Powerup::Type type= mf_Powerup::Type( randomizer_.Rand() % mf_Powerup::LastType );
+		// select type
+		mf_Powerup::Type type= mf_Powerup::LastType;
+		unsigned int rand_val= randomizer_.Rand() % c_chance_sum;
+		unsigned int prev_sum= 0;
+		for( unsigned int i= 0; i< mf_Powerup::LastType; i++ )
+		{
+			if( rand_val >= prev_sum && rand_val < prev_sum + c_powerup_place_chance[i] )
+			{
+				type= mf_Powerup::Type(i);
+				break;
+			}
+			prev_sum+= c_powerup_place_chance[i];
+		}
+		MF_ASSERT( type != mf_Powerup::LastType );
+
 		powerups_[powerup_count_].type= type;
 		powerups_[powerup_count_].stars_bonus= PowerupsTables::stars_bonus_table[type];
 		powerups_[powerup_count_].health_bonus= PowerupsTables::health_bonus_table[type];
