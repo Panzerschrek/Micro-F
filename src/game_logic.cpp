@@ -143,6 +143,8 @@ void mf_GameLogic::StopGame()
 	for( unsigned int i= 0; i< enemies_count_; i++ )
 	{
 		mf_SoundEngine::Instance()->DestroySoundSource( enemies_sounds_[i] );
+		player_->RemoveEnemyAircraft( enemies_[i]->GetAircraft() );
+		player_->SetTargetAircraft( NULL );
 		delete enemies_[i];
 	}
 	enemies_count_= 0;
