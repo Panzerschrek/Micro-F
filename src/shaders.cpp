@@ -327,6 +327,7 @@ const char* const aircrafts_stencil_shadow_shader_v=
 
 const char* const aircrafts_stencil_shadow_shader_g=
 "#version 330\n"
+"#extension GL_ARB_gpu_shader5 : require\n"
 "layout(triangles,invocations=1)in;"
 "layout(triangle_strip,max_vertices=24)out;"
 "uniform mat4 mat;"
