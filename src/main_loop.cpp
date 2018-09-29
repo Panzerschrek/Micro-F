@@ -1,8 +1,12 @@
-#include <new.h>
+#include <new>
 
 #include "micro-f.h"
 #include "main_loop.h"
+#ifdef MF_PLATFORM_WIN
 #include "sound_engine.h"
+#else
+#include "sound_engine_sdl.h"
+#endif
 #include "music_engine.h"
 #include "game_logic.h"
 #include "gui.h"

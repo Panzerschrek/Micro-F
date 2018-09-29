@@ -1,3 +1,4 @@
+#include <cstring>
 #include "micro-f.h"
 #include "main_loop.h"
 #include "mf_math.h"

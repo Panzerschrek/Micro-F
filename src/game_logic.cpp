@@ -2,7 +2,11 @@
 #include "micro-f.h"
 #include "game_logic.h"
 #include "main_loop.h"
+#ifdef MF_PLATFORM_WIN
 #include "sound_engine.h"
+#else
+#include "sound_engine_sdl.h"
+#endif
 #include "../models/models.h"
 
 #include "player.h"

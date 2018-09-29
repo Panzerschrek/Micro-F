@@ -1,3 +1,4 @@
+#include <cstring>
 #include "micro-f.h"
 #include "models_generation.h"
 

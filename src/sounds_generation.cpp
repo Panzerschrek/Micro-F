@@ -1,5 +1,9 @@
 #include "sounds_generation.h"
+#ifdef MF_PLATFORM_WIN
 #include "sound_engine.h"
+#else
+#include "sound_engine_sdl.h"
+#endif
 
 #include "mf_math.h"
 

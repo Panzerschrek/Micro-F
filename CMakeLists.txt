@@ -22,7 +22,7 @@ set( HEADERS
 	src/renderer.h
 	src/settings.h
 	src/shaders.h
-	src/sound_engine.h
+	src/sound_engine_sdl.h
 	src/sounds_generation.h
 	src/text.h
 	src/texture.h
@@ -46,7 +46,7 @@ set( SOURCES
 	src/player.cpp
 	src/renderer.cpp
 	src/shaders.cpp
-	src/sound_engine.cpp
+	src/sound_engine_sdl.cpp
 	src/sounds_generation.cpp
 	src/text.cpp
 	src/texture.cpp
@@ -55,3 +55,9 @@ set( SOURCES
 )
 
 add_executable( MicroF ${SOURCES} ${HEADERS} )
+
+if( WIN32 )
+	target_compile_definitions( MicroF PRIVATE MF_PLATFORM_WIN )
+else()
+	target_compile_definitions( MicroF PRIVATE MF_PLATFORM_SDL )
+endif()

@@ -4,12 +4,17 @@
 #include <math.h>
 #include <time.h>
 
+#ifdef MF_PLATFORM_WIN
 #include <windows.h>
 #include <mmsystem.h>
+#else
+#endif
 
-#include <Gl/gl.h>
+#include <GL/gl.h>
 #include "gl/glcorearb.h"
+#ifdef MF_PLATFORM_WIN
 #include "gl/wglext.h"
+#endif
 #include "gl/func_declarations.h"
 
 #ifdef MF_DEBUG
