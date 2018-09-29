@@ -17,8 +17,8 @@
 
 #define WINDOW_CLASS "Micro-F"
 #define WINDOW_NAME "Micro-F"
-#define OGL_VERSION_MAJOR 3
-#define OGL_VERSION_MINOR 3
+#define OGL_VERSION_MAJOR 4
+#define OGL_VERSION_MINOR 2
 #define KEY(x) (65 + x - 'A' )
 
 void* mfGetGLFuncAddress( const char* addr )
@@ -333,7 +333,7 @@ mf_MainLoop::mf_MainLoop(
 			WINDOW_NAME,
 			SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			viewport_width_, viewport_height_,
-			SDL_WINDOW_OPENGL | ( fullscreen_ ? SDL_WINDOW_FULLSCREEN : 0 ) | SDL_WINDOW_SHOWN );
+			SDL_WINDOW_OPENGL | ( fullscreen_ ? SDL_WINDOW_FULLSCREEN : 0 ) | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE );
 
 	gl_context_= SDL_GL_CreateContext( window_ );
 #endif
@@ -541,6 +541,8 @@ void mf_MainLoop::ProcessEvents()
 		case SDL_WINDOWEVENT:
 			if( event.window.event == SDL_WINDOWEVENT_CLOSE )
 				instance->quit_= true;
+			else if( event.window.event == SDL_WINDOWEVENT_RESIZED )
+				instance->Resize();
 			break;
 
 		case SDL_QUIT:
@@ -713,6 +715,17 @@ void mf_MainLoop::Resize()
 		if(gui_)
 			gui_->Resize();
 	}
+#else
+	int w, h;
+	SDL_GetWindowSize( window_, &w, &h );
+	viewport_width_= w;
+	viewport_height_= h;
+
+	glViewport( 0, 0, viewport_width_, viewport_height_ );
+	if(renderer_)
+		renderer_->Resize();
+	if(gui_)
+		gui_->Resize();
 #endif
 }
 
@@ -779,6 +792,7 @@ void mf_MainLoop::RestartGame()
 
 void mf_MainLoop::CalculateFPS()
 {
+#ifdef MF_PLATFORM_WIN
 	const unsigned int fps_calc_interval_ticks= CLOCKS_PER_SEC * 3 / 4;
 
 	fps_calc_.current_calc_frame_count++;
@@ -792,4 +806,19 @@ void mf_MainLoop::CalculateFPS()
 
 		fps_calc_.prev_calc_time= current_time;
 	}
+#else
+	const unsigned int fps_calc_interval_ticks= 1000 * 3 / 4;
+
+	fps_calc_.current_calc_frame_count++;
+
+	unsigned int current_time= SDL_GetTicks();
+	unsigned int dt= current_time - fps_calc_.prev_calc_time;
+	if( dt >= fps_calc_interval_ticks )
+	{
+		fps_calc_.frame_count_to_show= fps_calc_.current_calc_frame_count * 1000 / fps_calc_interval_ticks;
+		fps_calc_.current_calc_frame_count= 0;
+
+		fps_calc_.prev_calc_time= current_time;
+	}
+#endif
 }
