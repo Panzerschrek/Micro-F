@@ -396,6 +396,10 @@ mf_MainLoop::~mf_MainLoop()
 	DestroyWindow(hwnd_);
 
 	UnregisterClass( WINDOW_CLASS, 0 );
+#else
+	SDL_GL_DeleteContext( gl_context_ );
+	SDL_DestroyWindow( window_ );
+	SDL_QuitSubSystem( SDL_INIT_VIDEO );
 #endif
 }
 
