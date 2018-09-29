@@ -22,6 +22,7 @@ public:
 private:
 	bool is_playing_;
 	char tmp_file_name_[512];
+#ifdef MF_PLATFORM_WIN
 	MCI_OPEN_PARMS mci_open_params_;
-
+#endif
 };

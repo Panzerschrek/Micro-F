@@ -1,3 +1,4 @@
+#include <cstring>
 #include "micro-f.h"
 #include "particles_manager.h"
 #include "textures_generation.h"

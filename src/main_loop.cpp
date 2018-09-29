@@ -1,3 +1,4 @@
+#include <cstring>
 #include <new>
 
 #include "micro-f.h"
@@ -22,7 +23,11 @@
 
 void* mfGetGLFuncAddress( const char* addr )
 {
+#ifdef MF_PLATFORM_WIN
 	return wglGetProcAddress( addr );
+#else
+	return nullptr;
+#endif
 }
 
 mf_MainLoop* main_loop_instance= NULL;
@@ -64,12 +69,14 @@ void mf_MainLoop::Loop()
 {
 	while(!quit_)
 	{
+	#ifdef MF_PLATFORM_WIN
 		MSG msg;
 		while ( PeekMessage(&msg,NULL,0,0,PM_REMOVE) )
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+	#endif
 
 		text_->SetViewport( viewport_width_, viewport_height_ );
 
@@ -84,11 +91,13 @@ void mf_MainLoop::Loop()
 
 				if( mouse_captured_ )
 				{
+				#ifdef MF_PLATFORM_WIN
 					POINT new_cursor_pos;
 					GetCursorPos(&new_cursor_pos);
 					player_.RotateZ( float( prev_cursor_pos_.x - new_cursor_pos.x ) * mouse_speed_x_ );
 					player_.RotateX( float( prev_cursor_pos_.y - new_cursor_pos.y ) * mouse_speed_y_ );
 					SetCursorPos( prev_cursor_pos_.x, prev_cursor_pos_.y );
+				#endif
 				}
 				player_.Tick(prev_tick_dt_);
 				game_time_= float(prev_game_tick_) / float(CLOCKS_PER_SEC);
@@ -131,7 +140,10 @@ void mf_MainLoop::Loop()
 		gui_->Draw();
 		text_->Draw();
 
+		#ifdef MF_PLATFORM_WIN
 		SwapBuffers( hdc_ );
+		#endif
+
 		CalculateFPS();
 	} // while !quit
 }
@@ -156,7 +168,9 @@ void mf_MainLoop::DrawLoadingFrame( const char* text )
 		2, mf_Text::default_color, text );
 
 	text_->Draw();
+#ifdef MF_PLATFORM_WIN
 	SwapBuffers( hdc_ );
+#endif
 }
 
 void mf_MainLoop::Play( const mf_Settings* settings )
@@ -212,10 +226,14 @@ mf_MainLoop::mf_MainLoop(
 	, fullscreen_(fullscreen)
 	, vsync_(vsync)
 	, quit_(false)
-	, prev_cursor_pos_(), mouse_captured_(false), shot_button_pressed_(false)
+#ifdef MF_PLATFORM_WIN
+	, prev_cursor_pos_()
+#endif
+	, mouse_captured_(false), shot_button_pressed_(false)
 	, game_logic_(NULL), renderer_(NULL), sound_engine_(NULL), music_engine_(NULL), gui_(NULL)
 	, mode_(ModeMainMenu)
 {
+#ifdef MF_PLATFORM_WIN
 	int border_size, top_border_size, bottom_border_size;
 
 	window_class_.cbSize= sizeof(WNDCLASSEX);
@@ -295,8 +313,13 @@ mf_MainLoop::mf_MainLoop(
 		wglSwapInterval( vsync_ ? 1 : 0 );
 
 	GetGLFunctions( mfGetGLFuncAddress );
+#endif
 
+#ifdef MF_PLATFORM_WIN
 	sound_engine_= new mf_SoundEngine(hwnd_);
+#else
+	sound_engine_= new mf_SoundEngine();
+#endif
 	music_engine_= new mf_MusicEngine();
 	//music_engine_->Play( mf_MusicEngine::MelodyAviatorsMarch );
 
@@ -341,6 +364,7 @@ mf_MainLoop::~mf_MainLoop()
 	delete sound_engine_;
 	delete game_logic_;
 
+#ifdef MF_PLATFORM_WIN
 	wglMakeCurrent( NULL, NULL );
 	wglDeleteContext( hrc_ );
 
@@ -348,8 +372,10 @@ mf_MainLoop::~mf_MainLoop()
 	DestroyWindow(hwnd_);
 
 	UnregisterClass( WINDOW_CLASS, 0 );
+#endif
 }
 
+#ifdef MF_PLATFORM_WIN
 LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
 	mf_MainLoop* instance= Instance();
@@ -477,6 +503,7 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 
 	return DefWindowProc( hwnd, uMsg, wParam, lParam );
 }
+#endif
 
 void mf_MainLoop::Resize()
 {
@@ -486,6 +513,7 @@ void mf_MainLoop::Resize()
 		return;
 	}
 
+#ifdef MF_PLATFORM_WIN
 	RECT rect;
 	GetClientRect( hwnd_, &rect );
 	unsigned int new_width= rect.right;
@@ -524,6 +552,7 @@ void mf_MainLoop::Resize()
 		if(gui_)
 			gui_->Resize();
 	}
+#endif
 }
 
 void mf_MainLoop::FocusChange( bool focus_in )
@@ -537,7 +566,7 @@ void mf_MainLoop::FocusChange( bool focus_in )
 void mf_MainLoop::CaptureMouse( bool need_capture )
 {
 	if( need_capture == mouse_captured_) return;
-
+#ifdef MF_PLATFORM_WIN
 	if(mouse_captured_)
 	{
 		mouse_captured_= false;
@@ -549,6 +578,7 @@ void mf_MainLoop::CaptureMouse( bool need_capture )
 		ShowCursor( false );
 		GetCursorPos( &prev_cursor_pos_ );
 	}
+#endif
 }
 
 void mf_MainLoop::Shot( unsigned int x, unsigned int y, unsigned int button )

@@ -40,6 +40,7 @@ set( SOURCES
 	src/main.cpp
 	src/main_loop.cpp
 	src/mf_math.cpp
+	models/models.cpp
 	src/models_generation.cpp
 	src/music_engine.cpp
 	src/particles_manager.cpp
@@ -58,6 +59,10 @@ add_executable( MicroF ${SOURCES} ${HEADERS} )
 
 if( WIN32 )
 	target_compile_definitions( MicroF PRIVATE MF_PLATFORM_WIN )
+
+	target_link_libraries( MicroF opengl32 )
 else()
 	target_compile_definitions( MicroF PRIVATE MF_PLATFORM_SDL )
+
+	target_link_libraries( MicroF GL )
 endif()

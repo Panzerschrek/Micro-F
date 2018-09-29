@@ -46,7 +46,9 @@ private:
 		float mouse_speed_x, float mouse_speed_y );
 	~mf_MainLoop();
 
+#ifdef MF_PLATFORM_WIN
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+#endif
 
 	void Resize();
 	void FocusChange( bool focus_in );
@@ -65,12 +67,14 @@ private:
 	bool vsync_;
 	bool quit_;
 
+#ifdef MF_PLATFORM_WIN
 	HWND hwnd_;
 	HDC hdc_;
 	HGLRC hrc_;
 	WNDCLASSEX window_class_;
 
 	POINT prev_cursor_pos_;
+#endif
 	bool mouse_captured_;
 	bool shot_button_pressed_;
 

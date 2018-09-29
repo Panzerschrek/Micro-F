@@ -1,3 +1,4 @@
+#include <cstring>
 #include "micro-f.h"
 #include "texture.h"
 
@@ -134,12 +135,14 @@ void mf_Texture::PoissonDiskPoints( unsigned int min_distanse_div_sqrt2, unsigne
 					}
 				}
 			
-			int* cell= &grid[ (grid_pos[0] + grid_pos[1] * grid_size[0]) * 2 ];
-			MF_ASSERT( cell[0] == -1 );
-			cell[0]= pos[0];
-			cell[1]= pos[1];
-			MF_ASSERT( processing_stack_pos < max_point_count );
-			processing_stack[ processing_stack_pos++ ]= cell;
+			{
+				int* cell= &grid[ (grid_pos[0] + grid_pos[1] * grid_size[0]) * 2 ];
+				MF_ASSERT( cell[0] == -1 );
+				cell[0]= pos[0];
+				cell[1]= pos[1];
+				MF_ASSERT( processing_stack_pos < max_point_count );
+				processing_stack[ processing_stack_pos++ ]= cell;
+			}
 
 			xy_loop_break:;
 		} // try place points near

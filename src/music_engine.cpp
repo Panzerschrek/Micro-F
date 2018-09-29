@@ -25,9 +25,11 @@ static const unsigned int melodies_size[ mf_MusicEngine::LastMelody ]=
 mf_MusicEngine::mf_MusicEngine()
 	: is_playing_(false)
 {
+#ifdef MF_PLATFORM_WIN
 	char tmp[512]= "";
 	GetEnvironmentVariable( "TEMP", tmp, sizeof(tmp) );
 	sprintf( tmp_file_name_, "%s%s%s", tmp, "/", "sound_tmp.midi" );
+#endif
 }
 
 mf_MusicEngine::~mf_MusicEngine()
@@ -36,6 +38,7 @@ mf_MusicEngine::~mf_MusicEngine()
 
 void mf_MusicEngine::Play( Melody melody )
 {
+#ifdef MF_PLATFORM_WIN
 	FILE* f= fopen( tmp_file_name_, "wb" );
 	if( f == NULL ) return;
 	fwrite( melodies_data[melody], melodies_size[melody], 1, f );
@@ -48,26 +51,33 @@ void mf_MusicEngine::Play( Melody melody )
 	mciSendCommand( mci_open_params_.wDeviceID, MCI_PLAY, MCI_NOTIFY, (DWORD)&mci_open_params_ );
 
 	is_playing_= true;
+#endif
 }
 
 void mf_MusicEngine::Stop()
 {
+#ifdef MF_PLATFORM_WIN
 	if( !is_playing_ ) return;
 	mciSendCommand( mci_open_params_.wDeviceID, MCI_STOP, MCI_NOTIFY, (DWORD)&mci_open_params_ );
 	mciSendCommand( mci_open_params_.wDeviceID, MCI_CLOSE, 0, (DWORD)(LPVOID)&mci_open_params_ );
 
 	DeleteFile( tmp_file_name_ );
 	is_playing_= false;
+#endif
 }
 
 void mf_MusicEngine::Pause()
 {
+#ifdef MF_PLATFORM_WIN
 	if( !is_playing_ ) return;
 	mciSendCommand( mci_open_params_.wDeviceID, MCI_PAUSE, 0, (DWORD)(LPVOID)&mci_open_params_ );
+#endif
 }
 
 void mf_MusicEngine::Continue()
 {
+#ifdef MF_PLATFORM_WIN
 	if( !is_playing_ ) return;
 	mciSendCommand( mci_open_params_.wDeviceID, MCI_PLAY, 0, (DWORD)(LPVOID)&mci_open_params_ );
+#endif
 }

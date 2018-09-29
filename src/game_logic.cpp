@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstring>
 #include "micro-f.h"
 #include "game_logic.h"
@@ -291,7 +292,7 @@ void mf_GameLogic::Tick( float dt )
 				Vec3Cross( vec_to_target, rocket->dir, rotation_vec );
 				float rot_mat[16];
 				const float rotation_speed= 3.0f * MF_PI4; // radians per second
-				float d_angle= min( rotation_speed * dt, mf_Math::acos(angle_to_target_cos) );
+				float d_angle= std::min( rotation_speed * dt, mf_Math::acos(angle_to_target_cos) );
 				Mat4RotateAroundVector( rot_mat, rotation_vec, -d_angle );
 
 				Vec3Mat4Mul( rocket->dir, rot_mat );

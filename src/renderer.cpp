@@ -1,3 +1,4 @@
+#include <cstring>
 #include "micro-f.h"
 #include "renderer.h"
 
@@ -1458,7 +1459,7 @@ void mf_Renderer::GenWaterMesh()
 	water_mesh_.quad_row_count= size_y;
 
 	bool* is_underwater_matrix= new bool[ size_x * size_y ];
-	memset( is_underwater_matrix, 0, size_x * size_y * sizeof(bool) );
+	std::memset( is_underwater_matrix, 0, size_x * size_y * sizeof(bool) );
 
 	for( unsigned int y= 0; y< level_->TerrainSizeY(); y++ )
 	{
