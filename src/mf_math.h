@@ -1,6 +1,10 @@
 #pragma once
 #include "micro-f.h"
 
+#ifdef MF_PLATFORM_SDL
+#include <cmath>
+#endif
+
 #define MF_PI   3.141592653589793238462643383279f
 #define MF_2PI  6.283185307179586476925286766559f
 #define MF_PI2  1.570796326794896619231321691639f
@@ -79,6 +83,7 @@ namespace mf_Math
 
 inline float sin( float a )
 {
+#ifdef MF_PLATFORM_WIN
 	float r;
 	__asm
 	{
@@ -87,10 +92,14 @@ inline float sin( float a )
 		fstp r
 	}
 	return r;
+#else
+	return std::sin(a);
+#endif
 }
 
 inline float cos( float a )
 {
+#ifdef MF_PLATFORM_WIN
 	float r;
 	__asm
 	{
@@ -99,10 +108,13 @@ inline float cos( float a )
 		fstp r
 	}
 	return r;
+#endif
+	return std::cos(a);
 }
 
 inline float tan( float a )
 {
+#ifdef MF_PLATFORM_WIN
 #pragma warning(push)
 #pragma warning(disable: 4725)
 	float r;
@@ -115,10 +127,14 @@ inline float tan( float a )
 	}
 	return r;
 #pragma warning(pop)
+#else
+	return std::tan(a);
+#endif
 }
 
 inline float sqrt( float a )
 {
+#ifdef MF_PLATFORM_WIN
 	float r;
 	__asm
 	{
@@ -127,10 +143,14 @@ inline float sqrt( float a )
 		fstp r
 	}
 	return r;
+#else
+	return std::sqrt(a);
+#endif
 }
 
 inline float log( float a )
 {
+#ifdef MF_PLATFORM_WIN
 	float r;
 	__asm
 	{
@@ -140,6 +160,9 @@ inline float log( float a )
 		fstp r
 	}
 	return r;
+#else
+	return std::log(a);
+#endif
 }
 
 inline float fabs( float x )
@@ -168,6 +191,7 @@ inline float sign( float a )
 
 inline float atan( float a )
 {
+#ifdef MF_PLATFORM_WIN
 	float r;
 	__asm
 	{
@@ -177,6 +201,9 @@ inline float atan( float a )
 		fstp r
 	}
 	return r;
+#else
+	return std::atan(a);
+#endif
 }
 
 inline float acos( float x )
