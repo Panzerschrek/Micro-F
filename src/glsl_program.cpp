@@ -1,3 +1,4 @@
+#include <cstring>
 #include "micro-f.h"
 #include "glsl_program.h"
 
@@ -13,7 +14,7 @@ mf_GLSLProgram::~mf_GLSLProgram()
 void mf_GLSLProgram::Create( const char* vertex_shader, const char* fragment_shader, const char* geometry_shader )
 {
 	const char* str[2]= { vertex_shader, 0 };
-	int len[2]= { strlen( vertex_shader ), 0 };
+	int len[2]= { std::strlen( vertex_shader ), 0 };
 
 	program_id_= glCreateProgram();
 
@@ -37,7 +38,7 @@ void mf_GLSLProgram::Create( const char* vertex_shader, const char* fragment_sha
 	if( fragment_shader != NULL )
 	{
 		str[0]= fragment_shader;
-		len[0]= strlen( fragment_shader );
+		len[0]= std::strlen( fragment_shader );
 
 		f_shader_= glCreateShader( GL_FRAGMENT_SHADER );
 		glShaderSource( f_shader_, 1, str, len );
@@ -56,7 +57,7 @@ void mf_GLSLProgram::Create( const char* vertex_shader, const char* fragment_sha
 	if( geometry_shader != NULL )
 	{
 		str[0]= geometry_shader;
-		len[0]= strlen( geometry_shader );
+		len[0]= std::strlen( geometry_shader );
 
 		g_shader_= glCreateShader( GL_GEOMETRY_SHADER );
 		glShaderSource( g_shader_, 1, str, len );

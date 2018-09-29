@@ -207,7 +207,7 @@ void GenForcefieldModel( mf_DrawingModel* model, float radius, float length, con
 	model->ScaleTexCoord( tc_scale_vec );
 
 	unsigned short* ind = new unsigned short[ c_partitions_left * 6 ];
-	memcpy( ind, model->GetIndexData(), c_partitions_left * 6 * sizeof(unsigned short) );
+	std::memcpy( ind, model->GetIndexData(), c_partitions_left * 6 * sizeof(unsigned short) );
 	model->SetIndexData( ind, c_partitions_left * 6 );
 }
 

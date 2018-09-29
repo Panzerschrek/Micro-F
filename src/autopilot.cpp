@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "micro-f.h"
 
 #include "autopilot.h"
@@ -49,11 +50,11 @@ void mf_Autopilot::GetControlResult( float* in_out_pitch_factor, float* in_out_y
 
 		*in_out_pitch_factor= mf_Math::clamp( -1.0f, 1.0f,
 			mf_Math::fabs(course_angle_delta) *
-			max( 0.0f, ( c_max_y_angle - 2.0f * mf_Math::fabs(y_angle_delta) ) / c_max_y_angle ) *
+			std::max( 0.0f, ( c_max_y_angle - 2.0f * mf_Math::fabs(y_angle_delta) ) / c_max_y_angle ) *
 			0.5f * 
 			mf_Math::fabs(mf_Math::sin(angle[1])) );
 
-		*in_out_pitch_factor+= mf_Math::clamp( -0.1f, 0.1f, (target_altitude_ - aircraft_->Pos()[2]) * 0.003f - aircraft_->Velocity()[2] * 0.008f ) / max( 0.1f, mf_Math::cos(angle[1]) );
+		*in_out_pitch_factor+= mf_Math::clamp( -0.1f, 0.1f, (target_altitude_ - aircraft_->Pos()[2]) * 0.003f - aircraft_->Velocity()[2] * 0.008f ) / std::max( 0.1f, mf_Math::cos(angle[1]) );
 		*in_out_pitch_factor= mf_Math::clamp( -1.0f, 1.0f, *in_out_pitch_factor );
 
 		*in_out_yaw_factor= mf_Math::clamp( -1.0f, 1.0f, -40.0f * aircraft_->AngularSpeed()[2] );

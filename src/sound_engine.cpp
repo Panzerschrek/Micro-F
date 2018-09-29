@@ -209,7 +209,7 @@ void mf_SoundEngine::GenSounds()
 			(LPDWORD)&buff_size2,
 			0 );
 
-		memcpy( buff_data1, data, sample_count * sizeof(short) );
+		std::memcpy( buff_data1, data, sample_count * sizeof(short) );
 
 		sound_buffers_[i].buffer->Unlock( buff_data1, buff_size1, NULL, 0 );
 		sound_buffers_[i].length= float(sample_count) / float(samples_per_second_);

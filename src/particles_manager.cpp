@@ -229,7 +229,7 @@ void mf_ParticlesManager::AddRocketTrail( const mf_Rocket* rocket )
 
 void mf_ParticlesManager::AddFlashingText( const float* pos, const float* x_dir, const float* y_dir, const char* text )
 {
-	unsigned int text_length= strlen(text);
+	unsigned int text_length= std::strlen(text);
 	const unsigned char* font_data= mf_Text::font_data_;
 
 	Particle* particle= particles_ + particle_count_;

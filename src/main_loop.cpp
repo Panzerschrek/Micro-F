@@ -143,11 +143,11 @@ void mf_MainLoop::DrawLoadingFrame( const char* text )
 	unsigned int center_row= viewport_height_ / ( 2 * MF_LETTER_HEIGHT ) + 1;
 
 	text_->AddText(
-		center_column - strlen(c_loading_text),
+		center_column - std::strlen(c_loading_text),
 		center_row - 3,
 		2, mf_Text::default_color, c_loading_text );
 	text_->AddText(
-		center_column - strlen(text),
+		center_column - std::strlen(text),
 		center_row,
 		2, mf_Text::default_color, text );
 

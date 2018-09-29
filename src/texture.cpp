@@ -676,7 +676,7 @@ void mf_Texture::FillTriangle( const float* xy_coords, const float* color )
 
 void mf_Texture::Copy( const mf_Texture* t )
 {
-	memcpy( data_, t->data_, ( 1<<( size_log2_[0] + size_log2_[1] + 2 ) ) * sizeof(float) );
+	std::memcpy( data_, t->data_, ( 1<<( size_log2_[0] + size_log2_[1] + 2 ) ) * sizeof(float) );
 }
 
 void mf_Texture::CopyRect( const mf_Texture* src, unsigned int width, unsigned int height, unsigned int x_dst, unsigned int y_dst, unsigned int x_src, unsigned int y_src )
@@ -685,7 +685,7 @@ void mf_Texture::CopyRect( const mf_Texture* src, unsigned int width, unsigned i
 	{
 		const float* src_data= src->GetData() + ( x_src + ((v + y_src) << src->SizeXLog2()) ) * 4;
 		float* dst_data= data_+ ( x_dst + ((v + y_dst) << size_log2_[0]) ) * 4;
-		memcpy( dst_data, src_data, width * sizeof(float) * 4 );
+		std::memcpy( dst_data, src_data, width * sizeof(float) * 4 );
 	}
 }
 

@@ -1,3 +1,4 @@
+#include <cstring>
 #include "micro-f.h"
 #include "game_logic.h"
 #include "main_loop.h"
@@ -410,7 +411,7 @@ void mf_GameLogic::Tick( float dt )
 		static const char* const c_back_border_text= "DEATH";
 		static const float c_letter_pixel_size= 8.0f;
 		float pos[3];
-		pos[0]= float( level_.TerrainSizeX() / 2 ) * level_.TerrainCellSize() - float(strlen(c_finish_text) * MF_LETTER_WIDTH) * 0.5f * c_letter_pixel_size;
+		pos[0]= float( level_.TerrainSizeX() / 2 ) * level_.TerrainCellSize() - float(std::strlen(c_finish_text) * MF_LETTER_WIDTH) * 0.5f * c_letter_pixel_size;
 		pos[1]= float(level_.TerrainSizeY()) * level_.TerrainCellSize() - MF_Y_LEVEL_BORDER;
 		pos[2]= level_.TerrainAmplitude() * 0.75f;
 
@@ -420,7 +421,7 @@ void mf_GameLogic::Tick( float dt )
 
 		particles_manager_.AddFlashingText( pos, c_x_axis, c_y_axis, c_finish_text );
 
-		pos[0]= float( level_.TerrainSizeX() / 2 ) * level_.TerrainCellSize() + float(strlen(c_back_border_text) * MF_LETTER_WIDTH) * 0.5f * c_letter_pixel_size;
+		pos[0]= float( level_.TerrainSizeX() / 2 ) * level_.TerrainCellSize() + float(std::strlen(c_back_border_text) * MF_LETTER_WIDTH) * 0.5f * c_letter_pixel_size;
 		pos[1]= MF_Y_LEVEL_BORDER;
 		particles_manager_.AddFlashingText( pos, c_x_axis_invert, c_y_axis, c_back_border_text );
 	}

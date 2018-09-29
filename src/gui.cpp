@@ -1,3 +1,4 @@
+#include <cstring>
 #include "micro-f.h"
 #include "gui.h"
 
@@ -417,7 +418,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[0];
 	strcpy( text->text, c_title_text );
 	text->size= 4;
-	text->colomn= screen_size_cl[0]/2 - strlen(c_title_text) * text->size / 2;
+	text->colomn= screen_size_cl[0]/2 - std::strlen(c_title_text) * text->size / 2;
 	text->row= 1;
 	COLOR_CPY( text->color, text_color );
 	menu->text_count++;
@@ -439,7 +440,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->buttons[0].text;
 	strcpy( text->text, c_play_button_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_play_button_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_play_button_text) / 2;
 	text->row= button_altitude;
 	COLOR_CPY( text->color, text_color );
 
@@ -457,7 +458,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->buttons[1].text;
 	strcpy( text->text, c_settings_button_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_settings_button_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_settings_button_text) / 2;
 	text->row= button_altitude;
 	COLOR_CPY( text->color, text_color );
 
@@ -475,7 +476,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->buttons[2].text;
 	strcpy( text->text, c_credits_button_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_credits_button_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_credits_button_text) / 2;
 	text->row= button_altitude;
 	COLOR_CPY( text->color, text_color );
 
@@ -493,7 +494,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->buttons[3].text;
 	strcpy( text->text, c_quit_button_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_quit_button_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_quit_button_text) / 2;
 	text->row= button_altitude;
 	COLOR_CPY( text->color, text_color );
 
@@ -520,7 +521,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[0];
 	strcpy( text->text, c_daytime_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 -text->size * strlen(c_daytime_text);
+	text->colomn= screen_size_cl[0]/2 -text->size * std::strlen(c_daytime_text);
 	text->row= 4;
 	COLOR_CPY( text->color, text_color );
 	menu->text_count++;
@@ -545,7 +546,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[1];
 	strcpy( text->text, c_hdr_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 -text->size * strlen(c_hdr_text);
+	text->colomn= screen_size_cl[0]/2 -text->size * std::strlen(c_hdr_text);
 	text->row= 7;
 	COLOR_CPY( text->color, text_color );
 	menu->text_count++;
@@ -570,7 +571,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[2];
 	strcpy( text->text, c_clouds_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 -text->size * strlen(c_clouds_text);
+	text->colomn= screen_size_cl[0]/2 -text->size * std::strlen(c_clouds_text);
 	text->row= 10;
 	COLOR_CPY( text->color, text_color );
 	menu->text_count++;
@@ -595,7 +596,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[3];
 	strcpy( text->text, c_sky_quality_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 -text->size * strlen(c_sky_quality_text);
+	text->colomn= screen_size_cl[0]/2 -text->size * std::strlen(c_sky_quality_text);
 	text->row= 13;
 	COLOR_CPY( text->color, text_color );
 	menu->text_count++;
@@ -620,7 +621,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[4];
 	strcpy( text->text, c_shadows_quality_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 -text->size * strlen(c_shadows_quality_text);
+	text->colomn= screen_size_cl[0]/2 -text->size * std::strlen(c_shadows_quality_text);
 	text->row= 16;
 	COLOR_CPY( text->color, text_color );
 	menu->text_count++;
@@ -652,7 +653,7 @@ void mf_Gui::PrepareMenus()
 	button= &menu->buttons[5];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_button_back) - border_size;
+	button->width=  text->size * cell_size[0] * std::strlen(c_button_back) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnSettingsBackButton;
 	button->user_data= 0;
@@ -662,7 +663,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[5];
 	strcpy( text->text, c_seed_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_seed_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_seed_text) / 2;
 	text->row= 20;
 	COLOR_CPY( text->color, text_color );
 	menu->text_count++;
@@ -703,14 +704,14 @@ void mf_Gui::PrepareMenus()
 	text= &menu->buttons[0].text;
 	strcpy( text->text, c_button_previous );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_button_previous) - 4;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_button_previous) - 4;
 	text->row= screen_size_cl[1] - 3;
 	COLOR_CPY( text->color, text_color );
 	// previous button
 	button= &menu->buttons[0];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_button_previous) - border_size;
+	button->width=  text->size * cell_size[0] * std::strlen(c_button_previous) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnPreviousAircraft;
 	button->user_data= 0;
@@ -727,7 +728,7 @@ void mf_Gui::PrepareMenus()
 	button= &menu->buttons[1];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_button_next) - border_size;
+	button->width=  text->size * cell_size[0] * std::strlen(c_button_next) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnNextAircraft;
 	button->user_data= 0;
@@ -737,14 +738,14 @@ void mf_Gui::PrepareMenus()
 	text= &menu->buttons[2].text;
 	strcpy( text->text, c_button_select_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_button_select_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_button_select_text) / 2;
 	text->row= screen_size_cl[1] - 6;
 	COLOR_CPY( text->color, text_color );
 	// select button
 	button= &menu->buttons[2];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_button_select_text) - border_size;
+	button->width=  text->size * cell_size[0] * std::strlen(c_button_select_text) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnSelectAircraft;
 	button->user_data= 0;
@@ -778,7 +779,7 @@ void mf_Gui::PrepareMenus()
 		text= &menu->texts[i*2];
 		strcpy( text->text, c_credits_strings[i] );
 		text->size= 2;
-		text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_credits_strings[i]) - 3;
+		text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_credits_strings[i]) - 3;
 		text->row= row;
 		COLOR_CPY( text->color, text_color );
 
@@ -794,7 +795,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[menu->text_count];
 	strcpy( text->text, c_credits_title );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_credits_title) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_credits_title) / 2;
 	text->row= credits_begin_row - 3;
 	COLOR_CPY( text->color, text_color );
 	menu->text_count++;
@@ -810,7 +811,7 @@ void mf_Gui::PrepareMenus()
 	button= &menu->buttons[0];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_button_back) - border_size;
+	button->width=  text->size * cell_size[0] * std::strlen(c_button_back) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnSettingsBackButton;
 	button->user_data= 0;
@@ -829,7 +830,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[0];
 	strcpy( text->text, c_win_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_win_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_win_text) / 2;
 	text->row= win_menu_begin_row;
 	COLOR_CPY( text->color, text_color );
 
@@ -837,7 +838,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[1];
 	strcpy( text->text, c_score_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_score_text);
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_score_text);
 	text->row= win_menu_begin_row + 3;
 	COLOR_CPY( text->color, text_color );
 	// Score value text
@@ -852,7 +853,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[3];
 	strcpy( text->text, c_time_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_time_text);
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_time_text);
 	text->row= win_menu_begin_row + 6;
 	COLOR_CPY( text->color, text_color );
 	// Time value text
@@ -869,14 +870,14 @@ void mf_Gui::PrepareMenus()
 	text= &menu->buttons[0].text;
 	strcpy( text->text, c_replay_button_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_replay_button_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_replay_button_text) / 2;
 	text->row= win_menu_begin_row + 9;
 	COLOR_CPY( text->color, text_color );
 	// Replay button
 	button= &menu->buttons[0];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_replay_button_text) - border_size;
+	button->width=  text->size * cell_size[0] * std::strlen(c_replay_button_text) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnPlayButton;
 	menu->button_count++;
@@ -885,14 +886,14 @@ void mf_Gui::PrepareMenus()
 	text= &menu->buttons[1].text;
 	strcpy( text->text, c_quit_button_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_quit_button_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_quit_button_text) / 2;
 	text->row= win_menu_begin_row + 12;
 	COLOR_CPY( text->color, text_color );
 	// Quit button
 	button= &menu->buttons[1];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_quit_button_text) - border_size;
+	button->width=  text->size * cell_size[0] * std::strlen(c_quit_button_text) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnQuitButton;
 	menu->button_count++;
@@ -908,7 +909,7 @@ void mf_Gui::PrepareMenus()
 	text= &menu->texts[0];
 	strcpy( text->text, c_game_over_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_win_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_win_text) / 2;
 	text->row= win_menu_begin_row;
 	COLOR_CPY( text->color, text_color );
 	menu->text_count++;
@@ -917,14 +918,14 @@ void mf_Gui::PrepareMenus()
 	text= &menu->buttons[0].text;
 	strcpy( text->text, c_replay_button_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_replay_button_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_replay_button_text) / 2;
 	text->row= win_menu_begin_row + 3;
 	COLOR_CPY( text->color, text_color );
 	// Replay button
 	button= &menu->buttons[0];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_replay_button_text) - border_size;
+	button->width=  text->size * cell_size[0] * std::strlen(c_replay_button_text) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnPlayButton;
 	menu->button_count++;
@@ -933,14 +934,14 @@ void mf_Gui::PrepareMenus()
 	text= &menu->buttons[1].text;
 	strcpy( text->text, c_quit_button_text );
 	text->size= 2;
-	text->colomn= screen_size_cl[0]/2 - text->size * strlen(c_quit_button_text) / 2;
+	text->colomn= screen_size_cl[0]/2 - text->size * std::strlen(c_quit_button_text) / 2;
 	text->row= win_menu_begin_row + 6;
 	COLOR_CPY( text->color, text_color );
 	// Quit button
 	button= &menu->buttons[1];
 	button->x= text->colomn * cell_size[0] + border_size;
 	button->y= text->row * cell_size[1] + border_size;
-	button->width=  text->size * cell_size[0] * strlen(c_quit_button_text) - border_size;
+	button->width=  text->size * cell_size[0] * std::strlen(c_quit_button_text) - border_size;
 	button->height= text->size * cell_size[1] - border_size;
 	button->callback= &mf_Gui::OnQuitButton;
 	menu->button_count++;
@@ -1198,7 +1199,7 @@ void mf_Gui::DrawNaviball()
 		Mat4Mul( tmp_mat, scale_mat, mat );
 		Mat4Mul( mat, translate_mat, tmp_mat );
 		Mat4Mul( model_mirror_mat, tmp_mat, mat );
-		memcpy( rot_mat_for_space_vectors, tmp_mat, sizeof(mat) );
+		std::memcpy( rot_mat_for_space_vectors, tmp_mat, sizeof(mat) );
 
 		naviball_shader_.UniformMat4( "mat", mat );
 

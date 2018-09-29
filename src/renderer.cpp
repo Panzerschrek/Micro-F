@@ -2594,7 +2594,7 @@ void mf_Renderer::DrawShadows()
 		corrected_proj_mat[14]*= -1.0f;
 		Mat4Mul( primary_proj_mat, corrected_proj_mat, projection_final_mat );
 
-		memcpy( common_shadow_matrix_, projection_final_mat, sizeof(float) * 16 );
+		std::memcpy( common_shadow_matrix_, projection_final_mat, sizeof(float) * 16 );
 	} // calculate projection matrix
 	{ // draw terrain
 		float terrain_mat[16];

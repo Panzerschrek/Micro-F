@@ -1,3 +1,4 @@
+#include <cstring>
 #include "micro-f.h"
 #include "drawing_model.h"
 
@@ -43,8 +44,8 @@ void mf_DrawingModel::Copy( const mf_DrawingModel* m )
 	index_count_= m->index_count_;
 	vertices_= new mf_DrawingModelVertex[ vertex_count_ ];
 	indeces_= new unsigned short[ index_count_ ];
-	memcpy( vertices_, m->vertices_, vertex_count_ * sizeof(mf_DrawingModelVertex) );
-	memcpy( indeces_, m->indeces_, index_count_ * sizeof(unsigned short) );
+	std::memcpy( vertices_, m->vertices_, vertex_count_ * sizeof(mf_DrawingModelVertex) );
+	std::memcpy( indeces_, m->indeces_, index_count_ * sizeof(unsigned short) );
 }
 
 void mf_DrawingModel::LoadFromMFMD( const unsigned char* model_data )
@@ -105,7 +106,7 @@ void mf_DrawingModel::LoadFromMFMD( const unsigned char* model_data )
 	} // for out vertices
 
 	if( header->bytes_per_index == 2 )
-		memcpy( indeces_, i_p, sizeof(unsigned short) * index_count_ );
+		std::memcpy( indeces_, i_p, sizeof(unsigned short) * index_count_ );
 	else
 	{
 		unsigned char* byte_p= (unsigned char*)i_p;
@@ -120,11 +121,11 @@ void mf_DrawingModel::Add( const mf_DrawingModel* m )
 	unsigned short* new_indeces= new unsigned short[ index_count_ + m->index_count_ ];
 	
 	if( vertices_ != NULL )
-		memcpy( new_vertices, vertices_, vertex_count_ * sizeof(mf_DrawingModelVertex) );
-	memcpy( new_vertices + vertex_count_, m->vertices_, m->vertex_count_ * sizeof(mf_DrawingModelVertex) );
+		std::memcpy( new_vertices, vertices_, vertex_count_ * sizeof(mf_DrawingModelVertex) );
+	std::memcpy( new_vertices + vertex_count_, m->vertices_, m->vertex_count_ * sizeof(mf_DrawingModelVertex) );
 
 	if( indeces_ != NULL )
-		memcpy( new_indeces, indeces_, sizeof(unsigned short) * index_count_ );
+		std::memcpy( new_indeces, indeces_, sizeof(unsigned short) * index_count_ );
 	for( unsigned int i= 0; i< m->index_count_; i++ )
 		new_indeces[ i + index_count_ ]= (unsigned short)( m->indeces_[i] + vertex_count_ );
 
