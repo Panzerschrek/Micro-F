@@ -70,3 +70,7 @@ else()
 	target_link_libraries( MicroF GL )
 	target_link_libraries( MicroF SDL2 )
 endif()
+
+if( ${CMAKE_BUILD_TYPE} STREQUAL Debug )
+	target_compile_definitions( MicroF PRIVATE MF_DEBUG )
+endif()

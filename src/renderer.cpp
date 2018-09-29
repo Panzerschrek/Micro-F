@@ -1886,8 +1886,10 @@ void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
 {
 	{
 #ifdef MF_DEBUG
+#ifdef MF_PLATFORM_WIN
 		LARGE_INTEGER ticks[2];
 		QueryPerformanceCounter( ticks );
+#endif
 #endif
 
 		mf_PerticleSortInfo particles_sort[ MF_MAX_PARTICLES ];
@@ -1907,6 +1909,7 @@ void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
 			particles_data_.sorted_vertices[i]= *particles_sort[i].particle_vertex;
 
 #ifdef MF_DEBUG
+#ifdef MF_PLATFORM_WIN
 		QueryPerformanceCounter( ticks + 1 );
 		long long int ticks_delta= ticks[1].QuadPart - ticks[0].QuadPart;
 		LARGE_INTEGER freq;
@@ -1919,6 +1922,7 @@ void mf_Renderer::DrawParticles( bool draw_to_water_framebuffer )
 			sprintf( str, "particles: %d, sort time: %3.6f mcs", count, sort_time * 1e6 );
 			text_->AddText( 1, 6, 1, mf_Text::default_color, str );
 		}
+#endif
 #endif
 		particles_data_.particles_vbo.Bind();
 		particles_data_.particles_vbo.VertexSubData( particles_data_.sorted_vertices, sizeof(mf_ParticleVertex) * count, 0 );
