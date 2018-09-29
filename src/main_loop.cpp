@@ -26,7 +26,7 @@ void* mfGetGLFuncAddress( const char* addr )
 #ifdef MF_PLATFORM_WIN
 	return wglGetProcAddress( addr );
 #else
-	return nullptr;
+	return SDL_GL_GetProcAddress( addr );
 #endif
 }
 
@@ -76,6 +76,8 @@ void mf_MainLoop::Loop()
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+	#else
+		ProcessEvents();
 	#endif
 
 		text_->SetViewport( viewport_width_, viewport_height_ );
@@ -140,9 +142,11 @@ void mf_MainLoop::Loop()
 		gui_->Draw();
 		text_->Draw();
 
-		#ifdef MF_PLATFORM_WIN
+#ifdef MF_PLATFORM_WIN
 		SwapBuffers( hdc_ );
-		#endif
+#else
+		SDL_GL_SwapWindow(window_);
+#endif
 
 		CalculateFPS();
 	} // while !quit
@@ -170,6 +174,8 @@ void mf_MainLoop::DrawLoadingFrame( const char* text )
 	text_->Draw();
 #ifdef MF_PLATFORM_WIN
 	SwapBuffers( hdc_ );
+#else
+	SDL_GL_SwapWindow( window_ );
 #endif
 }
 
@@ -312,8 +318,26 @@ mf_MainLoop::mf_MainLoop(
 	if( wglSwapInterval != NULL )
 		wglSwapInterval( vsync_ ? 1 : 0 );
 
-	GetGLFunctions( mfGetGLFuncAddress );
+#else
+	SDL_Init( SDL_INIT_VIDEO );
+
+	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
+
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, OGL_VERSION_MAJOR );
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, OGL_VERSION_MINOR );
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+
+	window_=
+		SDL_CreateWindow(
+			WINDOW_NAME,
+			SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+			viewport_width_, viewport_height_,
+			SDL_WINDOW_OPENGL | ( fullscreen_ ? SDL_WINDOW_FULLSCREEN : 0 ) | SDL_WINDOW_SHOWN );
+
+	gl_context_= SDL_GL_CreateContext( window_ );
 #endif
+	GetGLFunctions( mfGetGLFuncAddress );
 
 #ifdef MF_PLATFORM_WIN
 	sound_engine_= new mf_SoundEngine(hwnd_);
@@ -503,6 +527,143 @@ LRESULT CALLBACK mf_MainLoop::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, L
 
 	return DefWindowProc( hwnd, uMsg, wParam, lParam );
 }
+
+#else
+void mf_MainLoop::ProcessEvents()
+{
+	mf_MainLoop* instance= Instance();
+
+	SDL_Event event;
+	while( SDL_PollEvent(&event) )
+	{
+		switch(event.type)
+		{
+		case SDL_WINDOWEVENT:
+			if( event.window.event == SDL_WINDOWEVENT_CLOSE )
+				instance->quit_= true;
+			break;
+
+		case SDL_QUIT:
+			instance->quit_= true;
+			break;
+
+		case SDL_MOUSEBUTTONUP:
+			if( event.button.button == SDL_BUTTON_LEFT )
+			{
+				instance->gui_->MouseClick( event.button.x, event.button.y );
+				instance->shot_button_pressed_= false;
+			}
+			break;
+		case SDL_MOUSEBUTTONDOWN:
+			if( event.button.button == SDL_BUTTON_LEFT )
+			{
+				instance->Shot( event.button.x, event.button.y, 0 );
+				instance->shot_button_pressed_= true;
+			}
+			else if( event.button.button == SDL_BUTTON_RIGHT )
+				instance->Shot( event.button.x, event.button.y, 1 );
+			else if( event.button.button == SDL_BUTTON_MIDDLE )
+				instance->Shot( event.button.x, event.button.y, 2 );
+			break;
+
+		case SDL_MOUSEMOTION:
+			instance->gui_->MouseHover( event.motion.x, event.motion.y );
+			instance->gui_->SetCursor( event.motion.x, event.motion.y );
+			if( instance->mouse_captured_ )
+			{
+				instance->player_.RotateZ( float( -event.motion.xrel ) * instance->mouse_speed_x_ );
+				instance->player_.RotateX( float( -event.motion.yrel ) * instance->mouse_speed_y_ );
+			}
+			break;
+
+		case SDL_MOUSEWHEEL:
+			{
+			const int step= event.wheel.y;
+				if( step > 0 )
+					for( int i= 0; i< step; i++ )
+						instance->player_.ZoomIn();
+				else
+					for( int i= 0; i< abs(step); i++ )
+						instance->player_.ZoomOut();
+			}
+			break;
+
+		case SDL_KEYUP:
+			switch(event.key.keysym.scancode)
+			{
+			case SDL_SCANCODE_W:
+				instance->player_.ForwardReleased(); break;
+			case SDL_SCANCODE_S:
+				instance->player_.BackwardReleased(); break;
+			case SDL_SCANCODE_A:
+				instance->player_.LeftReleased(); break;
+			case SDL_SCANCODE_D:
+				instance->player_.RightReleased(); break;
+			case SDL_SCANCODE_LSHIFT:
+				instance->player_.UpReleased(); break;
+			case SDL_SCANCODE_LCTRL:
+				instance->player_.DownReleased(); break;
+			case SDL_SCANCODE_LEFT:
+				instance->player_.RotateLeftReleased(); break;
+			case SDL_SCANCODE_RIGHT:
+				instance->player_.RotateRightReleased(); break;
+			case SDL_SCANCODE_UP:
+				instance->player_.RotateUpReleased(); break;
+			case SDL_SCANCODE_DOWN:
+				instance->player_.RotateDownReleased(); break;
+			case SDL_SCANCODE_Q:
+				instance->player_.RotateClockwiseReleased(); break;
+			case SDL_SCANCODE_E:
+				instance->player_.RotateAnticlockwiseReleased(); break;
+			case SDL_SCANCODE_F1:
+				if( !instance->player_.IsInRespawn() && instance->game_logic_ != NULL && instance->game_logic_->GameStarted() )
+					instance->player_.ToggleViewMode();
+				break;
+			case SDL_SCANCODE_ESCAPE:
+				instance->quit_= true;
+				break;
+			default:
+				break;
+			};
+			break;
+
+		case SDL_KEYDOWN:
+			switch(event.key.keysym.scancode)
+			{
+			case SDL_SCANCODE_W:
+				instance->player_.ForwardPressed(); break;
+			case SDL_SCANCODE_S:
+				instance->player_.BackwardPressed(); break;
+			case SDL_SCANCODE_A:
+				instance->player_.LeftPressed(); break;
+			case SDL_SCANCODE_D:
+				instance->player_.RightPressed(); break;
+			case SDL_SCANCODE_LSHIFT:
+				instance->player_.UpPressed(); break;
+			case SDL_SCANCODE_LCTRL:
+				instance->player_.DownPressed(); break;
+			case SDL_SCANCODE_LEFT:
+				instance->player_.RotateLeftPressed(); break;
+			case SDL_SCANCODE_RIGHT:
+				instance->player_.RotateRightPressed(); break;
+			case SDL_SCANCODE_UP:
+				instance->player_.RotateUpPressed(); break;
+			case SDL_SCANCODE_DOWN:
+				instance->player_.RotateDownPressed(); break;
+			case SDL_SCANCODE_Q:
+				instance->player_.RotateClockwisePressed(); break;
+			case SDL_SCANCODE_E:
+				instance->player_.RotateAnticlockwisePressed(); break;
+			default:
+				break;
+			};
+			break;
+
+		default:
+			break;
+		};
+	} // while has events
+}
 #endif
 
 void mf_MainLoop::Resize()
@@ -578,6 +739,9 @@ void mf_MainLoop::CaptureMouse( bool need_capture )
 		ShowCursor( false );
 		GetCursorPos( &prev_cursor_pos_ );
 	}
+#else
+	mouse_captured_= need_capture;
+	SDL_SetRelativeMouseMode( mouse_captured_ ? SDL_TRUE : SDL_FALSE );
 #endif
 }
 

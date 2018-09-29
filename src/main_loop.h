@@ -1,4 +1,7 @@
 #pragma once
+#ifdef MF_PLATFORM_SDL
+#include <SDL.h>
+#endif
 #include "micro-f.h"
 
 #include "renderer.h"
@@ -48,6 +51,8 @@ private:
 
 #ifdef MF_PLATFORM_WIN
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+#else
+	static void ProcessEvents();
 #endif
 
 	void Resize();
@@ -74,6 +79,9 @@ private:
 	WNDCLASSEX window_class_;
 
 	POINT prev_cursor_pos_;
+#else
+	SDL_Window* window_;
+	SDL_GLContext gl_context_;
 #endif
 	bool mouse_captured_;
 	bool shot_button_pressed_;

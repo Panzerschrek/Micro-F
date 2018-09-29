@@ -29,18 +29,19 @@ set( HEADERS
 )
 
 set( SOURCES
+	models/models.cpp
 	src/aircraft.cpp
 	src/autopilot.cpp
 	src/drawing_model.cpp
 	src/enemy.cpp
 	src/game_logic.cpp
+	src/gl/func_addresses.cpp
 	src/glsl_program.cpp
 	src/gui.cpp
 	src/level.cpp
 	src/main.cpp
 	src/main_loop.cpp
 	src/mf_math.cpp
-	models/models.cpp
 	src/models_generation.cpp
 	src/music_engine.cpp
 	src/particles_manager.cpp
@@ -64,5 +65,8 @@ if( WIN32 )
 else()
 	target_compile_definitions( MicroF PRIVATE MF_PLATFORM_SDL )
 
+	target_include_directories( MicroF PRIVATE /usr/include/SDL2 )
+
 	target_link_libraries( MicroF GL )
+	target_link_libraries( MicroF SDL2 )
 endif()
