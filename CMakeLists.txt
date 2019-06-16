@@ -56,19 +56,26 @@ set( SOURCES
 	src/vertex_buffer.cpp
 )
 
+if( WIN32 )
+	list( APPEND SOURCES
+		src/sound_engine.cpp
+	)
+	list( APPEND HEADERS
+		src/sound_engine.h
+	)
+endif()
+
 add_executable( MicroF ${SOURCES} ${HEADERS} )
 
 if( WIN32 )
 	target_compile_definitions( MicroF PRIVATE MF_PLATFORM_WIN )
-
 	target_link_libraries( MicroF opengl32 )
 else()
+	find_package( SDL2 REQUIRED )
+
 	target_compile_definitions( MicroF PRIVATE MF_PLATFORM_SDL )
-
-	target_include_directories( MicroF PRIVATE /usr/include/SDL2 )
-
-	target_link_libraries( MicroF GL )
-	target_link_libraries( MicroF SDL2 )
+	target_include_directories( MicroF PRIVATE ${SDL2_INCLUDE_DIRS} )
+	target_link_libraries( MicroF GL ${SDL2_LIBRARIES} )
 endif()
 
 if( ${CMAKE_BUILD_TYPE} STREQUAL Debug )
